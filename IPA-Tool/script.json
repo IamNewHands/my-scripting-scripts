@@ -1,0 +1,50 @@
+{
+  "permissions" : null,
+  "remoteResource" : {
+    "hash" : "fbef4a2dbb7d6ed30eaad63273bcdc7b",
+    "url" : "https:\/\/raw.githubusercontent.com\/luestr\/Scripting-Scripts\/main\/Script\/IPATool.scripting",
+    "autoUpdateInterval" : 86400
+  },
+  "contributors" : [
+
+  ],
+  "runInApp" : false,
+  "name" : "IPA-Tool",
+  "icon" : "iphone",
+  "entry" : "index.tsx",
+  "localizedNames" : {
+    "de" : "IPA-Tool",
+    "es" : "Herramienta IPA",
+    "zh" : "IPA工具箱",
+    "it" : "Strumento IPA",
+    "pt" : "Ferramenta IPA",
+    "fr" : "Outil IPA",
+    "ru" : "Инструмент IPA",
+    "ja" : "IPAツール",
+    "en" : "IPATool"
+  },
+  "author" : {
+    "homepage" : null,
+    "email" : null,
+    "name" : "小白脸"
+  },
+  "localizedDescriptions" : {
+    "en" : "This script is primarily used to download IPA packages and downgrade apps; to run it, you need auxiliary support such as a Surge module or a Loon plugin — either one is sufficient.",
+    "ja" : "このスクリプトは主にIPAパッケージのダウンロードとアプリのバージョンダウンに使用されます。実行にはSurgeのモジュールまたはLoonのプラグインのいずれかを補助ツールとして必要とします。",
+    "de" : "Dieses Skript dient hauptsächlich dem Herunterladen von IPA-Paketen und dem Downgraden von Apps. Für die Ausführung ist eine zusätzliche Unterstützung erforderlich, wie ein Modul von Surge oder ein Plugin von Loon — es genügt, eines davon auszuwählen.",
+    "fr" : "Ce script est principalement utilisé pour télécharger des fichiers IPA et effectuer une régression d'application ; pour l'exécuter, vous avez besoin d'un support complémentaire, comme un module de Surge ou un plugin de Loon — il suffit d'en choisir un seul.",
+    "ru" : "Этот скрипт主要用于 скачивания IPA-пакетов и понижения версии приложений; для его запуска требуется дополнительная поддержка в виде модуля Surge или плагина Loon — достаточно выбрать один из них.",
+    "zh" : "这个脚本主要用于下载IPA包和应用降级，运行这个脚本还需要依赖如Surge的模块或Loon的插件作为辅助支持，两者任选其一即可。",
+    "es" : "Este script se utiliza principalmente para descargar paquetes IPA y realizar el downgrade de aplicaciones; para ejecutarlo se requiere soporte adicional, como un módulo de Surge o un complemento de Loon, basta con elegir uno de los dos.",
+    "it" : "Questo script è principalmente utilizzato per scaricare pacchetti IPA e eseguire il downgrade delle app; per eseguirlo è necessario un supporto aggiuntivo come un modulo di Surge o un plugin di Loon, di cui basta sceglierne uno.",
+    "pt" : "Este script é principalmente usado para baixar pacotes IPA e realizar downgrade de aplicativos; para executá-lo, é necessário suporte adicional, como um módulo do Surge ou um plugin do Loon — basta escolher um dos dois."
+  },
+  "version" : "1.0.0",
+  "intentInputTypes" : [
+    "FileURLs",
+    "URLs"
+  ],
+  "description" : "This script is primarily used to download IPA packages and downgrade apps; to run it, you need auxiliary support such as a Surge module or a Loon plugin — either one is sufficient.",
+  "iconImage" : null,
+  "color" : "rgba(243, 159, 68,1)"
+}

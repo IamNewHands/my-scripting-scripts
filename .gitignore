@@ -1,0 +1,18 @@
+# macOS / iCloud 副本
+.DS_Store
+*\ 2.ts
+*\ 2.tsx
+*\ 2.js
+*\ 2.json
+
+# Scripting 备份工具产物
+BACKUP_INFO.md
+
+# 编辑器
+.vscode/
+.idea/
+
+# 本地临时
+node_modules/
+.tmp/
+tools/

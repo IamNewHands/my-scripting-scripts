@@ -1,0 +1,5 @@
+export { localApi } from "./api/localApi"
+export { AuthService } from "./core/AuthService"
+export { StoreService } from "./core/StoreService"
+export { VersionService } from "./core/VersionService"
+export { VersionCacheRepository } from "./core/VersionCacheRepository"
