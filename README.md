@@ -4,9 +4,9 @@
 
 ## 目录
 
-| 脚本 | 说明 | 来源 |
-|---|---|---|
-| [IPA-Tool](./IPA-Tool) | 使用自己的 Apple ID 从 App Store 拉取正版 IPA、支持历史版本降级；配合 Loon/Surge 插件走 `itms-services://` 本地安装 | 原作者：[小白脸 / luestr](https://github.com/luestr) |
+| 脚本 | 说明 | 导入 | 来源 |
+|---|---|---|---|
+| [IPA-Tool](./IPA-Tool) | 下载旧版IPA并安装，支持自定义plist服务（自建/代理/Scripting三选一），密码Keychain加密 | [📥 一键导入](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D) | 原作：[小白脸/luestr](https://github.com/luestr)，维护：[IamNewHands](https://github.com/IamNewHands) |
 
 > 后续新增脚本按同级子目录追加即可。
 
@@ -122,3 +122,23 @@ export default {
 
 - 方式 B（手动复制）：把子目录整包复制到 iCloud 的 `Scripting/Documents/scripts/<脚本名>/` 下即可自动出现在 App 里。
 - 方式 C：某些脚本的 `script.json` 里带 `remoteResource`，App 会按其中的 URL 自动拉更新——请以那个 URL 的原始仓库为准，不要指向本仓库。
+
+## 脚本自动更新（GitHub Release）
+
+本仓库的 `script.json` 里已配置 `remoteResource`：
+
+```json
+"remoteResource": {
+  "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/IPA-Tool.zip",
+  "autoUpdateInterval": 86400,
+  "hash": ""
+}
+```
+
+机制：Scripting App 每 86400 秒（一天）去上述 URL 拉 zip 包，比对 `hash`（MD5）。如果和你本地的不同，App 提示有新版本并自动升级。
+
+发新版本的流程：
+1. 把 `IPA-Tool/` 整个目录打成 zip（确保 `index.tsx` / `script.json` 等文件在 zip 根层级）。
+2. 在 GitHub 仓库页面创建新 Release → 上传 zip。
+3. 计算 zip 的 MD5，更新 `script.json` 的 `hash` 字段。
+4. 提交 + 推送。下次 Scripting 检查就自动发现更新。
