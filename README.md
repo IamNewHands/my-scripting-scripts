@@ -13,6 +13,7 @@ Personal collection of [Scripting App](https://apps.apple.com/app/scripting/id64
 |---|---|---|---|
 | [IPA-Tool](./IPA-Tool) | Download older IPAs & install; custom plist; Keychain passwords | [EN](./IPA-Tool/README.md) · [中文](./IPA-Tool/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D) |
 | [App-Store-Translate](./App-Store-Translate) | Translate App Store notes/descriptions to Chinese (system or AI) | [EN](./App-Store-Translate/README.md) · [中文](./App-Store-Translate/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Store-Translate%22%5D) |
+| [App-Region-Price](./App-Region-Price) | Search apps & compare prices across regions with CNY conversion and auto-translated metadata | [EN](./App-Region-Price/README.md) · [中文](./App-Region-Price/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Region-Price%22%5D) |
 
 **Docs** columns link to the full per-script write-up (features, code map, privacy, limits).
 
