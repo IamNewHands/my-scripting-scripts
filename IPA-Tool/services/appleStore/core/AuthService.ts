@@ -1,5 +1,6 @@
 import { $cache, $http, plist } from "../runtime"
 import { appleStoreConfig, configureAppleHttp, CustomError, getMac } from "./shared"
+import { getPassword, deletePassword as deleteLoginPassword } from "../../../utils/loginHistoryStorage"
 
 type LoginParams = {
   appleId: string
@@ -15,7 +16,6 @@ export type AppleLoginResponse = Record<string, any> & {
       lastName?: string
     }
   }
-  password?: string
   Cookie?: string
   storeFront?: string
   dsPersonId?: string | number
@@ -98,7 +98,8 @@ export class AuthService {
 
     const Cookie = resp.headers["set-cookie"]
     const storeFront = resp.headers["x-set-apple-store-front"]?.split("-")?.[0]
-    const loginResp = { ...parsedResp, password, Cookie, storeFront } as AppleLoginResponse
+    // 密码不入 Storage；Keychain 由 useAuth.login() 侧写入
+    const loginResp = { ...parsedResp, Cookie, storeFront } as AppleLoginResponse
     upsertActiveLogin(loginResp)
     return loginResp
   }
@@ -111,7 +112,11 @@ export class AuthService {
       return await this.#login(op)
     }
 
-    if (op && op.password !== loginResp?.password) return await this.#login(op)
+    // 与 Keychain 存取的密码对比，若不一致则重新登录
+    if (op) {
+      const cachedPwd = getPassword(op.appleId)
+      if (op.password !== cachedPwd) return await this.#login(op)
+    }
 
     this.validate(loginResp)
     return loginResp!
@@ -146,18 +151,26 @@ export class AuthService {
   }
 
   static async refreshCookie(): Promise<AppleLoginResponse> {
-    const { accountInfo = {}, password } = getActiveLogin() ?? {}
+    const { accountInfo = {} } = getActiveLogin() ?? {}
     const appleId = accountInfo.appleId
-    if (!appleId || !password) throw new CustomError("Login", "❌未登录,刷新Cookie失败,请重新登录")
+    if (!appleId) throw new CustomError("Login", "❌未登录,刷新Cookie失败,请重新登录")
+    const password = getPassword(appleId)
+    if (!password) throw new CustomError("Login", "❌未找到 Keychain 密码,请重新登录")
     return await this.#login({ appleId, password })
   }
 
   static reset() {
+    // 清理所有缓存 session 对应的 Keychain 密码
+    const sessions = parseLoginCache()
+    for (const s of sessions) {
+      const id = getAppleId(s)
+      if (id) deleteLoginPassword(id)
+    }
     $cache.remove(appleStoreConfig.keys.appleStoreLogin)
     $cache.remove(appleStoreConfig.keys.appleStoreMac)
     return {
       success: true,
-      message: "重置成功，已清除登录信息和GUID缓存",
+      message: "重置成功，已清除登录信息、GUID缓存和Keychain密码",
       clearedKeys: [appleStoreConfig.keys.appleStoreLogin, appleStoreConfig.keys.appleStoreMac],
     }
   }

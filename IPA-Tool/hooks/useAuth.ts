@@ -11,6 +11,8 @@ import {
   getActive,
   getAll,
   remove as removeHistory,
+  savePassword,
+  getPassword,
   setActive,
   update,
 } from "../utils/loginHistoryStorage";
@@ -21,7 +23,6 @@ const emptyAuthState = {
   isLoggedIn: false,
   account: "",
   username: "",
-  password: "",
   storeFront: "",
   lastLogin: "",
 };
@@ -93,13 +94,15 @@ export const useAuth = () => {
    * 登录账号。
    *
    * 后端负责判断是否复用 CK / 是否真实登录；
-   * 成功后前端写入 login_history，并标记为 active。
+   * 成功后：密码写入 Keychain（加密），其他信息写入 login_history。
    */
   const login = async (appleId: string, password: string, code: string) => {
     const data = await apiLogin({ appleId, password, code });
-    const history = add({ ...data, password, isActive: true });
+    savePassword(data.account, password);
+    const history = add({ ...data, isActive: true });
     syncAuthStateFromHistory(history);
-    await refreshAuthSessions();
+    // refreshAuthSessions 失败不影响登录核心流程
+    await refreshAuthSessions().catch(() => {});
   };
 
   /**

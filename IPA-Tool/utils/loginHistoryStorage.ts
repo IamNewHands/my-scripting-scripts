@@ -6,12 +6,12 @@
 import { AppConfig } from "../constants/AppConfig";
 
 /**
- * 账户历史记录接口
+ * 账户历史记录接口。
+ * 密码不存 Storage，改用 Keychain（keychain:loginPassword:<account>）。
  */
 interface AccountHistory {
   account: string;
   username: string;
-  password: string;
   lastLogin: string;
   storeFront: string;
   isActive?: boolean;
@@ -121,5 +121,26 @@ export const remove = (account: string) => {
     });
   }
 
+  // 同时清理 Keychain 中的密码
+  deletePassword(account);
   return save(nextHistory);
 };
+
+// ─── Keychain 读写密码（不落 Storage） ───
+
+const passwordKey = (account: string) => `loginPassword:${account}`
+
+/** 将密码写入 Keychain（加密存储，Storage 管理器不可见）。 */
+export const savePassword = (account: string, password: string) => {
+  Keychain.set(passwordKey(account), password)
+}
+
+/** 从 Keychain 读取密码。若不存在返回 null。 */
+export const getPassword = (account: string): string | null => {
+  return Keychain.get(passwordKey(account))
+}
+
+/** 从 Keychain 删除密码。 */
+export const deletePassword = (account: string) => {
+  Keychain.remove(passwordKey(account))
+}

@@ -36,8 +36,53 @@
 | `buy.itunes.apple.com` / `p*-buy.itunes.apple.com` | 苹果购买与下载 | dsPersonId、Cookie、App ID |
 | `itunes.apple.com` | 搜索 / 详情 / lookup | 关键词、App ID |
 | `api.timbrd.com` / `apis.bilin.eu.org` | 查历史版本 ID（第三方版本数据库） | 只发 App 的数字 ID |
-| `api.scripting.fun/ipa-plist` | 生成安装用的 manifest.plist（云端方案） | 文件名、BundleId、版本号 |
-| `xiaobai.app/install` | 生成安装用的 manifest.plist（本地代理方案，需 Loon/Surge 插件拦截） | 同上，但**不出手机** |
+| `api.scripting.fun/ipa-plist` | 安装用的 manifest.plist（云端方案） | 文件名、BundleId、版本号 |
+| `xiaobai.app/install` | 安装用的 manifest.plist（本地代理方案，需 Loon/Surge 插件拦截） | 同上，但**不出手机** |
+| `https://你的域名/ipa-plist` | 你自己的 plist 服务（自定义方案） | 同上，不经过第三方 |
+
+### Plist 服务三种模式对比
+
+安装 IPA 时 iOS 需要从一个 HTTPS 地址拿到 manifest.plist 描述文件。设置里的 Plist 服务有不同隐私级别：
+
+| 模式 | plist 谁生成 | 泄露给第三方 | 需要代理 | 需要自建 |
+|---|---|---|---|---|
+| **Scripting** | 云端 api.scripting.fun | App名 + BundleID + 版本 + IP | ❌ | ❌ |
+| **代理模块** | 本机插件本地生成 | **无**（不离开手机） | ✅ Loon/Surge | ❌ |
+| **自定义** | 你自己的服务器 | **无**（到你自己的） | ❌ | ✅ |
+
+三种模式都不传 Apple ID/密码/Cookie——那些在登录环节直连苹果处理完成了。
+
+### 自建 plist 服务（Cloudflare Worker）
+
+如果想完全脱离第三方，可以在 Cloudflare Workers（免费）上部署你自己的 plist 服务。只做一件事：收到 GET `/ipa-plist` 后把 query 参数拼成 XML 返回。部署后把 Worker 地址填进设置页，下次安装就只走你自己的链路。
+
+部署时可以直接把以下代码发给 AI 让它部署：
+
+```
+在 Cloudflare Workers 上帮我部署这个。用途：我在 iPhone 上用一个脚本下载旧版 IPA 安装包，安装时
+需要 iOS 从某个 HTTPS 地址获取 manifest.plist 描述文件 。我不想用别人的公共服务器。
+Worker 做一件事——GET /ipa-plist 收到 name、bundleId、displayVersion、fileName 四个 query 参数，拼成固定 XML 返回，其中 IPA 下载地址写死为 http://localhost:8000/<fileName>。代码如下：
+
+import：
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (url.pathname !== "/ipa-plist") {
+      return new Response("not found", { status: 404 });
+    }
+    const name = url.searchParams.get("name") || "app";
+    const bundleId = url.searchParams.get("bundleId") || "";
+    const fileName = url.searchParams.get("fileName") || "";
+    const plist = `<?xml version="1.0" encoding="UTF-8"?>`;
+    return new Response(plist, {
+      headers: { "Content-Type": "application/xml", "Cache-Control": "no-cache" },
+    });
+  },
+};
+```
+
+部署好后把地址给我，我把那个地址填到 APP 里就会只使用自己的私链。
+```
 
 ### 安装步骤
 
@@ -58,6 +103,7 @@
 - 只能下你 Apple ID **获取过**的 App；没获取过的会报错。
 - 换 Apple ID 后旧 IPA 打开会闪退（sinf 不匹配）。
 - 依赖代理软件的 MitM 拦截才能真正装上——纯 Scripting 装不了。
+- **安全改进（本仓库版本）**：密码不再以明文写入 `Storage(login_history)` 或 `Storage(AppleLogin)`，改用 iOS Keychain 加密存储。
 
 ---
 

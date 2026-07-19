@@ -33,7 +33,7 @@ export function LoginHistory({ setFormData }: LoginHistoryProps) {
     setSelectedAccount(account)
     setFormData({
       username: account.account,
-      password: account.password,
+      password: "",
       captcha: "",
     })
   }
