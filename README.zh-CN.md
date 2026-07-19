@@ -14,6 +14,7 @@
 | [IPA-Tool](./IPA-Tool) | 下载旧版 IPA 并安装；自定义 plist；密码 Keychain | [中文](./IPA-Tool/README.zh-CN.md) · [EN](./IPA-Tool/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D) |
 | [App-Store-Translate](./App-Store-Translate) | App Store 更新说明与描述译中文（系统或 AI） | [中文](./App-Store-Translate/README.zh-CN.md) · [EN](./App-Store-Translate/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Store-Translate%22%5D) |
 | [App-Region-Price](./App-Region-Price) | 搜索 App 对比多区价格，自动换算人民币，简介按需翻译 | [中文](./App-Region-Price/README.zh-CN.md) · [EN](./App-Region-Price/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Region-Price%22%5D) |
+| [PDD-Quick-Submit](./PDD-Quick-Submit) | 多站点提交拼多多组队码；首成功即返回，结果显示成功数/总数 | [中文](./PDD-Quick-Submit/README.zh-CN.md) · [EN](./PDD-Quick-Submit/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FPDD-Quick-Submit%22%5D) |
 
 **说明** 列为该脚本完整文档（功能、代码结构、隐私、边界等）。
 
