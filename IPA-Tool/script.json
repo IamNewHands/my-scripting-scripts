@@ -1,7 +1,7 @@
 {
   "permissions" : null,
   "remoteResource" : {
-    "hash" : "",
+    "hash" : "9429b6ede91a7fdf05247733dce8f571",
     "url" : "https:\/\/github.com\/IamNewHands\/my-scripting-scripts\/releases\/latest\/download\/IPA-Tool.zip",
     "autoUpdateInterval" : 86400
   },
@@ -25,7 +25,7 @@
     "zh" : "下载旧版IPA并安装。支持自定义plist服务（自建/代理/Scripting三选一），密码已改用iOS Keychain加密存储。原作：小白脸，二次维护：IamNewHands。",
     "en" : "Download old IPA versions and install them. Supports custom plist service, passwords encrypted with iOS Keychain. Original by luestr, enhanced by IamNewHands."
   },
-  "version" : "1.1.0",
+  "version" : "1.1.1",
   "intentInputTypes" : [
     "FileURLs",
     "URLs"
