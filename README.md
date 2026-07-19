@@ -12,8 +12,9 @@ Personal collection of [Scripting App](https://apps.apple.com/app/scripting/id64
 | Script | Description | Import | Source |
 |---|---|---|---|
 | [IPA-Tool](./IPA-Tool) | Download older IPA builds and install them. Custom plist servers, Keychain-encrypted passwords. / 下载旧版 IPA 并安装；支持自定义 plist；密码 Keychain 加密 | [📥 One-tap import / 一键导入](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D) | Original: [luestr](https://github.com/luestr) · Maintained by [IamNewHands](https://github.com/IamNewHands) |
+| [App-Store-Translate](./App-Store-Translate) | Translate App Store release notes & descriptions into Chinese (system Translation or AI). / 将 App Store 更新说明与描述译为中文（系统翻译或 AI） | [📥 One-tap import / 一键导入](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Store-Translate%22%5D) | Maintained by [IamNewHands](https://github.com/IamNewHands) · see [App-Store-Translate/README.md](./App-Store-Translate/README.md) |
 
-Add new scripts as sibling folders under the repo root.
+Add new scripts as sibling folders under the repo root. Each script folder may carry its own bilingual README.
 
 ---
 
@@ -209,6 +210,134 @@ export default {
 - `remoteResource.hash` = **zip 整包 MD5**；zip 根目录直接放 `index.tsx` / `script.json`。
 
 发版：打扁平 zip → Release 上传 → 写 hash → 推 main。
+
+---
+
+# App Store Translate (English)
+
+Full write-up: [App-Store-Translate/README.md](./App-Store-Translate/README.md).
+
+## What it does
+
+- Open via **Share Sheet / Intent** with an App Store product URL.
+- Fetch public metadata from **iTunes Lookup** (`itunes.apple.com/{region}/lookup?id=`).
+- Show name, App ID, version, release date, bundle ID.
+- Translate **release notes** and **description** into Chinese.
+- Engines (Settings → picker, stored in `Storage` key `translate_engine`):
+  - **System Translation** — iOS 18+ on-device `Translation` API (may prompt language packs).
+  - **AI Translation** — Scripting `Assistant.requestStreaming` with your configured model (streaming partial text).
+- Long-press: re-translate / copy translation / copy original; info rows copy field values.
+
+## Requirements
+
+- Scripting App on iOS; network for lookup (and AI engine).
+- System engine: iOS 18+.
+- AI engine: a working model in Scripting Assistant settings.
+- **No Apple ID login.** Lookup is public metadata only.
+
+## How to use
+
+1. One-tap import:  
+   https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Store-Translate%22%5D
+2. Share an App Store link → choose this script (or pass URL via Shortcuts / Intent).
+3. Gear icon switches System / AI engine; pull to refresh; long-press for copy menus.
+
+Direct run uses a sample URL inside `index.tsx` for quick testing.
+
+## Code map (brief)
+
+| Path | Role |
+|---|---|
+| `index.tsx` | Run entry → present main view |
+| `intent.tsx` | Share/Intent entry; requires URL |
+| `page/index.tsx` | Parse App ID + region; load info; bind engine / Translation host |
+| `page/info.tsx` | Metadata rows + copy menu |
+| `page/translate.tsx` | Translate UI, loading, context menu |
+| `page/settings.tsx` | Engine picker |
+| `util/itunes.ts` | iTunes Lookup client |
+| `util/translate.ts` | System / AI engine router |
+| `util/settings.ts` | Engine preference |
+
+## External domains
+
+| Host | Purpose | Data |
+|---|---|---|
+| `itunes.apple.com` | Public lookup | App ID, storefront region |
+| Scripting Assistant backend (AI only) | Streaming completion | Release notes / description + system prompt |
+
+System Translation stays on-device.
+
+## Auto-update
+
+```json
+"remoteResource": {
+  "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/App-Store-Translate.zip",
+  "autoUpdateInterval": 86400,
+  "hash": "<md5-of-zip>"
+}
+```
+
+Zip root must contain `index.tsx` / `script.json` directly. `hash` = whole-zip MD5.
+
+---
+
+# App Store翻译（中文）
+
+完整说明见：[App-Store-Translate/README.md](./App-Store-Translate/README.md)。
+
+## 它是干什么的
+
+- 通过**分享菜单 / Intent** 传入 App Store 商品链接打开。
+- 用苹果公开 **iTunes Lookup** 拉元数据。
+- 展示名称、App ID、版本、更新日期、Bundle ID。
+- 将**更新说明**与**应用描述**译为中文。
+- 设置可选引擎（`Storage` 键 `translate_engine`）：
+  - **系统翻译**：iOS 18+ 本机 `Translation`（可能提示下载语言包）。
+  - **AI 翻译**：Scripting `Assistant.requestStreaming`，流式输出。
+- 长按：重新翻译 / 复制译文 / 复制原文；信息行可复制字段。
+
+## 使用前提
+
+- Scripting App；Lookup（及 AI）需网络。
+- 系统引擎需 iOS 18+；AI 需在助手设置里配好模型。
+- **无需登录 Apple ID**，不涉及密码。
+
+## 使用方法
+
+1. 一键导入：  
+   https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Store-Translate%22%5D
+2. 分享 App Store 链接 → 选本脚本（或快捷指令 / Intent 传 URL）。
+3. 齿轮切换系统 / AI；下拉刷新；长按复制或重译。
+
+直接运行时 `index.tsx` 内置示例链接，便于试跑。
+
+## 代码简表
+
+| 路径 | 作用 |
+|---|---|
+| `index.tsx` | 运行入口 |
+| `intent.tsx` | 分享/Intent 入口 |
+| `page/index.tsx` | 解析链接、加载信息、绑定引擎 |
+| `page/info.tsx` | 应用信息行 |
+| `page/translate.tsx` | 翻译区块 UI |
+| `page/settings.tsx` | 引擎设置 |
+| `util/itunes.ts` | Lookup 请求 |
+| `util/translate.ts` | 系统 / AI 路由 |
+| `util/settings.ts` | 引擎偏好 |
+
+## 外部域名
+
+| 域名 | 用途 | 内容 |
+|---|---|---|
+| `itunes.apple.com` | 公开查询 | App ID、区域 |
+| Scripting 助手后端（仅 AI） | 流式补全 | 正文 + 系统提示词 |
+
+系统翻译不出设备。
+
+## 自动更新
+
+`remoteResource.hash` = **zip 整包 MD5**；zip 根目录直接放 `index.tsx` / `script.json`。  
+发版：扁平 zip → Release 上传 `App-Store-Translate.zip` → 写 hash → 推 `main`。
 
 ---
 
