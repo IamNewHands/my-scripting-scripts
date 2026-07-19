@@ -12,7 +12,7 @@ Personal collection of [Scripting App](https://apps.apple.com/app/scripting/id64
 | Script | Description | Import | Source |
 |---|---|---|---|
 | [IPA-Tool](./IPA-Tool) | Download older IPA builds and install them. Custom plist servers, Keychain-encrypted passwords. / 下载旧版 IPA 并安装；支持自定义 plist；密码 Keychain 加密 | [📥 One-tap import / 一键导入](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D) | Original: [luestr](https://github.com/luestr) · Maintained by [IamNewHands](https://github.com/IamNewHands) |
-| [App-Store-Translate](./App-Store-Translate) | Translate App Store release notes & descriptions into Chinese (system Translation or AI). / 将 App Store 更新说明与描述译为中文（系统翻译或 AI） | [📥 One-tap import / 一键导入](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Store-Translate%22%5D) | Maintained by [IamNewHands](https://github.com/IamNewHands) · see [App-Store-Translate/README.md](./App-Store-Translate/README.md) |
+| [App-Store-Translate](./App-Store-Translate) | Translate App Store release notes & descriptions into Chinese (system Translation or AI). Author: IamNewHands. / 将 App Store 更新说明与描述译为中文（系统翻译或 AI）。作者：IamNewHands | [📥 One-tap import / 一键导入](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Store-Translate%22%5D) | Maintained by [IamNewHands](https://github.com/IamNewHands) · see [App-Store-Translate/README.md](./App-Store-Translate/README.md) |
 
 Add new scripts as sibling folders under the repo root. Each script folder may carry its own bilingual README.
 

@@ -1,33 +1,33 @@
 {
-  "icon": "translate",
-  "localizedDescriptions": {
-    "en": "Translate App Store release notes and descriptions into Chinese via system Translation (iOS 18+) or Scripting AI Assistant. Share an App Store URL to open.",
-    "zh": "将 App Store 更新说明与应用描述翻译为中文。支持 iOS 系统翻译（iOS 18+）与 Scripting AI 助手。通过分享 App Store 链接打开。"
-  },
   "name": "App Store翻译",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "icon": "translate",
   "color": "rgba(28, 140, 255,1)",
-  "remoteResource": {
-    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/App-Store-Translate.zip",
-    "autoUpdateInterval": 86400,
-    "hash": "1e39a790cf50fd8411234fb40f2adbfa"
+  "entry": "index.tsx",
+  "runInApp": false,
+  "iconImage": null,
+  "permissions": null,
+  "intentInputTypes": [
+    "URLs"
+  ],
+  "author": {
+    "name": "IamNewHands",
+    "email": null,
+    "homepage": "https://github.com/IamNewHands/my-scripting-scripts"
   },
-  "description": "Translate App Store release notes and descriptions into Chinese via system Translation (iOS 18+) or Scripting AI Assistant. Share an App Store URL to open.",
+  "contributors": [],
+  "description": "Translate App Store release notes and app descriptions into Chinese. Supports iOS System Translation (iOS 18+) and Scripting AI Assistant (streaming). Open via Share Sheet / Shortcuts with an App Store URL. Maintained by IamNewHands.",
   "localizedNames": {
     "en": "App Store Translate",
     "zh": "App Store翻译"
   },
-  "contributors": [],
-  "intentInputTypes": [
-    "URLs"
-  ],
-  "permissions": null,
-  "iconImage": null,
-  "runInApp": false,
-  "author": {
-    "name": "IamNewHands",
-    "email": null,
-    "homepage": "https://github.com/IamNewHands"
+  "localizedDescriptions": {
+    "en": "Translate App Store release notes and app descriptions into Chinese. Supports iOS System Translation (iOS 18+) and Scripting AI Assistant (streaming). Open via Share Sheet / Shortcuts with an App Store URL. Maintained by IamNewHands.",
+    "zh": "将 App Store 更新说明与应用描述翻译为中文。支持 iOS 系统翻译（iOS 18+）与 Scripting AI 助手（流式输出）。通过分享菜单 / 快捷指令传入 App Store 链接即可使用。维护：IamNewHands。"
   },
-  "entry": "index.tsx"
+  "remoteResource": {
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/App-Store-Translate.zip",
+    "autoUpdateInterval": 86400,
+    "hash": "730b8769e769dd1fe35925bec2db7f35"
+  }
 }

@@ -21,6 +21,12 @@ Translate App Store **release notes** and **app descriptions** into Chinese insi
 - Long-press translated text: re-translate / copy translation / copy original.
 - Long-press info rows: copy the field value.
 
+## Author / Credits
+
+- **Author / Maintainer**: [IamNewHands](https://github.com/IamNewHands)
+- **Homepage**: https://github.com/IamNewHands/my-scripting-scripts/tree/main/App-Store-Translate
+- Based on the community script **App Store翻译** (original `script.json` had empty author/description); this fork adds dual engines (system + AI), settings UI, and release packaging.
+
 ## Requirements
 
 | Item | Notes |
@@ -129,6 +135,12 @@ MIT — see repo root [`LICENSE`](../LICENSE).
   - **AI 翻译**：走 Scripting 已配置的 `Assistant.requestStreaming`，流式输出。
 - 长按译文：重新翻译 / 复制译文 / 复制原文。
 - 长按信息行：复制字段值。
+
+## 作者 / 致谢
+
+- **作者 / 维护**： [IamNewHands](https://github.com/IamNewHands)
+- **主页**： https://github.com/IamNewHands/my-scripting-scripts/tree/main/App-Store-Translate
+- 基于社区脚本 **App Store翻译**（原版 `script.json` 作者与描述为空）；本仓库版本增加双引擎（系统 + AI）、设置页与发版打包。
 
 ## 使用前提
 
