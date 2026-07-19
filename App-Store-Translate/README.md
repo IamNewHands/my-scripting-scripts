@@ -5,6 +5,8 @@ Translate App Store **release notes** and **app descriptions** into Chinese insi
 
 > Language: **English first**, then Chinese. / 英文在前，中文在后。
 
+> Repo index (brief): [../README.md](../README.md)
+
 ---
 
 # English
