@@ -28,9 +28,8 @@ let _selection: ReturnType<typeof useObservable<number>> | null = null
 const getDefaultTab = () => getAuthStateSnapshot().isLoggedIn ? Tab.Search : Tab.Settings
 
 export function useTabs(initialTab: TabValue = getDefaultTab()) {
-  if (_selection) return _selection
-
-  const selection = useObservable<number>(initialTab)
+  // 每次渲染都必须调用 useObservable，缓存返回值会在重渲染时跳过 hook 导致崩溃
+  const selection = useObservable<number>(_selection?.value ?? initialTab)
   _selection = selection
   return selection
 }

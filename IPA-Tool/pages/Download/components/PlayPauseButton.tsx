@@ -16,6 +16,7 @@ import {
 } from "../../../services/downloadService";
 import { AppConfig, defaultConfig } from "../../../constants/AppConfig";
 import { makeAppIconColor } from "../../../hooks";
+import type { RGBAColor } from "../../../types/utils";
 
 function FetchingIcon({ value, dominantColor }: { value: string, dominantColor?: RGBAColor | null }) {
   const deg = useObservable(0);

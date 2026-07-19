@@ -3,6 +3,7 @@ import { makeAppIconColor } from "../../../hooks"
 import { useProgress } from "../../../hooks/useAppsState"
 import { formatSize } from "../../../utils"
 import { AnimText } from "../../../components/AnimText"
+import type { RGBAColor } from "../../../types/utils"
 
 const tintColor = (color?: RGBAColor | null) => color ? makeAppIconColor(color) : undefined
 

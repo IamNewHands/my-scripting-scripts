@@ -2,6 +2,7 @@ import { HStack, Spacer, VStack } from "scripting"
 import type { MergedItem } from "../hooks/useDownloadItems"
 import DownloadProgress from "./DownloadProgressBar"
 import { AnimText } from "../../../components/AnimText"
+import type { RGBAColor } from "../../../types/utils"
 
 export default function DownloadingInfo({ item, dominantColor }: { item: MergedItem, dominantColor?: RGBAColor | null }) {
   const status = item.status

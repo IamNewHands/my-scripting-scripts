@@ -1,36 +1,34 @@
 {
-  "permissions" : null,
-  "remoteResource" : {
-    "hash" : "9429b6ede91a7fdf05247733dce8f571",
-    "url" : "https:\/\/github.com\/IamNewHands\/my-scripting-scripts\/releases\/latest\/download\/IPA-Tool.zip",
-    "autoUpdateInterval" : 86400
+  "icon": "iphone",
+  "localizedDescriptions": {
+    "en": "Download old IPA versions and install them. Supports custom plist service, passwords encrypted with iOS Keychain. Original by luestr, enhanced by IamNewHands.",
+    "zh": "下载旧版IPA并安装。支持自定义plist服务（自建/代理/Scripting三选一），密码已改用iOS Keychain加密存储。原作：小白脸，二次维护：IamNewHands。"
   },
-  "contributors" : [
-
-  ],
-  "runInApp" : false,
-  "name" : "IPA-Tool",
-  "icon" : "iphone",
-  "entry" : "index.tsx",
-  "localizedNames" : {
-    "en" : "IPA-Tool",
-    "zh" : "IPA工具箱"
+  "name": "IPA-Tool",
+  "version": "1.1.2",
+  "color": "rgba(243, 159, 68,1)",
+  "remoteResource": {
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/IPA-Tool.zip",
+    "autoUpdateInterval": 86400,
+    "hash": "e3dbad97c4e2dfc314ef32dcfd8fe2f5"
   },
-  "author" : {
-    "homepage" : "https:\/\/github.com\/IamNewHands",
-    "email" : null,
-    "name" : "IamNewHands"
+  "description": "Download old IPA versions and install them. Supports custom plist service, passwords encrypted with iOS Keychain. Original by luestr, enhanced by IamNewHands.",
+  "localizedNames": {
+    "en": "IPA-Tool",
+    "zh": "IPA工具箱"
   },
-  "localizedDescriptions" : {
-    "zh" : "下载旧版IPA并安装。支持自定义plist服务（自建/代理/Scripting三选一），密码已改用iOS Keychain加密存储。原作：小白脸，二次维护：IamNewHands。",
-    "en" : "Download old IPA versions and install them. Supports custom plist service, passwords encrypted with iOS Keychain. Original by luestr, enhanced by IamNewHands."
-  },
-  "version" : "1.1.1",
-  "intentInputTypes" : [
+  "contributors": [],
+  "intentInputTypes": [
     "FileURLs",
     "URLs"
   ],
-  "description" : "Download old IPA versions and install them. Supports custom plist service, passwords encrypted with iOS Keychain. Original by luestr, enhanced by IamNewHands.",
-  "iconImage" : null,
-  "color" : "rgba(243, 159, 68,1)"
+  "permissions": null,
+  "iconImage": null,
+  "runInApp": false,
+  "author": {
+    "name": "IamNewHands",
+    "email": null,
+    "homepage": "https://github.com/IamNewHands"
+  },
+  "entry": "index.tsx"
 }

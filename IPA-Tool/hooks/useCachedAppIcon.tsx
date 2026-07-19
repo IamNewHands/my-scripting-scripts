@@ -1,5 +1,6 @@
 import { Rectangle, RoundedRectangle, ZStack, gradient, useEffect, useObservable, type Color, type CommonViewProps } from "scripting"
 import { getAppIconAsset, putAppIconAsset } from "../modules/AppIconAssetDB"
+import type { RGBAColor, DominantColor } from "../types/utils"
 
 export type CachedAppIconState = {
   iconUrl: string | null

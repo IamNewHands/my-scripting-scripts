@@ -1,7 +1,22 @@
 /**
- * 文件：scripts/ipaTool/types/utils.ts
- * 说明：类型工具函数
+ * 文件：types/utils.ts
+ * 说明：类型工具函数与通用类型
  */
+
+// 图标主色 RGBAColor
+export interface RGBAColor {
+  hex: string
+  red: number
+  green: number
+  blue: number
+  alpha: number
+}
+
+// 图标主色条目
+export interface DominantColor {
+  color: RGBAColor
+  fraction: number
+}
 
 /**
  * 字面量类型展宽

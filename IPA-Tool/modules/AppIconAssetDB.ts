@@ -1,4 +1,5 @@
 import { ipaToolAppGroupPath } from "../utils/paths/appGroupPaths"
+import type { RGBAColor } from "../types/utils"
 
 const DB_PATH = ipaToolAppGroupPath("app_icon_assets.db")
 

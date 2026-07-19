@@ -1,7 +1,7 @@
+import "./polyfill"
 import { Navigation, Script, useEffect } from "scripting"
 import TabViewApp from "./pages"
 import { initServerManager } from "./services/server"
-import "./polyfill"
 
 const App = () => {
   useEffect(() => {
@@ -11,6 +11,15 @@ const App = () => {
   return <TabViewApp />
 }
 
-Navigation.present({
-  element: <App interactiveDismissDisabled />,
-}).then(() => Script.exit())
+async function main() {
+  await Navigation.present({
+    element: <App />,
+    modalPresentationStyle: "fullScreen",
+  })
+  Script.exit()
+}
+
+main().catch(error => {
+  console.log("IPA-Tool boot error", error)
+  Script.exit()
+})
