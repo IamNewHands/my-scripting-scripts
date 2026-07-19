@@ -143,14 +143,10 @@ export class DownloadTask {
       .catch((err: DownloadFailedError) => {
         if (err.name === "AbortError") {
           this.status = err.message.replaceAll("AbortError: ","") as DownloadStatus;
-          
-          console.log("触发",this.status)
           this.bus.emit("downloadCancel", this.status);
-          console.log("下载任务取消：", err.toString());
         } else {
           this.status = err.status ?? "failed";
           this.bus.emit("downloadFailed", this.status, err);
-          console.log("下载任务失败：", err.toString());
         }
       })
       .finally(() => {
@@ -168,8 +164,7 @@ export class DownloadTask {
     if (!["fetching", "downloading"].includes(this.status)) return;
     this.status = "cancelled";
     this.#controller.abort("cancelled");
-    console.log("取消下载任务", this.name);
-  }
+      }
 
   /**
    * 删除下载任务
@@ -183,8 +178,7 @@ export class DownloadTask {
       if (options.emitRemove !== false)
         this.bus.emit("downloadRemove", "deleted");
       this.dispose();
-      console.log("删除下载任务", this.name);
-    });
+          });
   }
 
   /**

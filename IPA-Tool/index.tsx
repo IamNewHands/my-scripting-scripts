@@ -19,7 +19,6 @@ async function main() {
   Script.exit()
 }
 
-main().catch(error => {
-  console.log("IPA-Tool boot error", error)
+main().catch(() => {
   Script.exit()
 })

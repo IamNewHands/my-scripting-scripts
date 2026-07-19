@@ -22,6 +22,18 @@ const emptyState = (iconUrl: string | null = null): CachedAppIconState => ({
 
 const memoryCache = new Map<string, CachedAppIconState>()
 const pendingTasks = new Map<string, Promise<CachedAppIconState>>()
+// 内存里缓存 UIImage，限制条目避免列表滑动时无限涨
+const MAX_MEMORY_ICON_CACHE = 40
+
+const putMemoryCache = (iconUrl: string, state: CachedAppIconState) => {
+  if (memoryCache.has(iconUrl)) memoryCache.delete(iconUrl)
+  memoryCache.set(iconUrl, state)
+  while (memoryCache.size > MAX_MEMORY_ICON_CACHE) {
+    const oldest = memoryCache.keys().next().value
+    if (oldest == null) break
+    memoryCache.delete(oldest)
+  }
+}
 
 const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value))
 
@@ -194,29 +206,14 @@ export const makeAppIconRowStyleProps = (dominantColor: RGBAColor): CachedAppIco
   background: <AppIconAccentBackground dominantColor={dominantColor} />,
 })
 
-const extractDominantColor = (image: UIImage, iconUrl: string) => {
+const extractDominantColor = (image: UIImage, _iconUrl: string) => {
   try {
     const dominantColors = (image as UIImage & { dominantColors?: (count?: number) => DominantColor[] }).dominantColors
-    console.log("[AppIconColor] dominantColors api", iconUrl, typeof dominantColors)
     if (typeof dominantColors !== "function") return null
 
     const colors = dominantColors.call(image, 8)
-    console.log("[AppIconColor] colors", iconUrl, colors.map(item => ({
-      hex: item.color.hex,
-      red: item.color.red,
-      green: item.color.green,
-      blue: item.color.blue,
-      alpha: item.color.alpha,
-      luminance: luminance(item.color),
-      fraction: item.fraction,
-      usable: isUsableDominantColor(item),
-    })))
-
-    const selected = colors.find(isUsableDominantColor)?.color ?? null
-    console.log("[AppIconColor] selected", iconUrl, selected?.hex ?? null)
-    return selected
-  } catch (error) {
-    console.log("[AppIconColor] extract error", iconUrl, error)
+    return colors.find(isUsableDominantColor)?.color ?? null
+  } catch {
     return null
   }
 }
@@ -230,30 +227,20 @@ const buildState = (iconUrl: string, image: UIImage | null, dominantColor: RGBAC
 
 const readCachedState = async (iconUrl: string) => {
   const cached = await getAppIconAsset(iconUrl)
-  console.log("[AppIconColor] db hit", iconUrl, {
-    hasRecord: !!cached,
-    hasImage: !!cached?.image,
-    dominantColor: cached?.dominant_color ?? null,
-  })
   if (!cached?.image) return null
 
   const image = UIImage.fromData(cached.image)
-  console.log("[AppIconColor] image from db", iconUrl, !!image)
   if (!image) return null
 
   const color = parseColor(cached.dominant_color)
-  console.log("[AppIconColor] color from db", iconUrl, color?.hex ?? null)
 
   if (!color || !isUsableDominantColor({ color, fraction: 1 })) {
     const nextColor = extractDominantColor(image, iconUrl)
-    console.log("[AppIconColor] recolor cached image", iconUrl, nextColor?.hex ?? null)
     await putAppIconAsset({
       iconUrl,
       image: cached.image,
       dominantColor: nextColor,
-    }).catch(error => {
-      console.log("[AppIconColor] recolor save error", iconUrl, error)
-    })
+    }).catch(() => {})
     return buildState(iconUrl, image, nextColor)
   }
 
@@ -265,27 +252,20 @@ const loadCachedAppIcon = async (iconUrl: string): Promise<CachedAppIconState> =
   if (cached) return cached
 
   try {
-    console.log("[AppIconColor] fetch start", iconUrl)
     const image = await UIImage.fromURL(iconUrl)
-    console.log("[AppIconColor] fetch done", iconUrl, !!image)
     if (!image) return buildState(iconUrl, null, null, true)
 
     const dominantColor = extractDominantColor(image, iconUrl)
-    console.log("[AppIconColor] save", iconUrl, {
-      hasImageData: !!image.toPNGData(),
-      dominantColor: dominantColor?.hex ?? null,
-    })
+    // 只编码一次 PNG，避免日志/落库各调一次 toPNGData
+    const imageData = image.toPNGData()
     await putAppIconAsset({
       iconUrl,
-      image: image.toPNGData(),
+      image: imageData,
       dominantColor,
-    }).catch(error => {
-      console.log("[AppIconColor] save error", iconUrl, error)
-    })
+    }).catch(() => {})
 
     return buildState(iconUrl, image, dominantColor)
-  } catch (error) {
-    console.log("[AppIconColor] fetch error", iconUrl, error)
+  } catch {
     return buildState(iconUrl, null, null, true)
   }
 }
@@ -299,7 +279,7 @@ const resolveCachedAppIcon = (iconUrl: string): Promise<CachedAppIconState> => {
 
   const task = loadCachedAppIcon(iconUrl)
     .then(state => {
-      memoryCache.set(iconUrl, state)
+      putMemoryCache(iconUrl, state)
       return state
     })
     .finally(() => {

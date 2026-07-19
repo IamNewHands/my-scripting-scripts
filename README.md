@@ -1,144 +1,225 @@
 # my-scripting-scripts
 
-个人自用的 [Scripting App](https://apps.apple.com/app/scripting/id6479691128) 脚本合集。所有脚本均运行在 iOS 上的 Scripting 客户端内，源码为 TypeScript / TSX。
+Personal collection of [Scripting App](https://apps.apple.com/app/scripting/id6479691128) scripts for iOS.  
+个人自用的 Scripting App 脚本合集。源码为 TypeScript / TSX，运行在 iOS 上的 Scripting 客户端内。
 
-## 目录
-
-| 脚本 | 说明 | 导入 | 来源 |
-|---|---|---|---|
-| [IPA-Tool](./IPA-Tool) | 下载旧版IPA并安装，支持自定义plist服务（自建/代理/Scripting三选一），密码Keychain加密 | [📥 一键导入](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D) | 原作：[小白脸/luestr](https://github.com/luestr)，维护：[IamNewHands](https://github.com/IamNewHands) |
-
-> 后续新增脚本按同级子目录追加即可。
+> Language: **English first**, then Chinese. / 英文在前，中文在后。
 
 ---
 
-## IPA-Tool 使用说明
+## Catalog / 目录
 
-### 它是干什么的
+| Script | Description | Import | Source |
+|---|---|---|---|
+| [IPA-Tool](./IPA-Tool) | Download older IPA builds and install them. Custom plist servers, Keychain-encrypted passwords. / 下载旧版 IPA 并安装；支持自定义 plist；密码 Keychain 加密 | [📥 One-tap import / 一键导入](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D) | Original: [luestr](https://github.com/luestr) · Maintained by [IamNewHands](https://github.com/IamNewHands) |
 
-- 用你自己的 Apple ID 登录 iTunes/App Store，走 Apple Configurator 的协议直接向苹果服务器请求 IPA 下载链接。
-- 拿到的是**苹果原始签名**的 IPA，脚本只在本地往包里塞两样东西：`iTunesMetadata.plist` 和 `SC_Info/*.sinf`（都是你自己账号对应的授权文件）。
-- 不重签、不脱壳、不改 Info.plist，装上去就跟 App Store 亲手下的一样，**不会 7 天失效**。
-- 前提：你的 Apple ID 之前"买过"（免费 App 也算获取过）这个 App。
+Add new scripts as sibling folders under the repo root.
 
-### 账号密码走向（源码级）
+---
 
-- 登录直连苹果官方接口：`POST https://auth.itunes.apple.com/auth/v1/native/fast/`。
-- 请求体是 plist，`password` 字段拼接了两步验证码。
-- 拿到 Cookie / dsPersonId / storeFront 后**只写入本机 Storage**（`AppleLogin` 键），不上传任何第三方服务器。
-- 项目中出现的 `localApi(...)` 是**本地路由分发**，不是网络请求；`services/appleStore/api/localApi.ts` 会把 `/auth/login` 之类的字符串就地转发给 `AuthService.login()`。
+# IPA-Tool (English)
 
-### 用到的外部域名（透明清单）
+## What it does
 
-| 域名 | 用途 | 传的内容 |
+- Sign in with **your own Apple ID** to iTunes / App Store and request IPA download URLs via Apple Configurator-style protocols.
+- You get an **Apple-signed** IPA. Locally the script only injects:
+  - `iTunesMetadata.plist`
+  - `SC_Info/*.sinf` (license data for **your** account)
+- No re-sign, no dump, no `Info.plist` rewrite. Installed apps behave like App Store installs and **do not expire in 7 days**.
+- Requirement: your Apple ID has previously obtained the app (free apps count).
+
+## Account & password flow (source-level)
+
+- Login goes **directly** to Apple:  
+  `POST https://auth.itunes.apple.com/auth/v1/native/fast/`
+- Request body is a plist; the `password` field is password + optional 2FA code.
+- Cookies / `dsPersonId` / `storeFront` are stored **only on-device** (`Storage` key `AppleLogin`). Nothing is uploaded to third-party backends for login.
+- Passwords are stored in **iOS Keychain** (`loginPassword:<account>`), not plain `Storage`.
+- `localApi(...)` is an **in-process router**, not a network call.  
+  `services/appleStore/api/localApi.ts` dispatches paths like `/auth/login` to `AuthService.login()`.
+
+## External domains (transparency)
+
+| Host | Purpose | Data sent |
 |---|---|---|
-| `auth.itunes.apple.com` | 苹果登录 | Apple ID / 密码 / 2FA |
-| `buy.itunes.apple.com` / `p*-buy.itunes.apple.com` | 苹果购买与下载 | dsPersonId、Cookie、App ID |
-| `itunes.apple.com` | 搜索 / 详情 / lookup | 关键词、App ID |
-| `api.timbrd.com` / `apis.bilin.eu.org` | 查历史版本 ID（第三方版本数据库） | 只发 App 的数字 ID |
-| `api.scripting.fun/ipa-plist` | 安装用的 manifest.plist（云端方案） | 文件名、BundleId、版本号 |
-| `xiaobai.app/install` | 安装用的 manifest.plist（本地代理方案，需 Loon/Surge 插件拦截） | 同上，但**不出手机** |
-| `https://你的域名/ipa-plist` | 你自己的 plist 服务（自定义方案） | 同上，不经过第三方 |
+| `auth.itunes.apple.com` | Apple login | Apple ID / password / 2FA |
+| `buy.itunes.apple.com` / `p*-buy.itunes.apple.com` | Purchase & download | dsPersonId, Cookie, App ID |
+| `itunes.apple.com` | Search / lookup | Keywords, App ID |
+| `api.timbrd.com` / `apis.bilin.eu.org` | Historical version IDs | Numeric App ID only |
+| `api.scripting.fun/ipa-plist` | Install manifest (cloud) | File name, Bundle ID, version |
+| `xiaobai.app/install` | Install manifest (local proxy; needs Loon/Surge) | Same fields, **stays on device** |
+| `https://your-domain/ipa-plist` | Your own plist service | Same fields, your server only |
 
-### Plist 服务三种模式对比
+## Plist service modes
 
-安装 IPA 时 iOS 需要从一个 HTTPS 地址拿到 manifest.plist 描述文件。设置里的 Plist 服务有不同隐私级别：
+iOS needs an HTTPS manifest.plist when installing. Privacy levels:
 
-| 模式 | plist 谁生成 | 泄露给第三方 | 需要代理 | 需要自建 |
+| Mode | Who builds plist | Leaves device? | Proxy needed | Self-host |
 |---|---|---|---|---|
-| **Scripting** | 云端 api.scripting.fun | App名 + BundleID + 版本 + IP | ❌ | ❌ |
-| **代理模块** | 本机插件本地生成 | **无**（不离开手机） | ✅ Loon/Surge | ❌ |
-| **自定义** | 你自己的服务器 | **无**（到你自己的） | ❌ | ✅ |
+| **Scripting** | `api.scripting.fun` | App name + Bundle ID + version + IP | No | No |
+| **Proxy module** | Local plugin | **No** | Yes (Loon/Surge) | No |
+| **Custom** | Your server | Only to you | No | Yes |
 
-三种模式都不传 Apple ID/密码/Cookie——那些在登录环节直连苹果处理完成了。
+None of these modes send Apple ID / password / Cookie. Those are handled only in the Apple login path.
 
-### 自建 plist 服务（Cloudflare Worker）
+## Self-hosted plist (Cloudflare Worker sketch)
 
-如果想完全脱离第三方，可以在 Cloudflare Workers（免费）上部署你自己的 plist 服务。只做一件事：收到 GET `/ipa-plist` 后把 query 参数拼成 XML 返回。部署后把 Worker 地址填进设置页，下次安装就只走你自己的链路。
+Deploy a Worker that answers `GET /ipa-plist` and returns XML. IPA URL should point at `http://localhost:8000/<fileName>` (the in-app HTTP server). Then paste the Worker URL into Settings.
 
-部署时可以直接把以下代码发给 AI 让它部署：
+Minimal Worker idea:
 
-```
-在 Cloudflare Workers 上帮我部署这个。用途：我在 iPhone 上用一个脚本下载旧版 IPA 安装包，安装时
-需要 iOS 从某个 HTTPS 地址获取 manifest.plist 描述文件 。我不想用别人的公共服务器。
-Worker 做一件事——GET /ipa-plist 收到 name、bundleId、displayVersion、fileName 四个 query 参数，拼成固定 XML 返回，其中 IPA 下载地址写死为 http://localhost:8000/<fileName>。代码如下：
-
-import：
+```js
 export default {
   async fetch(request) {
-    const url = new URL(request.url);
+    const url = new URL(request.url)
     if (url.pathname !== "/ipa-plist") {
-      return new Response("not found", { status: 404 });
+      return new Response("not found", { status: 404 })
     }
-    const name = url.searchParams.get("name") || "app";
-    const bundleId = url.searchParams.get("bundleId") || "";
-    const fileName = url.searchParams.get("fileName") || "";
-    const plist = `<?xml version="1.0" encoding="UTF-8"?>`;
+    const name = url.searchParams.get("name") || "app"
+    const bundleId = url.searchParams.get("bundleId") || ""
+    const displayVersion = url.searchParams.get("displayVersion") || ""
+    const fileName = url.searchParams.get("fileName") || ""
+    // Build a standard itms-services manifest XML from the query params.
+    // IPA asset URL: http://localhost:8000/<fileName>
+    const plist = `<?xml version="1.0" encoding="UTF-8"?>...` // fill full manifest
     return new Response(plist, {
-      headers: { "Content-Type": "application/xml", "Cache-Control": "no-cache" },
-    });
+      headers: {
+        "Content-Type": "application/xml",
+        "Cache-Control": "no-cache",
+      },
+    })
   },
-};
+}
 ```
 
-部署好后把地址给我，我把那个地址填到 APP 里就会只使用自己的私链。
-```
+## Install steps
 
-### 安装步骤
+1. **Download IPA**: log in with an Apple ID that owns the app → search → pick version → download.
+2. **Tap install**: the script starts `http://localhost:8000` and opens `itms-services://`.
+3. **Required**: Loon or Surge MitM + trusted CA for plist interception / local proxy.
+   - Loon plugin: <https://kelee.one/Tool/Loon/Lpx/IPATool.lpx>  
+     Import: `loon://import?plugin=https://kelee.one/Tool/Loon/Lpx/IPATool.lpx`
+   - Surge: see <https://hub.kelee.one/> or `luestr/ProxyResource` for `IPATool.sgmodule`.
+4. **App Store “update” noise**: after sideload-style install, App Store may show odd states. Turn off auto-updates and don’t tap Update for that app if you want to keep the older build.
 
-1. **下载 IPA**：打开 App Store 授权过的 Apple ID 登录 → 搜索 App → 选版本 → 点下载。
-2. **点绿色按钮安装**：脚本会本地起 `http://localhost:8000` 提供 IPA，通过 `itms-services://` 交给系统安装。
-3. **必需依赖**：Loon 或 Surge，用于拦截 plist 服务域名 + 本地代理转发。
-   - Loon 插件（可莉的插件中心）：<https://kelee.one/Tool/Loon/Lpx/IPATool.lpx>
-     - 一键导入：`loon://import?plugin=https://kelee.one/Tool/Loon/Lpx/IPATool.lpx`
-   - Surge 用户请到 <https://hub.kelee.one/> 或作者仓库 `luestr/ProxyResource` 找 `IPATool.sgmodule`。
-   - 必须开启 Loon/Surge 的 MitM 并信任 CA 证书。
-4. **App Store 更新问题**：装完后 App Store 通常显示"未下载"状态（因为系统没有把这次安装上报给苹果账户）。想彻底不被"更新回去"：
-   - 关闭 App Store 自动更新；
-   - 别手动点 App Store 里那个 App 的更新按钮；
-   - 想更稳可以在 Loon 里加规则拦截 App Store 的目录同步接口。
+## Security & privacy notes (this fork)
 
-### 已知边界
+- Passwords: **Keychain only** (not `login_history` / not plain Storage blobs).
+- Login session (Cookie / tokens): on-device Storage only.
+- Debug logging for icon color extraction and download metadata has been stripped in recent builds to reduce log noise and accidental leakage.
+- Local HTTP server serves IPA files from the app temp folder on port `8000` for install only.
 
-- 只能下你 Apple ID **获取过**的 App；没获取过的会报错。
-- 换 Apple ID 后旧 IPA 打开会闪退（sinf 不匹配）。
-- 依赖代理软件的 MitM 拦截才能真正装上——纯 Scripting 装不了。
-- **安全改进（本仓库版本）**：密码不再以明文写入 `Storage(login_history)` 或 `Storage(AppleLogin)`，改用 iOS Keychain 加密存储。
+## Known limits
 
----
+- Only apps your Apple ID has obtained.
+- Switching Apple ID can make older IPAs crash (sinf mismatch).
+- Real device install depends on proxy MitM; Scripting alone is not enough for the install path.
 
-## 关于本仓库
+## Import & auto-update
 
-- **协议**：MIT，见 [`LICENSE`](./LICENSE)。
-- **各子目录脚本的原始版权归各自原作者所有**；本仓库仅作为个人自用的整理与备份，未做去权/伪造行为。
-- 目录里若出现 `IPA-Tool/` 等第三方脚本，二次修改内容以本仓库为准，原版请查看各子目录 `script.json` 中标注的 `author` 与官方源。
-
-## 如何在 Scripting App 里使用
-
-- **方式 A（一键导入，推荐）**：在 Safari 打开下面的链接，跳转到 Scripting App 后确认导入。
-
-  一键导入 IPA-Tool：
+- **One-tap import (recommended)**  
   https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D
 
-- 方式 B（手动复制）：把子目录整包复制到 iCloud 的 `Scripting/Documents/scripts/<脚本名>/` 下即可自动出现在 App 里。
-- 方式 C：某些脚本的 `script.json` 里带 `remoteResource`，App 会按其中的 URL 自动拉更新——请以那个 URL 的原始仓库为准，不要指向本仓库。
-
-## 脚本自动更新（GitHub Release）
-
-本仓库的 `script.json` 里已配置 `remoteResource`：
+- **Auto-update** via `script.json` → `remoteResource`:
 
 ```json
 "remoteResource": {
   "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/IPA-Tool.zip",
   "autoUpdateInterval": 86400,
-  "hash": ""
+  "hash": "<md5-of-zip>"
 }
 ```
 
-机制：Scripting App 每 86400 秒（一天）去上述 URL 拉 zip 包，比对 `hash`（MD5）。如果和你本地的不同，App 提示有新版本并自动升级。
+`hash` is the **MD5 of the whole zip file**. Release zip root must contain `index.tsx` / `script.json` directly (no extra top-level folder).
 
-发新版本的流程：
-1. 把 `IPA-Tool/` 整个目录打成 zip（确保 `index.tsx` / `script.json` 等文件在 zip 根层级）。
-2. 在 GitHub 仓库页面创建新 Release → 上传 zip。
-3. 计算 zip 的 MD5，更新 `script.json` 的 `hash` 字段。
-4. 提交 + 推送。下次 Scripting 检查就自动发现更新。
+### Publishing a new version
+
+1. Zip the `IPA-Tool/` contents at zip root.
+2. Create a GitHub Release (tag like `IPA-Tool-vX.Y.Z`) and upload `IPA-Tool.zip`.
+3. Set `script.json` `remoteResource.hash` to the zip MD5; bump `version`.
+4. Commit + push `main`.
+
+---
+
+# IPA-Tool（中文）
+
+## 它是干什么的
+
+- 用你自己的 Apple ID 登录 iTunes/App Store，走 Apple Configurator 风格协议向苹果请求 IPA 下载链接。
+- 拿到的是**苹果原始签名**的 IPA；本地只注入 `iTunesMetadata.plist` 与 `SC_Info/*.sinf`。
+- 不重签、不脱壳、不改 Info.plist；**不会 7 天失效**。
+- 前提：该 Apple ID 曾经获取过这个 App（免费也算）。
+
+## 账号密码走向（源码级）
+
+- 登录直连：`POST https://auth.itunes.apple.com/auth/v1/native/fast/`
+- 请求体 plist，`password` = 密码 + 可选 2FA。
+- Cookie / dsPersonId / storeFront **只写本机** `Storage(AppleLogin)`。
+- 密码走 **iOS Keychain**（`loginPassword:<account>`），不落明文 Storage。
+- `localApi(...)` 是**进程内路由**，不是 HTTP；见 `services/appleStore/api/localApi.ts`。
+
+## 外部域名（透明清单）
+
+| 域名 | 用途 | 传的内容 |
+|---|---|---|
+| `auth.itunes.apple.com` | 苹果登录 | Apple ID / 密码 / 2FA |
+| `buy.itunes.apple.com` / `p*-buy.itunes.apple.com` | 购买与下载 | dsPersonId、Cookie、App ID |
+| `itunes.apple.com` | 搜索 / lookup | 关键词、App ID |
+| `api.timbrd.com` / `apis.bilin.eu.org` | 历史版本 ID | 仅 App 数字 ID |
+| `api.scripting.fun/ipa-plist` | 安装 manifest（云端） | 文件名、BundleId、版本 |
+| `xiaobai.app/install` | 安装 manifest（本地代理） | 同上，**不出手机** |
+| `https://你的域名/ipa-plist` | 自建 plist | 同上，只到你的服务器 |
+
+## Plist 服务三种模式
+
+| 模式 | 谁生成 | 是否出设备 | 代理 | 自建 |
+|---|---|---|---|---|
+| **Scripting** | 云端 | App 名 + BundleID + 版本 + IP | 否 | 否 |
+| **代理模块** | 本机插件 | **无** | 是 | 否 |
+| **自定义** | 你的服务器 | 仅到你 | 否 | 是 |
+
+三种模式都不传 Apple ID/密码/Cookie。
+
+## 安装步骤
+
+1. 用已获取过目标 App 的 Apple ID 登录 → 搜索 → 选版本 → 下载。
+2. 点安装：本地 `http://localhost:8000` + `itms-services://`。
+3. 需要 Loon/Surge MitM 与信任证书。  
+   - Loon：<https://kelee.one/Tool/Loon/Lpx/IPATool.lpx>  
+   - Surge：hub.kelee.one 或 `luestr/ProxyResource` 的 `IPATool.sgmodule`
+4. 装完后 App Store 可能状态异常：关自动更新，别点该 App 的更新。
+
+## 安全说明（本仓库版本）
+
+- 密码 Keychain 加密存储。
+- 会话 Cookie 仅本机。
+- 近期版本收敛了图标取色/下载过程的调试日志，降低日志噪音与误泄露风险。
+- 本地 8000 端口仅用于安装时提供 IPA。
+
+## 已知边界
+
+- 只能下本账号获取过的 App。
+- 换账号后旧 IPA 可能因 sinf 不匹配闪退。
+- 安装链路依赖代理 MitM。
+
+## 导入与自动更新
+
+- 一键导入：  
+  https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D
+- `remoteResource.hash` = **zip 整包 MD5**；zip 根目录直接放 `index.tsx` / `script.json`。
+
+发版：打扁平 zip → Release 上传 → 写 hash → 推 main。
+
+---
+
+## About this repo / 关于本仓库
+
+- License: MIT — see [`LICENSE`](./LICENSE).
+- Original copyright of third-party scripts remains with their authors. This repo is a personal collection / maintained fork; see each `script.json` `author` field.
+- Protocol: MIT.
+
+### How to use in Scripting App
+
+- **A (recommended)**: open the one-tap import link above in Safari.
+- **B**: copy a script folder into iCloud `Scripting/Documents/scripts/<name>/`.
+- **C**: if `remoteResource` is set, the app can auto-update from the Release zip URL.

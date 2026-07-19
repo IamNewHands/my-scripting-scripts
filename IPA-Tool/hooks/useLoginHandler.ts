@@ -27,7 +27,6 @@ export const useLoginHandler = (
       setTimeout(() => setCaptchaPagePresented(false), 800);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      console.log(message)
       const isCaptcha = message.includes(
         "MZFinance.BadLogin.Configurator_message"
       );

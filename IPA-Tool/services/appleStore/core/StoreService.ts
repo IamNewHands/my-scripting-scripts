@@ -63,8 +63,7 @@ export class StoreService {
     if (!await VersionCacheRepository.isFresh(salableAdamId)) {
       const [processedVersions, legacyVersions] = await Promise.all([
         this.processVersionIdList(salableAdamId, startVersionId),
-        VersionService.concurrentGetVersionList(salableAdamId).catch(({ errors = [], error }) => {
-          console.log(...errors, error)
+        VersionService.concurrentGetVersionList(salableAdamId).catch(() => {
           return { total: 0, data: [] as VersionTuple[] }
         }),
       ])

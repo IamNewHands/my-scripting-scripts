@@ -89,20 +89,6 @@ export const useStartAppDownload = () => {
           signal: controller.signal,
         });
 
-        console.log("✅ appInfo 请求成功", JSON.stringify({
-          name: appInfo.name,
-          appId: appInfo.appId,
-          bundleId: appInfo.bundleId,
-          displayVersion: appInfo.displayVersion,
-          buildVersion: appInfo.buildVersion,
-          externalVersionId: appInfo.externalVersionId,
-          externalVersionIdListLength: appInfo.externalVersionIdList?.length ?? 0,
-          fileSize: appInfo.fileSize,
-          hasUrl: !!appInfo.url,
-          hasSinf: !!appInfo.sinf,
-          hasMetadata: !!appInfo.metadata,
-        }, null, 2));
-
         // 如果再次下载历史版本相同，直接退出
         if (
           status === "completed" &&
@@ -148,15 +134,6 @@ export const useStartAppDownload = () => {
 
       // 4. 更新状态并启动下载
       setAppState(appId, { down });
-
-      console.log("✅ 下载状态写入完成，开始 startDownload", {
-        id: appId,
-        name: down.name,
-        displayVersion: down.displayVersion,
-        bundleId: down.bundleId,
-        totalSize: down.totalSize,
-        hasUrl: !!down.url,
-      });
 
       startDownload(appId, down);
 
