@@ -115,5 +115,10 @@ export default {
 
 ## 如何在 Scripting App 里使用
 
-- 方式 A（简单）：把子目录整包复制到 iCloud 的 `Scripting/Documents/scripts/<脚本名>/` 下即可自动出现在 App 里。
-- 方式 B：某些脚本的 `script.json` 里带 `remoteResource`，App 会按其中的 URL 自动拉更新——请以那个 URL 的原始仓库为准，不要指向本仓库。
+- **方式 A（一键导入，推荐）**：在 Safari 打开下面的链接，跳转到 Scripting App 后确认导入。
+
+  一键导入 IPA-Tool：
+  https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D
+
+- 方式 B（手动复制）：把子目录整包复制到 iCloud 的 `Scripting/Documents/scripts/<脚本名>/` 下即可自动出现在 App 里。
+- 方式 C：某些脚本的 `script.json` 里带 `remoteResource`，App 会按其中的 URL 自动拉更新——请以那个 URL 的原始仓库为准，不要指向本仓库。
