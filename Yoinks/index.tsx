@@ -224,6 +224,7 @@ function View() {
   const [platformSessions, setPlatformSessions] = useState<Partial<Record<AuthPlatform, PlatformAuthSession>>>({})
   const loggedInSessions = Object.values(platformSessions).filter((session): session is PlatformAuthSession => session != null)
   const platformSessionsRef = useRef<Partial<Record<AuthPlatform, PlatformAuthSession>>>({})
+  const lastProbedURLRef = useRef<string | null>(null)
 
   const updateSaveMode = (next: SaveMode) => {
     const nextPreferences = setPreferences({ ...preferences, defaultSaveMode: next })
@@ -330,11 +331,13 @@ function View() {
     }
   }, [])
 
-  // 输入链接后短防抖自动分析（与手动「分析链接」共用逻辑）
+  // 输入链接后短防抖自动分析；已用粘贴/手动分析过的同一 URL 不再重复 probe
   useEffect(() => {
     const candidate = extractFirstURL(urlInput)
-    if (!candidate || candidate === url || analyzing || downloading || !tools?.ytDlpVersion) return
+    if (!candidate || analyzing || downloading || !tools?.ytDlpVersion) return
+    if (candidate === lastProbedURLRef.current || candidate === url) return
     const timer = setTimeout(() => {
+      if (candidate === lastProbedURLRef.current) return
       void applySourceURL(candidate, "input")
     }, 900)
     return () => clearTimeout(timer)
@@ -457,12 +460,21 @@ function View() {
     await QuickLook.previewURLs([getLogDirectory()], true)
   }
 
-  const applySourceURL = async (raw: string, source: "paste" | "input" | "history") => {
+  const applySourceURL = async (raw: string, source: "paste" | "input" | "history", force = false) => {
+    if (analyzing || downloading) return
     const next = extractFirstURL(raw)
     if (!next) {
       setStatus("请输入有效的公开 http 或 https 链接。")
       return
     }
+    // 同一链接短时间内不重复分析（避免粘贴 + 防抖双 probe）
+    if (!force && source !== "history" && next === lastProbedURLRef.current && probe) {
+      setURL(next)
+      setURLInput(next)
+      setStatus("该链接已分析，可直接选择格式或重新分析。")
+      return
+    }
+    lastProbedURLRef.current = next
     await logEvent({ level: "info", event: source === "paste" ? "paste.accepted" : source === "history" ? "history.redownload" : "manual-url.accepted", details: { sourceURL: next, platform: detectMediaPlatform(next) } })
     disposeTemporarySession()
     setURL(next)
@@ -499,7 +511,9 @@ function View() {
 
   const submitURLInput = async () => {
     if (analyzing || downloading) return
-    await applySourceURL(urlInput, "input")
+    // 按钮点击视为用户明确要求分析（可强制刷新）
+    lastProbedURLRef.current = null
+    await applySourceURL(urlInput, "input", true)
   }
 
   const analyzeMedia = async (source?: string) => {
@@ -750,7 +764,8 @@ function View() {
         setSelectedChoice(null)
         setResult(null)
         activeTab.setValue(DOWNLOAD_TAB)
-        await analyzeMedia(record.sourceURL)
+        lastProbedURLRef.current = null
+        await applySourceURL(record.sourceURL, "history", true)
       }
       if (action === "打开来源链接") await Safari.present(record.sourceURL, true)
       if (action === "复制来源链接") {

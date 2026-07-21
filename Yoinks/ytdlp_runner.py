@@ -148,6 +148,10 @@ def main():
         "paths": {"home": config["paths"]},
         "progress_hooks": [progress_hook],
     })
+    merge_fmt = config.get("merge_output_format")
+    if merge_fmt:
+        options["merge_output_format"] = merge_fmt
+
 
     try:
         with YoutubeDL(options) as ydl:

@@ -114,12 +114,17 @@ function isAllowedURL(value: string): boolean {
   }
 }
 
-export type MediaPlatform = "douyin" | "xiaohongshu" | "generic"
+export type MediaPlatform = "douyin" | "xiaohongshu" | "youtube" | "generic"
 
 const XIAOHONGSHU_URL_PATTERNS = [
   /https?:\/\/(?:www\.)?(?:xiaohongshu|rednote)\.com\/(?:explore|discovery\/item|search_result|user\/profile\/[a-z0-9]+)\/[a-z0-9]+(?:\?[^\s"'<>，。！？；：、]*)?/i,
   /https?:\/\/xhslink\.com\/[^\s"'<>，。！？；：、]+/i,
 ]
+const YOUTUBE_URL_PATTERNS = [
+  /https?:\/\/(?:www\.)?youtube\.com\//i,
+  /https?:\/\/youtu\.be\//i,
+]
+
 const DOUYIN_URL_PATTERNS = [
   /https?:\/\/v\.douyin\.com\/[a-zA-Z0-9_-]+/i,
   /https?:\/\/(?:www\.)?douyin\.com\/video\/[0-9]+/i,
@@ -134,6 +139,7 @@ function sanitizeExtractedURL(value: string): string {
 
 export function detectMediaPlatform(value: string | null | undefined): MediaPlatform {
   if (!value) return "generic"
+  if (YOUTUBE_URL_PATTERNS.some((pattern) => pattern.test(value))) return "youtube"
   if (DOUYIN_URL_PATTERNS.some((pattern) => pattern.test(value))) return "douyin"
   if (XIAOHONGSHU_URL_PATTERNS.some((pattern) => pattern.test(value))) return "xiaohongshu"
   return "generic"
@@ -141,6 +147,7 @@ export function detectMediaPlatform(value: string | null | undefined): MediaPlat
 
 export function mediaPlatformLabel(value: string | null | undefined): string | null {
   switch (detectMediaPlatform(value)) {
+    case "youtube": return "YouTube"
     case "douyin": return "抖音"
     case "xiaohongshu": return "小红书"
     default: return null
@@ -149,7 +156,7 @@ export function mediaPlatformLabel(value: string | null | undefined): string | n
 
 export function extractFirstURL(value: string | null | undefined): string | null {
   if (!value) return null
-  for (const pattern of [...XIAOHONGSHU_URL_PATTERNS, ...DOUYIN_URL_PATTERNS]) {
+  for (const pattern of [...YOUTUBE_URL_PATTERNS, ...XIAOHONGSHU_URL_PATTERNS, ...DOUYIN_URL_PATTERNS]) {
     const match = value.match(pattern)
     if (match) {
       const candidate = sanitizeExtractedURL(match[0])
@@ -291,7 +298,7 @@ function buildChoices(formats: RawFormat[]): MediaChoice[] {
       id: `video-${item.height}-${item.formatId}${audio ? `-with-${audio.formatId}` : "-silent"}`,
       label: `${item.height}p ${canMerge ? "视频 · 合并音频" : "无音轨视频"}${item.ext ? ` · ${item.ext.toUpperCase()}` : ""}${item.fps ? ` · ${Math.round(item.fps)} fps` : ""}${(item.filesize || audio?.filesize) ? ` · 约 ${formatBytes((item.filesize || 0) + (audio?.filesize || 0))}` : ""}`,
       kind: "video",
-      formatExpression: item.formatId,
+      formatExpression: audio ? `${item.formatId}+${audio.formatId}` : item.formatId,
       height: item.height,
       estimatedBytes: (item.filesize || 0) + (audio?.filesize || 0) || undefined,
       mergeAudioFormat: audio?.formatId,
@@ -524,45 +531,31 @@ export async function downloadMedia(options: {
 
   try {
     if (mergeAudioFormat) {
-      await FileManager.createDirectory(taskDirectory, true)
-      const videoConfigPath = Path.join(TEMP_DIR, `${taskId}.video.json`)
-      const audioConfigPath = Path.join(TEMP_DIR, `${taskId}.audio.json`)
-      const videoConfig = { ...config, output: "%(title).120B [%(id)s].video.%(ext)s", paths: taskDirectory }
-      const audioConfig = { ...config, format: mergeAudioFormat, output: "%(title).120B [%(id)s].audio.%(ext)s", paths: taskDirectory }
-      await FileManager.writeAsString(videoConfigPath, JSON.stringify(videoConfig))
-      await FileManager.writeAsString(audioConfigPath, JSON.stringify(audioConfig))
-
-      progressPhase = "video"
-      options.onProgress({ fraction: 0.02, stage: "正在下载视频流" })
-      const videoResult = await runCommand(`python3 ${quote(RUNNER_PATH)} ${quote(videoConfigPath)}`, 7200)
-      await logEvent({ level: videoResult.exitCode === 0 ? "info" : "error", event: "download.video.command.completed", taskId, details: { exitCode: videoResult.exitCode, output: videoResult.output } })
-      if (videoResult.exitCode === 130) throw new Error("下载已取消")
-      if (videoResult.exitCode !== 0) throw new Error(compactMessage(videoResult.output || "视频流下载失败"))
-      const videoPath = [...parseOutputPaths(videoResult.output)].reverse().find((path) => FileManager.existsSync(path))
-      if (!videoPath) throw new Error("视频流下载完成但未找到输出文件")
-
-      progressPhase = "audio"
-      options.onProgress({ fraction: 0.55, stage: "正在下载音频流" })
-      const audioResult = await runCommand(`python3 ${quote(RUNNER_PATH)} ${quote(audioConfigPath)}`, 7200)
-      await logEvent({ level: audioResult.exitCode === 0 ? "info" : "error", event: "download.audio.command.completed", taskId, details: { exitCode: audioResult.exitCode, output: audioResult.output } })
-      if (audioResult.exitCode === 130) throw new Error("下载已取消")
-      if (audioResult.exitCode !== 0) throw new Error(compactMessage(audioResult.output || "音频流下载失败"))
-      const audioPath = [...parseOutputPaths(audioResult.output)].reverse().find((path) => FileManager.existsSync(path))
-      if (!audioPath) throw new Error("音频流下载完成但未找到输出文件")
-
-      const extension = options.choice.mergeExtension || "mkv"
-      const fileName = `${Path.basename(videoPath).replace(/\.video\.[^.]+$/, "")}.${extension}`
-      const filePath = Path.join(DOWNLOAD_DIR, fileName)
-      const fastStart = extension === "mp4" ? " -movflags +faststart" : ""
-      progressPhase = "merge"
-      options.onProgress({ fraction: 0.93, stage: "正在使用内置 FFmpeg 合并" })
-      const mergeResult = await runCommand(`ffmpeg -y -i ${quote(videoPath)} -i ${quote(audioPath)} -map 0:v:0 -map 1:a:0 -c copy${fastStart} ${quote(filePath)}`, 900)
-      await logEvent({ level: mergeResult.exitCode === 0 ? "info" : "error", event: "merge.ffmpeg.completed", taskId, details: { exitCode: mergeResult.exitCode, output: mergeResult.output, videoPath, audioPath, filePath } })
-      if (mergeResult.exitCode !== 0) throw new Error(compactMessage(mergeResult.output || "FFmpeg 合并失败"))
+      // 一次 yt-dlp 用 video+audio 格式串拉取并合并，减少二次 extract 触发风控
+      const mergeExt = options.choice.mergeExtension || "mkv"
+      const mergeConfigPath = Path.join(TEMP_DIR, `${taskId}.merge.json`)
+      const mergeConfig = {
+        ...config,
+        format: options.choice.formatExpression,
+        merge_output_format: mergeExt,
+        output: "%(title).120B [%(id)s].%(ext)s",
+        paths: DOWNLOAD_DIR,
+      }
+      await FileManager.writeAsString(mergeConfigPath, JSON.stringify(mergeConfig))
+      progressPhase = "single"
+      options.onProgress({ fraction: 0.02, stage: "正在下载并合并音视频" })
+      const result = await runCommand(`python3 ${quote(RUNNER_PATH)} ${quote(mergeConfigPath)}`, 7200)
+      await logEvent({ level: result.exitCode === 0 ? "info" : "error", event: "download.merge.command.completed", taskId, details: { exitCode: result.exitCode, output: result.output } })
+      try { if (FileManager.existsSync(mergeConfigPath)) FileManager.removeSync(mergeConfigPath) } catch {}
+      if (result.exitCode === 130) throw new Error("下载已取消")
+      if (result.exitCode !== 0) throw new Error(compactMessage(result.output || "音视频下载/合并失败"))
+      const paths = parseOutputPaths(result.output)
+      const filePath = [...paths].reverse().find((path) => FileManager.existsSync(path))
+      if (!filePath) throw new Error("下载完成但未找到输出文件")
       await verifyMediaFile(filePath, options.choice, taskId)
-      options.onProgress({ fraction: 1, stage: "下载、合并并验证完成" })
-      await logEvent({ level: "info", event: "download.completed", taskId, details: { filePath, choiceId: options.choice.id, mergedWithFFmpeg: true } })
-      return { filePath, fileName, sourceURL, choice: options.choice, taskId, fileSizeBytes: await fileSizeBytes(filePath) }
+      options.onProgress({ fraction: 1, stage: "下载并验证完成" })
+      await logEvent({ level: "info", event: "download.completed", taskId, details: { filePath, choiceId: options.choice.id, mergedWithFFmpeg: true, singleExtract: true } })
+      return { filePath, fileName: Path.basename(filePath), sourceURL, choice: options.choice, taskId, fileSizeBytes: await fileSizeBytes(filePath) }
     }
 
     progressPhase = "single"
@@ -584,7 +577,7 @@ export async function downloadMedia(options: {
   } finally {
     polling = false
     if (timer) clearTimeout(timer)
-    for (const path of [configPath, Path.join(TEMP_DIR, `${taskId}.video.json`), Path.join(TEMP_DIR, `${taskId}.audio.json`), progressPath, cancelPath]) {
+    for (const path of [configPath, Path.join(TEMP_DIR, `${taskId}.video.json`), Path.join(TEMP_DIR, `${taskId}.audio.json`), Path.join(TEMP_DIR, `${taskId}.merge.json`), progressPath, cancelPath]) {
       try {
         if (FileManager.existsSync(path)) FileManager.removeSync(path)
       } catch {}
