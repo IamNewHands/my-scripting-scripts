@@ -12,7 +12,7 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 
 ## Features
 
-- Accept **9-digit** team codes, or **9N concatenated** digits (split every 9).
+- Accept **8-digit** team codes, or **9N concatenated** digits (split every 8).
 - Submit **in parallel** to multiple third-party helper sites (publisher / token).
 - **First success wins**: return as soon as any site succeeds (no waiting on the slowest).
 - Per-code **5s deadline**; **3s** request timeout + native `timeout` dual guard.
@@ -38,7 +38,7 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 |---|---|
 | Scripting App | iOS TSX runtime |
 | Network | Configured helper-site domains |
-| Input | 9-digit team codes |
+| Input | 8-digit team codes |
 
 Codes are posted to **third-party** helpers — **not** the official Pinduoduo API. Availability depends on those services.
 
@@ -81,5 +81,5 @@ Payload is the team code plus site tokens/cookies. No Apple ID passwords.
 - ASCII dir: `PDD-Quick-Submit`
 - Zip: `…/releases/latest/download/PDD-Quick-Submit.zip`
 - `remoteResource.hash` = full zip MD5
-- Version: **1.1.0**
+- Version: **1.2.0**
 

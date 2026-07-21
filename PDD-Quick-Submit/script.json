@@ -1,32 +1,33 @@
 {
+  "description": "Submit Pinduoduo 8-digit team codes to multiple mirror sites. First success returns immediately with score display.",
   "name": "PDD 快捷提交",
-  "version": "1.1.0",
-  "icon": "paperplane.fill",
-  "color": "rgba(28, 140, 255,1)",
-  "entry": "index.tsx",
+  "localizedDescriptions": {
+    "en": "Paste 8-digit (or 8N) Pinduoduo team codes and submit to multiple helper sites in parallel. Returns as soon as any site succeeds (CODE_DEADLINE 5s). Shows success count as N/3.",
+    "zh": "粘贴拼多多 8 位（或 8N 连写）组队码，并行提交到多个互助站点。任一站点成功即立即返回（单码总时限 5 秒），结果用成功数/总数（如 1/3）显示。支持快捷指令文本输入。"
+  },
   "runInApp": true,
-  "iconImage": "",
+  "localizedNames": {
+    "zh": "PDD 快捷提交",
+    "en": "PDD Quick Submit"
+  },
+  "version": "1.2.0",
   "intentInputTypes": [
     "Text"
   ],
-  "author": {
-    "name": "IamNewHands",
-    "email": null,
-    "homepage": "https://github.com/IamNewHands/my-scripting-scripts/tree/main/PDD-Quick-Submit"
-  },
-  "contributors": [],
-  "description": "Submit Pinduoduo team codes to multiple mirror sites at once. First success returns immediately with score display.",
-  "localizedNames": {
-    "en": "PDD Quick Submit",
-    "zh": "PDD 快捷提交"
-  },
-  "localizedDescriptions": {
-    "en": "Paste 9-digit (or 9N) Pinduoduo team codes and submit to multiple helper sites in parallel. Returns as soon as any site succeeds (CODE_DEADLINE 5s). Shows success count as N/3.",
-    "zh": "粘贴拼多多 9 位（或 9N 连写）组队码，并行提交到多个互助站点。任一站点成功即立即返回（单码总时限 5 秒），结果用成功数/总数（如 1/3）显示。支持快捷指令文本输入。"
-  },
+  "icon": "paperplane.fill",
   "remoteResource": {
     "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/PDD-Quick-Submit.zip",
-    "hash": "09edd70e4fe0b50ec103d79a8df4c5eb",
+    "hash": "12c4e95be83e424e9f388b4de39cd5e3",
     "autoUpdateInterval": 86400
+  },
+  "permissions": null,
+  "color": "rgba(28, 140, 255,1)",
+  "contributors": [],
+  "iconImage": "",
+  "entry": "index.tsx",
+  "author": {
+    "email": null,
+    "name": "IamNewHands",
+    "homepage": "https://github.com/IamNewHands/my-scripting-scripts/tree/main/PDD-Quick-Submit"
   }
 }

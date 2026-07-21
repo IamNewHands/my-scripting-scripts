@@ -12,7 +12,7 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 
 ## 功能
 
-- 输入 **9 位**组队码，或 **18/27/…** 位连写（按每 9 位切分）。
+- 输入 **8 位**组队码，或 **16/24/…** 位连写（按每 8 位切分）。
 - **并行提交**到多个第三方互助站（publisher / token 两种协议）。
 - **首站成功即返回**：不必等最慢的站，避免「PDD 已成功但脚本还在转」。
 - 单码 **总时限 5 秒**；请求 **3 秒超时** + 原生 `timeout` 双保险。
@@ -38,7 +38,7 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 |---|---|
 | Scripting App | iOS TSX 脚本运行环境 |
 | 网络 | 访问已配置的互助站域名 |
-| 输入 | 9 位数字组队码（可多组连写） |
+| 输入 | 8 位数字组队码（可多组连写） |
 
 脚本把码提交到第三方互助站，**不直接调用拼多多官方 API**。站点可用性取决于第三方服务。
 
@@ -81,5 +81,5 @@ PDD-Quick-Submit/
 - 目录名（ASCII）：`PDD-Quick-Submit`
 - Release zip：`…/releases/latest/download/PDD-Quick-Submit.zip`
 - `remoteResource.hash` = 整包 zip 的 MD5
-- 当前版本：**1.1.0**（首成功返回 + 总时限 + 数字结果）
+- 当前版本：**1.2.0**（首成功返回 + 总时限 + 数字结果）
 

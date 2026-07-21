@@ -10,7 +10,7 @@ declare const Dialog: any
  *
  * 使用方式：
  * 1. iOS 快捷指令调用 Scripting，并把文本作为快捷指令参数传入。
- * 2. 输入可为 9 位数字，也可为 18/27/... 位连续数字，脚本会按每 9 位切分。
+ * 2. 输入可为 8 位数字，也可为 16/24/... 位连续数字，脚本会按每 8 位切分。
  * 3. 每组码串行处理；单组内并行提交 3 个站点，任一站点成功即立即返回该组结果。
  * 4. 慢站会被取消/忽略，避免拖累反馈；运行结果通过通知和 Script.exit 回传。
  */
@@ -447,11 +447,11 @@ async function submitBySite(site: any, code: string, ctx?: AbortableContext): Pr
 
 function parseCodes(input: string): { codes: string[]; ignoredTailLength: number } {
   const digits = String(input ?? "").trim().replace(/\D/g, "")
-  const completeLength = digits.length - (digits.length % 9)
-  const codes = digits.slice(0, completeLength).match(/.{9}/g) ?? []
+  const completeLength = digits.length - (digits.length % 8)
+  const codes = digits.slice(0, completeLength).match(/.{8}/g) ?? []
   return {
     codes,
-    ignoredTailLength: digits.length % 9,
+    ignoredTailLength: digits.length % 8,
   }
 }
 
@@ -578,8 +578,8 @@ async function promptInputIfAvailable(): Promise<string> {
   try {
     const result = await Dialog.prompt({
       title: "拼多多快捷组队",
-      message: "请输入组队码，支持多组连写",
-      placeholder: "9 位或 9N 位数字",
+      message: "请输入组队码（8 位，支持多组连写）",
+      placeholder: "8 位或 8N 位数字",
     })
     if (typeof result === "string") return result
     if (typeof result?.value === "string") return result.value
@@ -611,7 +611,7 @@ async function run(): Promise<void> {
   const { codes, ignoredTailLength } = parseCodes(text)
   if (codes.length === 0) {
     const suffix = ignoredTailLength > 0 ? `（输入有 ${ignoredTailLength} 位非整组数字）` : ""
-    Script.exit(Intent.text(`未识别到 9 位组队码${suffix}`))
+    Script.exit(Intent.text(`未识别到 8 位组队码${suffix}`))
     return
   }
   const results: CodeResult[] = []
