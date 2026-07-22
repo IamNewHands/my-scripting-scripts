@@ -1,34 +1,32 @@
 {
-  "name": "Yoinks",
-  "localizedNames": {
-    "en": "Yoinks",
-    "zh": "Yoinks"
-  },
-  "icon": "arrow.down.to.line.compact",
-  "color": "rgba(52, 199, 89, 1)",
-  "version": "1.1.1",
-  "entry": "index.tsx",
-  "runInApp": true,
-  "intentInputTypes": [
+  "intentInputTypes" : [
     "URLs",
     "Text"
   ],
-  "author": {
-    "name": "IamNewHands",
-    "email": null,
-    "homepage": "https://github.com/IamNewHands/my-scripting-scripts/tree/main/Yoinks"
+  "entry" : "index.tsx",
+  "remoteResource" : {
+    "autoUpdateInterval" : null,
+    "url" : "https:\/\/github.com\/ckldy\/Yoinks",
+    "hash" : "70e67b0168c4a546a2deae4be621dbb0"
   },
-  "description": "Paste a public media link, pick a format, download with yt-dlp (single-extract merge), save to Photos or Files. YouTube cookie login supported.",
-  "localizedDescriptions": {
-    "en": "Paste a public media link, pick a format, download with yt-dlp (single-extract merge), save to Photos or Files. YouTube cookie login supported.",
-    "zh": "粘贴公开媒体链接，选择格式后用 yt-dlp 一次拉取合并下载，保存到相册或文件。支持 YouTube Cookie 登录。"
+  "iconImage" : null,
+  "runInApp" : true,
+  "name" : "Yoinks",
+  "contributors" : [
+
+  ],
+  "version" : "1.1.1",
+  "author" : null,
+  "localizedDescriptions" : {
+    "zh" : "粘贴或分享公开媒体链接，选择输出格式后保存到相册或文件。",
+    "en" : "Paste or share a public media link, choose an output format, then save it to Photos or Files."
   },
-  "remoteResource": {
-    "autoUpdateInterval": 86400,
-    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/Yoinks.zip",
-    "hash": "601c20b741783700e791bd8c7dd92884"
-  },
-  "contributors": [],
-  "permissions": null,
-  "iconImage": null
+  "permissions" : null,
+  "color" : "rgba(52, 199, 89, 1)",
+  "icon" : "arrow.down.to.line.compact",
+  "description" : "Download public media with a focused Yoinks-style workflow.",
+  "localizedNames" : {
+    "zh" : "Yoinks",
+    "en" : "Yoinks"
+  }
 }

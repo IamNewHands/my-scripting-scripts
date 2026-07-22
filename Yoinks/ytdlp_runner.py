@@ -119,11 +119,10 @@ def main():
         "noplaylist": True,
         "quiet": False,
         "no_warnings": False,
-        "nocheckcertificate": bool(config.get("no_check_certificates", True)),
+        "nocheckcertificate": bool(config.get("no_check_certificates", False)),
         "retries": 3,
         "fragment_retries": 3,
-        "overwrites": bool(config.get("overwrites", False)),
-        "continuedl": bool(config.get("continuedl", True)),
+        "overwrites": True,
     }
 
     cookiefile = config.get("cookiefile")
@@ -148,10 +147,6 @@ def main():
         "paths": {"home": config["paths"]},
         "progress_hooks": [progress_hook],
     })
-    merge_fmt = config.get("merge_output_format")
-    if merge_fmt:
-        options["merge_output_format"] = merge_fmt
-
 
     try:
         with YoutubeDL(options) as ydl:

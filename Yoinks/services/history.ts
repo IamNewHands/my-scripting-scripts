@@ -69,24 +69,12 @@ function sortOldest(records: DownloadHistoryRecord[]): DownloadHistoryRecord[] {
   return [...records].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
 }
 
-/** 一次读 Downloads 目录，避免对每条记录 exists */
-async function listManagedFileSet(): Promise<Set<string>> {
-  try {
-    if (!(await FileManager.exists(DOWNLOAD_DIRECTORY))) return new Set()
-    const entries = await FileManager.readDirectory(DOWNLOAD_DIRECTORY)
-    const set = new Set<string>()
-    for (const entry of entries) {
-      if (await FileManager.isFile(entry)) set.add(entry)
-    }
-    return set
-  } catch {
-    return new Set()
-  }
-}
-
 async function availableRecords(records = readRecords()): Promise<DownloadHistoryRecord[]> {
-  const files = await listManagedFileSet()
-  return records.filter((record) => isManagedFilePath(record.filePath) && files.has(record.filePath))
+  const available: DownloadHistoryRecord[] = []
+  for (const record of records) {
+    if (isManagedFilePath(record.filePath) && await FileManager.exists(record.filePath)) available.push(record)
+  }
+  return available
 }
 
 export async function listHistoryRecords(): Promise<DownloadHistoryRecord[]> {
@@ -165,12 +153,7 @@ export async function pruneHistoryStorage(preferences: YoinksPreferences): Promi
       records = records.filter((item) => item.id !== record.id)
       writeRecords(records)
       deletedRecords += 1
-      // 本地累加更新，避免每次全量扫盘
-      summary = {
-        totalRecords: records.length,
-        availableCount: Math.max(0, summary.availableCount - (isManagedFilePath(record.filePath) ? 1 : 0)),
-        managedBytes: Math.max(0, summary.managedBytes - Math.max(0, record.fileSizeBytes)),
-      }
+      summary = await getHistoryStorageSummary()
     } catch {
       failedPaths.push(record.filePath)
     }

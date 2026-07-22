@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
+
 try:
     from yt_dlp import YoutubeDL
 except ImportError:
@@ -35,31 +36,24 @@ def compact_format(item: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> None:
-    if len(sys.argv) < 2:
+    if len(sys.argv) not in {2, 3}:
         print(json.dumps({"ok": False, "error": "missing URL"}))
         raise SystemExit(2)
+
     url = sys.argv[1]
-    cookiefile = None
-    nocheckcertificate = False
-    # 兼容：python3 ytdlp_probe.py URL [cookiefile] [--insecure]
-    for arg in sys.argv[2:]:
-        if arg in {"--insecure", "--nocheckcertificate"}:
-            nocheckcertificate = True
-            continue
-        cookiefile = arg
+    cookiefile = sys.argv[2] if len(sys.argv) == 3 else None
     if not safe_url(url):
         print(json.dumps({"ok": False, "error": "invalid public http or https URL"}))
         raise SystemExit(2)
     if cookiefile and not Path(cookiefile).is_file():
         print(json.dumps({"ok": False, "error": "cookie file is unavailable"}))
         raise SystemExit(2)
+
     options = {
         "noplaylist": True,
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
-        # Scripting 内置 Python 常缺系统 CA，默认跳过证书校验
-        "nocheckcertificate": True,
     }
     if cookiefile:
         options["cookiefile"] = cookiefile
@@ -69,6 +63,7 @@ def main() -> None:
     except Exception as error:
         print(json.dumps({"ok": False, "error": str(error)[:1000]}))
         raise SystemExit(1)
+
     formats = [compact_format(item) for item in (info.get("formats") or []) if item.get("format_id")]
     print(json.dumps({
         "ok": True,

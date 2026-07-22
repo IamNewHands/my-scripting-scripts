@@ -5,6 +5,8 @@ import type { AuthPlatform } from "./platform-auth"
 export type SaveMode = "ask" | "photos" | "files"
 export type ConcurrentDownloads = 1 | 2 | 4 | 8
 export type MediaKind = "video" | "audio"
+export type AutomaticDownloadFormatStrategy = "recommended" | "highest-video" | "highest-audio" | "preferred-container"
+export type PreferredContainer = "mp4" | "mkv" | "avi" | "wmv"
 
 export type ToolStatus = {
   ytDlpVersion: string | null
@@ -13,7 +15,6 @@ export type ToolStatus = {
 export type DownloadProgress = {
   fraction: number
   stage: string
-  percentLabel?: string
   downloadedBytes?: number
   totalBytes?: number
   speed?: number
@@ -27,6 +28,7 @@ export type MediaChoice = {
   label: string
   kind: MediaKind
   formatExpression: string
+  container?: string
   height?: number
   estimatedBytes?: number
   mergeAudioFormat?: string
@@ -73,8 +75,8 @@ const RUNNER_PATH = Path.join(Script.directory, "ytdlp_runner.py")
 const PROBE_PATH = Path.join(Script.directory, "ytdlp_probe.py")
 const MEDIA_EXTENSIONS = new Set([".mp4", ".m4v", ".mov", ".mkv", ".webm", ".m4a", ".aac", ".opus", ".mp3"])
 
-function quote(value: string): string {
-  return `'${value.replace(/'/g, `'"'"'`)}'`
+export function quote(value: string): string {
+  return `"${value.replace(/["\\$`]/g, "\\$&")}"`
 }
 
 function compactMessage(value: string): string {
@@ -114,17 +116,12 @@ function isAllowedURL(value: string): boolean {
   }
 }
 
-export type MediaPlatform = "douyin" | "xiaohongshu" | "youtube" | "generic"
+export type MediaPlatform = "douyin" | "xiaohongshu" | "generic"
 
 const XIAOHONGSHU_URL_PATTERNS = [
   /https?:\/\/(?:www\.)?(?:xiaohongshu|rednote)\.com\/(?:explore|discovery\/item|search_result|user\/profile\/[a-z0-9]+)\/[a-z0-9]+(?:\?[^\s"'<>，。！？；：、]*)?/i,
   /https?:\/\/xhslink\.com\/[^\s"'<>，。！？；：、]+/i,
 ]
-const YOUTUBE_URL_PATTERNS = [
-  /https?:\/\/(?:www\.)?youtube\.com\//i,
-  /https?:\/\/youtu\.be\//i,
-]
-
 const DOUYIN_URL_PATTERNS = [
   /https?:\/\/v\.douyin\.com\/[a-zA-Z0-9_-]+/i,
   /https?:\/\/(?:www\.)?douyin\.com\/video\/[0-9]+/i,
@@ -139,7 +136,6 @@ function sanitizeExtractedURL(value: string): string {
 
 export function detectMediaPlatform(value: string | null | undefined): MediaPlatform {
   if (!value) return "generic"
-  if (YOUTUBE_URL_PATTERNS.some((pattern) => pattern.test(value))) return "youtube"
   if (DOUYIN_URL_PATTERNS.some((pattern) => pattern.test(value))) return "douyin"
   if (XIAOHONGSHU_URL_PATTERNS.some((pattern) => pattern.test(value))) return "xiaohongshu"
   return "generic"
@@ -147,7 +143,6 @@ export function detectMediaPlatform(value: string | null | undefined): MediaPlat
 
 export function mediaPlatformLabel(value: string | null | undefined): string | null {
   switch (detectMediaPlatform(value)) {
-    case "youtube": return "YouTube"
     case "douyin": return "抖音"
     case "xiaohongshu": return "小红书"
     default: return null
@@ -156,7 +151,7 @@ export function mediaPlatformLabel(value: string | null | undefined): string | n
 
 export function extractFirstURL(value: string | null | undefined): string | null {
   if (!value) return null
-  for (const pattern of [...YOUTUBE_URL_PATTERNS, ...XIAOHONGSHU_URL_PATTERNS, ...DOUYIN_URL_PATTERNS]) {
+  for (const pattern of [...XIAOHONGSHU_URL_PATTERNS, ...DOUYIN_URL_PATTERNS]) {
     const match = value.match(pattern)
     if (match) {
       const candidate = sanitizeExtractedURL(match[0])
@@ -170,26 +165,6 @@ export function extractFirstURL(value: string | null | undefined): string | null
 async function ensureDirectories() {
   if (!(await FileManager.exists(DOWNLOAD_DIR))) await FileManager.createDirectory(DOWNLOAD_DIR, true)
   if (!(await FileManager.exists(TEMP_DIR))) await FileManager.createDirectory(TEMP_DIR, true)
-}
-
-/** 启动时清理临时 cookie / 中断任务残留 */
-export async function cleanupTempOrphans(): Promise<void> {
-  try {
-    await ensureDirectories()
-    if (!(await FileManager.exists(TEMP_DIR))) return
-    const entries = await FileManager.readDirectory(TEMP_DIR)
-    for (const entry of entries) {
-      const name = entry.includes("/") ? entry.slice(entry.lastIndexOf("/") + 1) : entry
-      if (name.endsWith(".cookies.txt") || name.endsWith(".cancel") || name.endsWith(".progress.json") || name.endsWith(".json") || name.includes("forced-h264") || name.includes("photos-h264") || name.endsWith(".yoinks-player.html")) {
-        try { await FileManager.remove(entry) } catch {}
-        continue
-      }
-      // 任务目录：临时 taskId 文件夹
-      try {
-        if (await FileManager.isDirectory(entry)) await FileManager.remove(entry)
-      } catch {}
-    }
-  } catch {}
 }
 
 async function runCommand(command: string, timeout: number) {
@@ -250,10 +225,7 @@ function stringValue(value: unknown): string | undefined {
 function formatScore(item: RawFormat): number {
   let score = item.tbr || 0
   if (item.ext === "mp4") score += 10_000
-  // 相册兼容：优先 H.264，压低 AV1
-  if (item.vcodec?.startsWith("avc") || item.vcodec === "h264") score += 50_000
-  if (item.vcodec?.startsWith("vp9") || item.vcodec === "vp09") score += 20_000
-  if (item.vcodec?.startsWith("av01") || item.vcodec === "av1") score -= 40_000
+  if (item.vcodec?.startsWith("avc")) score += 5_000
   if (item.acodec && item.acodec !== "none") score += 1_000
   return score
 }
@@ -285,6 +257,7 @@ function buildChoices(formats: RawFormat[]): MediaChoice[] {
     label: `${item.height}p 视频${item.ext ? ` · ${item.ext.toUpperCase()}` : ""}${item.fps ? ` · ${Math.round(item.fps)} fps` : ""}${item.filesize ? ` · 约 ${formatBytes(item.filesize)}` : ""}`,
     kind: "video",
     formatExpression: item.formatId,
+    container: item.ext?.toLowerCase(),
     height: item.height,
     estimatedBytes: item.filesize,
     previewURL: item.previewURL,
@@ -298,7 +271,7 @@ function buildChoices(formats: RawFormat[]): MediaChoice[] {
       id: `video-${item.height}-${item.formatId}${audio ? `-with-${audio.formatId}` : "-silent"}`,
       label: `${item.height}p ${canMerge ? "视频 · 合并音频" : "无音轨视频"}${item.ext ? ` · ${item.ext.toUpperCase()}` : ""}${item.fps ? ` · ${Math.round(item.fps)} fps` : ""}${(item.filesize || audio?.filesize) ? ` · 约 ${formatBytes((item.filesize || 0) + (audio?.filesize || 0))}` : ""}`,
       kind: "video",
-      formatExpression: audio ? `${item.formatId}+${audio.formatId}` : item.formatId,
+      formatExpression: item.formatId,
       height: item.height,
       estimatedBytes: (item.filesize || 0) + (audio?.filesize || 0) || undefined,
       mergeAudioFormat: audio?.formatId,
@@ -312,24 +285,34 @@ function buildChoices(formats: RawFormat[]): MediaChoice[] {
     label: `仅音频${item.ext ? ` · ${item.ext.toUpperCase()}` : ""}${item.abr || item.tbr ? ` · ${Math.round(item.abr || item.tbr || 0)} kbps` : ""}${item.filesize ? ` · 约 ${formatBytes(item.filesize)}` : ""}`,
     kind: "audio",
     formatExpression: item.formatId,
+    container: item.ext?.toLowerCase(),
     estimatedBytes: item.filesize,
     previewURL: item.previewURL,
   })))
 
-  // 同清晰度视频只保留评分最高的 1 条（muxed / 合并轨各自按 height）
-  const bestVideo = new Map<string, MediaChoice>()
-  const audioChoices: MediaChoice[] = []
-  for (const choice of choices) {
-    if (choice.kind === "audio") {
-      audioChoices.push(choice)
-      continue
-    }
-    const key = `${choice.height || 0}-${choice.mergeAudioFormat ? "merge" : "muxed"}`
-    if (!bestVideo.has(key)) bestVideo.set(key, choice)
+  return choices
+}
+
+export function resolveAutomaticChoice(
+  choices: MediaChoice[],
+  strategy: AutomaticDownloadFormatStrategy,
+  preferredContainer: PreferredContainer,
+): { choice: MediaChoice | null; usedFallback: boolean } {
+  const recommended = choices[0] || null
+  if (!recommended || strategy === "recommended") return { choice: recommended, usedFallback: false }
+
+  if (strategy === "highest-video") {
+    const choice = choices.filter((item) => item.kind === "video").sort((a, b) => (b.height || 0) - (a.height || 0))[0] || recommended
+    return { choice, usedFallback: choice === recommended && choice.kind !== "video" }
   }
-  const dedupedVideos = [...bestVideo.values()].sort((a, b) => (b.height || 0) - (a.height || 0))
-  // 仅音频保留最多 4 条
-  return [...dedupedVideos, ...audioChoices.slice(0, 4)]
+
+  if (strategy === "highest-audio") {
+    const choice = choices.find((item) => item.kind === "audio") || recommended
+    return { choice, usedFallback: choice === recommended && choice.kind !== "audio" }
+  }
+
+  const choice = choices.find((item) => item.kind === "video" && !item.mergeAudioFormat && item.container === preferredContainer) || recommended
+  return { choice, usedFallback: choice !== null && choice.container !== preferredContainer }
 }
 
 export async function getToolStatus(): Promise<ToolStatus> {
@@ -358,21 +341,29 @@ export async function installYtDlp(): Promise<string> {
 export type ProbeOptions = {
   cookieFile?: string
   authorizedPlatform?: AuthPlatform
-  /** 仅在用户确认后启用：跳过 TLS 证书校验（与下载兼容模式一致） */
-  insecureTLS?: boolean
 }
 
 export async function probeMedia(url: string, options: ProbeOptions = {}): Promise<MediaProbe> {
   const sourceURL = extractFirstURL(url)
   if (!sourceURL) throw new Error("请输入有效的公开 http 或 https 链接。")
   const taskId = createTaskId()
-  await logEvent({ level: "info", event: "probe.started", taskId, details: { sourceURL, authorizedPlatform: options.authorizedPlatform || null, cookieAuthorized: Boolean(options.cookieFile), tlsInsecure: true } })
+  await logEvent({ level: "info", event: "probe.started", taskId, details: { sourceURL, authorizedPlatform: options.authorizedPlatform || null, cookieAuthorized: Boolean(options.cookieFile) } })
   const cookieArgument = options.cookieFile ? ` ${quote(options.cookieFile)}` : ""
-  const insecureArgument = " --insecure"  // 默认跳过 TLS 证书校验
-  const result = await runCommand(`python3 ${quote(PROBE_PATH)} ${quote(sourceURL)}${cookieArgument}${insecureArgument}`, 120)
+  let result = await runCommand(`python3 ${quote(PROBE_PATH)} ${quote(sourceURL)}${cookieArgument}`, 120)
   await logEvent({ level: result.exitCode === 0 ? "info" : "error", event: "probe.command.completed", taskId, details: { exitCode: result.exitCode, output: result.exitCode === 0 ? "媒体信息已返回" : result.output } })
   if (result.exitCode !== 0) throw new Error(compactMessage(result.output || "媒体探测失败"))
-  const payload = parseLastJSON(result.output)
+  let payload: Record<string, unknown>
+  try {
+    payload = parseLastJSON(result.output)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (message !== "下载工具未返回可识别的媒体信息") throw error
+    await logEvent({ level: "warn", event: "probe.output.retry", taskId, details: { delayMilliseconds: 0 } })
+    result = await runCommand(`python3 ${quote(PROBE_PATH)} ${quote(sourceURL)}${cookieArgument}`, 120)
+    await logEvent({ level: result.exitCode === 0 ? "info" : "error", event: "probe.command.completed", taskId, details: { exitCode: result.exitCode, output: result.exitCode === 0 ? "媒体信息已返回" : result.output } })
+    if (result.exitCode !== 0) throw new Error(compactMessage(result.output || "媒体探测失败"))
+    payload = parseLastJSON(result.output)
+  }
   if (payload.ok !== true) throw new Error(compactMessage(stringValue(payload.error) || "媒体探测失败"))
   const rawFormats = Array.isArray(payload.formats) ? payload.formats : []
   const formats: RawFormat[] = rawFormats.map((value) => {
@@ -413,7 +404,6 @@ function readProgress(path: string): DownloadProgress | null {
     return {
       fraction,
       stage: percent == null ? "正在传输" : `${percent.toFixed(1)}%`,
-      percentLabel: percent == null ? undefined : `${percent.toFixed(1)}%`,
       downloadedBytes: numberValue(value.downloadedBytes),
       totalBytes: numberValue(value.totalBytes),
       speed: numberValue(value.speed),
@@ -494,71 +484,64 @@ export async function downloadMedia(options: {
     progress_path: progressPath,
     cancel_flag: cancelPath,
     concurrent_fragments: options.concurrentFragments,
-    no_check_certificates: true,  // 默认跳过 TLS 证书校验
+    no_check_certificates: Boolean(options.insecureTLS),
     cookiefile: options.cookieFile || undefined,
     extract_audio: false,
-    overwrites: false,
-    continuedl: true,  // 允许 yt-dlp 断点续传
   }
   await FileManager.writeAsString(configPath, JSON.stringify(config))
-  await logEvent({ level: "info", event: "download.started", taskId, details: { sourceURL, choiceId: options.choice.id, choiceLabel: options.choice.label, formatExpression: options.choice.formatExpression, concurrentFragments: options.concurrentFragments, tlsInsecure: true, authorizedPlatform: options.authorizedPlatform || null, cookieAuthorized: Boolean(options.cookieFile), outputDirectory: DOWNLOAD_DIR } })
+  await logEvent({ level: "info", event: "download.started", taskId, details: { sourceURL, choiceId: options.choice.id, choiceLabel: options.choice.label, formatExpression: options.choice.formatExpression, concurrentFragments: options.concurrentFragments, tlsInsecure: Boolean(options.insecureTLS), authorizedPlatform: options.authorizedPlatform || null, cookieAuthorized: Boolean(options.cookieFile), outputDirectory: DOWNLOAD_DIR } })
   options.onCancelPath(cancelPath)
 
   let polling = true
-  let progressPhase: "single" | "video" | "audio" | "merge" = "single"
   let timer: ReturnType<typeof setTimeout> | null = null
   const pollProgress = () => {
     if (!polling) return
     const progress = readProgress(progressPath)
-    if (progress) {
-      let fraction = progress.fraction
-      let stage = progress.stage
-      if (progressPhase === "video") {
-        fraction = 0.05 + Math.min(0.45, Math.max(0, progress.fraction) * 0.45)
-        stage = progress.percentLabel ? `视频 ${progress.percentLabel}` : "正在下载视频流"
-      } else if (progressPhase === "audio") {
-        fraction = 0.5 + Math.min(0.4, Math.max(0, progress.fraction) * 0.4)
-        stage = progress.percentLabel ? `音频 ${progress.percentLabel}` : "正在下载音频流"
-      } else if (progressPhase === "merge") {
-        fraction = 0.93
-        stage = "正在使用内置 FFmpeg 合并"
-      }
-      options.onProgress({ ...progress, fraction, stage })
-    }
-    timer = setTimeout(pollProgress, 400)
+    if (progress) options.onProgress(progress)
+    timer = setTimeout(pollProgress, 350)
   }
-  timer = setTimeout(pollProgress, 400)
+  timer = setTimeout(pollProgress, 350)
 
   try {
     if (mergeAudioFormat) {
-      // 一次 yt-dlp 用 video+audio 格式串拉取并合并，减少二次 extract 触发风控
-      const mergeExt = options.choice.mergeExtension || "mkv"
-      const mergeConfigPath = Path.join(TEMP_DIR, `${taskId}.merge.json`)
-      const mergeConfig = {
-        ...config,
-        format: options.choice.formatExpression,
-        merge_output_format: mergeExt,
-        output: "%(title).120B [%(id)s].%(ext)s",
-        paths: DOWNLOAD_DIR,
-      }
-      await FileManager.writeAsString(mergeConfigPath, JSON.stringify(mergeConfig))
-      progressPhase = "single"
-      options.onProgress({ fraction: 0.02, stage: "正在下载并合并音视频" })
-      const result = await runCommand(`python3 ${quote(RUNNER_PATH)} ${quote(mergeConfigPath)}`, 7200)
-      await logEvent({ level: result.exitCode === 0 ? "info" : "error", event: "download.merge.command.completed", taskId, details: { exitCode: result.exitCode, output: result.output } })
-      try { if (FileManager.existsSync(mergeConfigPath)) FileManager.removeSync(mergeConfigPath) } catch {}
-      if (result.exitCode === 130) throw new Error("下载已取消")
-      if (result.exitCode !== 0) throw new Error(compactMessage(result.output || "音视频下载/合并失败"))
-      const paths = parseOutputPaths(result.output)
-      const filePath = [...paths].reverse().find((path) => FileManager.existsSync(path))
-      if (!filePath) throw new Error("下载完成但未找到输出文件")
+      await FileManager.createDirectory(taskDirectory, true)
+      const videoConfigPath = Path.join(TEMP_DIR, `${taskId}.video.json`)
+      const audioConfigPath = Path.join(TEMP_DIR, `${taskId}.audio.json`)
+      const videoConfig = { ...config, output: "%(title).120B [%(id)s].video.%(ext)s", paths: taskDirectory }
+      const audioConfig = { ...config, format: mergeAudioFormat, output: "%(title).120B [%(id)s].audio.%(ext)s", paths: taskDirectory }
+      await FileManager.writeAsString(videoConfigPath, JSON.stringify(videoConfig))
+      await FileManager.writeAsString(audioConfigPath, JSON.stringify(audioConfig))
+
+      options.onProgress({ fraction: 0.02, stage: "正在下载视频流" })
+      const videoResult = await runCommand(`python3 ${quote(RUNNER_PATH)} ${quote(videoConfigPath)}`, 7200)
+      await logEvent({ level: videoResult.exitCode === 0 ? "info" : "error", event: "download.video.command.completed", taskId, details: { exitCode: videoResult.exitCode, output: videoResult.output } })
+      if (videoResult.exitCode === 130) throw new Error("下载已取消")
+      if (videoResult.exitCode !== 0) throw new Error(compactMessage(videoResult.output || "视频流下载失败"))
+      const videoPath = [...parseOutputPaths(videoResult.output)].reverse().find((path) => FileManager.existsSync(path))
+      if (!videoPath) throw new Error("视频流下载完成但未找到输出文件")
+
+      options.onProgress({ fraction: 0.55, stage: "正在下载音频流" })
+      const audioResult = await runCommand(`python3 ${quote(RUNNER_PATH)} ${quote(audioConfigPath)}`, 7200)
+      await logEvent({ level: audioResult.exitCode === 0 ? "info" : "error", event: "download.audio.command.completed", taskId, details: { exitCode: audioResult.exitCode, output: audioResult.output } })
+      if (audioResult.exitCode === 130) throw new Error("下载已取消")
+      if (audioResult.exitCode !== 0) throw new Error(compactMessage(audioResult.output || "音频流下载失败"))
+      const audioPath = [...parseOutputPaths(audioResult.output)].reverse().find((path) => FileManager.existsSync(path))
+      if (!audioPath) throw new Error("音频流下载完成但未找到输出文件")
+
+      const extension = options.choice.mergeExtension || "mkv"
+      const fileName = `${Path.basename(videoPath).replace(/\.video\.[^.]+$/, "")}.${extension}`
+      const filePath = Path.join(DOWNLOAD_DIR, fileName)
+      const fastStart = extension === "mp4" ? " -movflags +faststart" : ""
+      options.onProgress({ fraction: 0.93, stage: "正在使用内置 FFmpeg 合并" })
+      const mergeResult = await runCommand(`ffmpeg -y -i ${quote(videoPath)} -i ${quote(audioPath)} -map 0:v:0 -map 1:a:0 -c copy${fastStart} ${quote(filePath)}`, 900)
+      await logEvent({ level: mergeResult.exitCode === 0 ? "info" : "error", event: "merge.ffmpeg.completed", taskId, details: { exitCode: mergeResult.exitCode, output: mergeResult.output, videoPath, audioPath, filePath } })
+      if (mergeResult.exitCode !== 0) throw new Error(compactMessage(mergeResult.output || "FFmpeg 合并失败"))
       await verifyMediaFile(filePath, options.choice, taskId)
-      options.onProgress({ fraction: 1, stage: "下载并验证完成" })
-      await logEvent({ level: "info", event: "download.completed", taskId, details: { filePath, choiceId: options.choice.id, mergedWithFFmpeg: true, singleExtract: true } })
-      return { filePath, fileName: Path.basename(filePath), sourceURL, choice: options.choice, taskId, fileSizeBytes: await fileSizeBytes(filePath) }
+      options.onProgress({ fraction: 1, stage: "下载、合并并验证完成" })
+      await logEvent({ level: "info", event: "download.completed", taskId, details: { filePath, choiceId: options.choice.id, mergedWithFFmpeg: true } })
+      return { filePath, fileName, sourceURL, choice: options.choice, taskId, fileSizeBytes: await fileSizeBytes(filePath) }
     }
 
-    progressPhase = "single"
     options.onProgress({ fraction: 0.02, stage: "正在下载" })
     const result = await runCommand(`python3 ${quote(RUNNER_PATH)} ${quote(configPath)}`, 7200)
     await logEvent({ level: result.exitCode === 0 ? "info" : "error", event: "download.command.completed", taskId, details: { exitCode: result.exitCode, output: result.output } })
@@ -577,7 +560,7 @@ export async function downloadMedia(options: {
   } finally {
     polling = false
     if (timer) clearTimeout(timer)
-    for (const path of [configPath, Path.join(TEMP_DIR, `${taskId}.video.json`), Path.join(TEMP_DIR, `${taskId}.audio.json`), Path.join(TEMP_DIR, `${taskId}.merge.json`), progressPath, cancelPath]) {
+    for (const path of [configPath, Path.join(TEMP_DIR, `${taskId}.video.json`), Path.join(TEMP_DIR, `${taskId}.audio.json`), progressPath, cancelPath]) {
       try {
         if (FileManager.existsSync(path)) FileManager.removeSync(path)
       } catch {}
@@ -588,37 +571,6 @@ export async function downloadMedia(options: {
   }
 }
 
-function isLikelyPhotosIncompatibleCodec(ffprobeOutput: string): boolean {
-  const text = ffprobeOutput.toLowerCase()
-  // AV1 / 部分 HEVC / VP9 在 Photos.saveVideo 上容易失败
-  return /(av1|av01|hevc|h265|vp9)/.test(text)
-}
-
-async function probeVideoCodecs(filePath: string): Promise<string> {
-  const result = await runCommand(`ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,profile,pix_fmt -of default=noprint_wrappers=1 ${quote(filePath)}`, 60)
-  return result.output || ""
-}
-
-async function remuxOrTranscodeForPhotos(filePath: string, fileName: string, taskId?: string): Promise<{ path: string; name: string }> {
-  const codecs = await probeVideoCodecs(filePath)
-  await logEvent({ level: "info", event: "save.photos.codec", taskId, details: { filePath, codecs: codecs.slice(0, 500) } })
-  if (!isLikelyPhotosIncompatibleCodec(codecs)) {
-    return { path: filePath, name: fileName }
-  }
-  await ensureDirectories()
-  const baseName = fileName.replace(/\.[^.]+$/, "") + ".photos-h264.mp4"
-  const outPath = Path.join(TEMP_DIR, `${Date.now()}-${baseName}`)
-  // VideoToolbox 硬编 H.264，便于相册导入
-  const cmd = `ffmpeg -y -i ${quote(filePath)} -map 0:v:0 -map 0:a:0? -c:v h264_videotoolbox -b:v 8M -c:a aac -b:a 192k -movflags +faststart ${quote(outPath)}`
-  await logEvent({ level: "info", event: "save.photos.transcode.started", taskId, details: { filePath, outPath } })
-  const result = await runCommand(cmd, 3600)
-  await logEvent({ level: result.exitCode === 0 ? "info" : "error", event: "save.photos.transcode.completed", taskId, details: { exitCode: result.exitCode, output: (result.output || "").slice(-800), outPath } })
-  if (result.exitCode !== 0 || !FileManager.existsSync(outPath)) {
-    throw new Error("视频编码不兼容相册，转码为 H.264 失败。请改用「导出到文件」保存原文件。")
-  }
-  return { path: outPath, name: baseName }
-}
-
 export async function saveResult(filePath: string, fileName: string, mode: SaveMode, taskId?: string): Promise<string> {
   if (mode === "photos") {
     if ([".mp3", ".m4a", ".aac", ".opus"].includes(extensionOf(filePath))) {
@@ -626,42 +578,15 @@ export async function saveResult(filePath: string, fileName: string, mode: SaveM
       throw new Error("音频文件请导出到文件或通过分享面板保存。")
     }
     const isVideo = [".mp4", ".m4v", ".mov", ".mkv", ".webm"].includes(extensionOf(filePath))
-    let pathToSave = filePath
-    let nameToSave = fileName
-    let tempTranscoded: string | null = null
-    try {
-      if (isVideo) {
-        const prepared = await remuxOrTranscodeForPhotos(filePath, fileName, taskId)
-        pathToSave = prepared.path
-        nameToSave = prepared.name
-        if (prepared.path !== filePath) tempTranscoded = prepared.path
-      }
-      let saved = isVideo
-        ? await Photos.saveVideo(pathToSave, { fileName: nameToSave, shouldMoveFile: false })
-        : await Photos.savePhoto(pathToSave, { fileName: nameToSave, shouldMoveFile: false })
-      if (!saved && isVideo && !tempTranscoded) {
-        await logEvent({ level: "warn", event: "save.photos.retry-transcode", taskId, details: { filePath } })
-        await ensureDirectories()
-        const forcedOut = Path.join(TEMP_DIR, `${Date.now()}-forced-h264.mp4`)
-        const forceCmd = `ffmpeg -y -i ${quote(filePath)} -map 0:v:0 -map 0:a:0? -c:v h264_videotoolbox -b:v 8M -c:a aac -b:a 192k -movflags +faststart ${quote(forcedOut)}`
-        const forceResult = await runCommand(forceCmd, 3600)
-        if (forceResult.exitCode === 0 && FileManager.existsSync(forcedOut)) {
-          tempTranscoded = forcedOut
-          nameToSave = fileName.replace(/\.[^.]+$/, "") + ".photos-h264.mp4"
-          saved = await Photos.saveVideo(forcedOut, { fileName: nameToSave, shouldMoveFile: false })
-        }
-      }
-      if (!saved) {
-        await logEvent({ level: "error", event: "save.photos.failed", taskId, details: { filePath, fileName } })
-        throw new Error("保存到相册失败。该视频编码可能不被相册支持，请改用「导出到文件」。")
-      }
-      await logEvent({ level: "info", event: "save.photos.completed", taskId, details: { filePath, fileName, transcoded: Boolean(tempTranscoded) } })
-      return tempTranscoded ? "已转码为 H.264 并保存到相册。" : "已保存到相册。"
-    } finally {
-      if (tempTranscoded) {
-        try { if (FileManager.existsSync(tempTranscoded)) FileManager.removeSync(tempTranscoded) } catch {}
-      }
+    const saved = isVideo
+      ? await Photos.saveVideo(filePath, { fileName, shouldMoveFile: false })
+      : await Photos.savePhoto(filePath, { fileName, shouldMoveFile: false })
+    if (!saved) {
+      await logEvent({ level: "error", event: "save.photos.failed", taskId, details: { filePath, fileName } })
+      throw new Error("保存到相册失败")
     }
+    await logEvent({ level: "info", event: "save.photos.completed", taskId, details: { filePath, fileName } })
+    return "已保存到相册。"
   }
   if (mode === "files") {
     const data = Data.fromFile(filePath)
@@ -677,7 +602,7 @@ export async function saveResult(filePath: string, fileName: string, mode: SaveM
   const choice = await Dialog.actionSheet({
     title: "下载完成",
     message: fileName,
-    actions: [{ label: "播放" }, { label: "用其他 App 打开" }, { label: "保存到相册" }, { label: "导出到文件" }, { label: "分享文件" }, { label: "暂不处理" }],
+    actions: [{ label: "播放" }, { label: "保存到相册" }, { label: "导出到文件" }, { label: "分享文件" }, { label: "暂不处理" }],
     cancelButton: true,
   })
   if (choice === 0) {
@@ -685,14 +610,9 @@ export async function saveResult(filePath: string, fileName: string, mode: SaveM
     await logEvent({ level: "info", event: "save.play.presented", taskId, details: { fileName } })
     return "已关闭系统播放器。"
   }
-  if (choice === 1) {
-    await ShareSheet.present([filePath])
-    await logEvent({ level: "info", event: "save.open-other.presented", taskId, details: { filePath, fileName } })
-    return "已打开「用其他 App」分享面板。"
-  }
-  if (choice === 2) return saveResult(filePath, fileName, "photos", taskId)
-  if (choice === 3) return saveResult(filePath, fileName, "files", taskId)
-  if (choice === 4) {
+  if (choice === 1) return saveResult(filePath, fileName, "photos", taskId)
+  if (choice === 2) return saveResult(filePath, fileName, "files", taskId)
+  if (choice === 3) {
     await ShareSheet.present([filePath])
     await logEvent({ level: "info", event: "save.share.presented", taskId, details: { filePath, fileName } })
     return "已打开分享面板。"

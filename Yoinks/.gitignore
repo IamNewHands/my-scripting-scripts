@@ -1,6 +1,0 @@
-# Runtime logs / history (generated at runtime, not source)
-logs/
-
-# OS / editor cruft
-.DS_Store
-*.swp

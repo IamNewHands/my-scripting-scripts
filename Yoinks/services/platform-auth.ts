@@ -26,11 +26,6 @@ const PLATFORM_CONFIG: Record<AuthPlatform, { label: string; loginURL: string; d
     loginURL: "https://www.xiaohongshu.com/",
     domains: ["xiaohongshu.com", "rednote.com"],
   },
-  youtube: {
-    label: "YouTube",
-    loginURL: "https://www.youtube.com/",
-    domains: ["youtube.com", "google.com", "googlevideo.com", "youtu.be", "googleusercontent.com"],
-  },
 }
 
 function domainMatches(domain: string, candidate: string): boolean {
@@ -93,7 +88,7 @@ export function supportedAuthPlatforms(): AuthPlatform[] {
 }
 
 export function isAuthPlatform(platform: MediaPlatform): platform is AuthPlatform {
-  return platform === "douyin" || platform === "xiaohongshu" || platform === "youtube"
+  return platform === "douyin" || platform === "xiaohongshu"
 }
 
 export function authPlatformLabel(platform: AuthPlatform): string {
@@ -101,7 +96,7 @@ export function authPlatformLabel(platform: AuthPlatform): string {
 }
 
 export function isFreshCookieError(message: string): boolean {
-  return /fresh cookies|cookies? (?:are|is) needed|login required|sign in|required to login|not logged in|confirm you.?re not a bot|not a bot|use --cookies|cookies-from-browser|authentication/i.test(message)
+  return /fresh cookies|cookies? (?:are|is) needed|login required|sign in|required to login|not logged in/i.test(message)
 }
 
 export async function beginPlatformLogin(platform: AuthPlatform, retention: LoginRetention): Promise<PlatformAuthSession> {
