@@ -188,7 +188,7 @@ export class DownloadManager {
    * 取消所有正在下载的任务
    */
   cancelAllTasks(): void {
-this.getTasksByStatus("downloading").forEach(task => task.cancel());
+    this.getTasksByStatus("downloading").forEach(task => task.cancel());
   }
 
   /**

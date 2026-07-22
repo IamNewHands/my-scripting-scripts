@@ -164,7 +164,8 @@ export class DownloadTask {
     if (!["fetching", "downloading"].includes(this.status)) return;
     this.status = "cancelled";
     this.#controller.abort("cancelled");
-      }
+    console.log("取消下载任务", this.name);
+  }
 
   /**
    * 删除下载任务
@@ -178,7 +179,8 @@ export class DownloadTask {
       if (options.emitRemove !== false)
         this.bus.emit("downloadRemove", "deleted");
       this.dispose();
-          });
+      console.log("删除下载任务", this.name);
+    });
   }
 
   /**

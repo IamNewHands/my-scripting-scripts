@@ -30,5 +30,15 @@
     "email": null,
     "homepage": "https://github.com/IamNewHands"
   },
-  "entry": "index.tsx"
+  "entry": "index.tsx",
+  "import": [
+    { "key": "zh-cn", "label": "中文" },
+    { "key": "ru", "label": "Русский" },
+    { "key": "de", "label": "Deutsch" },
+    { "key": "it", "label": "Italiano" },
+    { "key": "es", "label": "Español" },
+    { "key": "pt", "label": "Português" },
+    { "key": "ja", "label": "日本語" },
+    { "key": "fr", "label": "Français" }
+  ]
 }

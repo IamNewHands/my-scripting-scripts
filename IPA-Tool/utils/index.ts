@@ -1,5 +1,6 @@
 export * from "./debounce";
 export * from "./formatSize";
+export * from "./formatAccountName";
 export * from "./countries";
 export * from "./ipa";
 export * from "./loginHistoryStorage";
