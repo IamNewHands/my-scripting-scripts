@@ -21,5 +21,9 @@
   },
   "contributors": [],
   "intentInputTypes": [],
-  "remoteResource": null
+  "remoteResource": {
+    "autoUpdateInterval": 86400,
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/WatchlistValuation.zip",
+    "hash": "e867403d6ad0937c569a982a4e019720"
+  }
 }
