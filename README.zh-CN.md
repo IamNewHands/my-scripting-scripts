@@ -16,6 +16,7 @@
 | [App-Region-Price](./App-Region-Price) | 搜索 App 对比多区价格，自动换算人民币，简介按需翻译 | [中文](./App-Region-Price/README.zh-CN.md) · [EN](./App-Region-Price/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Region-Price%22%5D) |
 | [PDD-Quick-Submit](./PDD-Quick-Submit) | 多站点提交拼多多组队码；首成功即返回，结果显示成功数/总数 | [中文](./PDD-Quick-Submit/README.zh-CN.md) · [EN](./PDD-Quick-Submit/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FPDD-Quick-Submit%22%5D) |
 | [Yoinks](./Yoinks) | 粘贴公开媒体链接，选择格式后用 yt-dlp 下载，保存到相册或文件 | [EN](./Yoinks/README.md) · [中文](./Yoinks/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FYoinks%22%5D) |
+| [WatchlistValuation](./WatchlistValuation) | 小组件追踪基金盘中估值 + A股/港股/美股行情；7/15/30日历史；非交易时段毫秒级本地渲染 | [EN](./WatchlistValuation/README.md) · [中文](./WatchlistValuation/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FWatchlistValuation%22%5D) |
 
 **说明** 列为该脚本完整文档（功能、代码结构、隐私、边界等）。
 
