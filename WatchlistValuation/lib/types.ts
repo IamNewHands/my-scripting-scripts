@@ -44,24 +44,29 @@ export type StockItem = {
   quantity?: number
 }
 
-/** 小组件字体大小（控制台可配，全界面统一缩放） */
-export type WidgetFontSize =
-  | "xsmall"
-  | "small"
-  | "medium"
-  | "large"
-  | "xlarge"
+/** 小组件字体大小：0.8-1.5 的缩放比例，1.0 为标准大小 */
+export type WidgetFontSize = number
 
 /** 小组件显示配置 */
 export type WidgetConfig = {
-  /** 全局字号档位 */
-  fontSize: WidgetFontSize
+  /** 顶部汇总栏字号缩放比例：0.8（最小）到 1.5（最大），默认 1.0 */
+  fontSizeSummary: WidgetFontSize
+  /** 名称字号缩放比例（基金/股票名称）：0.8 到 1.5，默认 1.0 */
+  fontSizeName: WidgetFontSize
+  /** 数值字号缩放比例（价格/涨跌/收益）：0.8 到 1.5，默认 1.0 */
+  fontSizeNum: WidgetFontSize
+  /** 列表其他文字（表头/说明等）字号缩放比例：0.8 到 1.5，默认 1.0 */
+  fontSizeList: WidgetFontSize
+  /** 明细区域字号缩放比例：0.8 到 1.5，默认 1.0 */
+  fontSizeDetail: WidgetFontSize
   /** 基金列表每页行数 */
   maxFundRows: number
   /** 股票列表每页行数 */
   maxStockRows: number
   /** 历史净值表格每页行数（超出可翻页） */
   maxChartRows: number
+  /** 列表列间距（像素）：0-20，默认 2 */
+  columnGap: number
   /** 涨跌色方向：true=红涨绿跌（中国）；false=绿涨红跌（海外）默认 true */
   redUp: boolean
 }

@@ -20,45 +20,41 @@ export function formatYmd(ts: number): string {
   return `${y}-${m}-${day}`
 }
 
-/** 字号档位 → 相对 medium 的偏移 */
-export function fontDelta(size: WidgetFontSize): number {
-  if (size === "xsmall") return -3
-  if (size === "small") return -2
-  if (size === "large") return 2
-  if (size === "xlarge") return 3
-  return 0
+/** 规范化缩放比：非法值回落 1.0，限制 0.8–1.5 */
+function normalizeScale(scale: WidgetFontSize): number {
+  const n = typeof scale === "number" ? scale : Number(scale)
+  if (!Number.isFinite(n)) return 1
+  if (n > 3) return Math.max(0.8, Math.min(1.5, n / 100))
+  return Math.max(0.8, Math.min(1.5, n))
 }
 
-/** 根据控制台字号档位缩放（全界面统一） */
-export function getFontSize(base: number, size: WidgetFontSize): number {
-  return Math.max(6, base + fontDelta(size))
+/** 根据字号缩放比例计算实际字号（fontSize 为 0.8-1.5 的数字） */
+export function getFontSize(base: number, scale: WidgetFontSize): number {
+  return Math.max(6, Math.round(base * normalizeScale(scale)))
 }
 
 /**
- * 数值列宽度：随字号略增，但封顶，避免大字号把名称列挤没。
+ * 数值列宽度：随字号缩放，避免大字号把名称列挤没。
  * 名称列始终用 maxWidth: infinity 吃剩余空间。
  */
-export function scaleW(base: number, size: WidgetFontSize): number {
-  const d = fontDelta(size)
-  // 比原先更克制：每档约 +4%，且不超过 base+10
-  const w = Math.round(base * (1 + d * 0.04))
-  return Math.max(30, Math.min(base + 10, w))
+export function scaleW(base: number, scale: WidgetFontSize): number {
+  return Math.max(20, Math.round(base * normalizeScale(scale)))
 }
 
 /** 名称列建议最小宽度（字号越大略增，仍优先保证可见） */
-export function nameMinW(size: WidgetFontSize): number {
-  return scaleW(56, size)
+export function nameMinW(scale: WidgetFontSize): number {
+  return scaleW(56, scale)
 }
 
-export function layoutPad(size: WidgetFontSize): {
+export function layoutPad(scale: WidgetFontSize): {
   leading: number
   trailing: number
   top: number
   bottom: number
 } {
-  const d = fontDelta(size)
   // 四周预留足够空间，避免点状文本贴近边缘
-  const h = Math.max(14, 16 + d)
-  const v = Math.max(10, 12 + Math.floor(d / 2))
+  const s = normalizeScale(scale)
+  const h = Math.max(12, Math.round(16 * s))
+  const v = Math.max(8, Math.round(12 * s))
   return { leading: h, trailing: h, top: v, bottom: v }
 }

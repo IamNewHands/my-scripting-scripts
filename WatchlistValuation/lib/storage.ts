@@ -157,42 +157,90 @@ export function setWidgetChart(state: WidgetChartState | null): void {
 }
 
 const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
-  fontSize: "medium",
+  fontSizeSummary: 1.0,
+  fontSizeName: 1.0,
+  fontSizeNum: 1.0,
+  fontSizeList: 1.0,
+  fontSizeDetail: 1.0,
   maxFundRows: 6,
   maxStockRows: 6,
   maxChartRows: 7,
+  columnGap: 2,
   redUp: true,
 }
 
+// 将旧的字符串档位或单一 fontSize 转换为三个独立字号
+export function migrateFontSize(oldValue: any): number {
+  if (typeof oldValue === "number" && Number.isFinite(oldValue)) {
+    // 已是 0.8–1.5 缩放比
+    if (oldValue >= 0.8 && oldValue <= 1.5) return oldValue
+    // 误存成 80–150 百分比整数
+    if (oldValue >= 80 && oldValue <= 150) return Math.round(oldValue) / 100
+  }
+  // 旧档位映射：特小=0.85, 小=0.95, 中=1.0, 大=1.1, 特大=1.25
+  switch (oldValue) {
+    case "xsmall":
+      return 0.85
+    case "small":
+      return 0.95
+    case "large":
+      return 1.1
+    case "xlarge":
+      return 1.25
+    case "medium":
+    default:
+      return 1.0
+  }
+}
+
 export function getWidgetConfig(): WidgetConfig {
-  const config = Storage.get<Partial<WidgetConfig>>(KEY_WIDGET_CONFIG)
-  if (!config) return { ...DEFAULT_WIDGET_CONFIG }
-  const fontSize =
-    config.fontSize === "xsmall" ||
-    config.fontSize === "small" ||
-    config.fontSize === "large" ||
-    config.fontSize === "xlarge"
-      ? config.fontSize
-      : "medium"
-  return {
-    fontSize,
-    maxFundRows: Math.max(3, Number(config.maxFundRows) || 6),
-    maxStockRows: Math.max(3, Number(config.maxStockRows) || 6),
-    maxChartRows: Math.max(4, Number(config.maxChartRows) || 7),
-    redUp: config.redUp !== false, // 未设置/异常 → 默认 true（中国习惯）
+  try {
+    const config = Storage.get<Partial<WidgetConfig>>(KEY_WIDGET_CONFIG)
+    if (!config || typeof config !== "object") return { ...DEFAULT_WIDGET_CONFIG }
+
+    // 兼容旧的 fontSize 字段，迁移到三个独立字号
+    const legacyFontSize = (config as any).fontSize
+    const migratedSize =
+      legacyFontSize !== undefined && legacyFontSize !== null
+        ? migrateFontSize(legacyFontSize)
+        : 1.0
+
+    const pickScale = (v: unknown): number => {
+      if (v === undefined || v === null) return migratedSize
+      const s = migrateFontSize(v)
+      return Number.isFinite(s) ? Math.max(0.8, Math.min(1.5, s)) : migratedSize
+    }
+
+    return {
+      fontSizeSummary: pickScale((config as any).fontSizeSummary),
+      fontSizeName: pickScale((config as any).fontSizeName) || migratedSize,
+      fontSizeNum: pickScale((config as any).fontSizeNum) || migratedSize,
+      fontSizeList: pickScale((config as any).fontSizeList) || migratedSize,
+      fontSizeDetail: pickScale((config as any).fontSizeDetail) || migratedSize,
+      maxFundRows: Math.max(3, Number(config.maxFundRows) || 6),
+      maxStockRows: Math.max(3, Number(config.maxStockRows) || 6),
+      maxChartRows: Math.max(4, Number(config.maxChartRows) || 7),
+      columnGap: Math.max(0, Math.min(20, Number(config.columnGap) || 2)),
+      redUp: config.redUp !== false,
+    }
+  } catch {
+    return { ...DEFAULT_WIDGET_CONFIG }
   }
 }
 
 export function setWidgetConfig(config: WidgetConfig): void {
-  const fontSize =
-    config.fontSize === "xsmall" ||
-    config.fontSize === "small" ||
-    config.fontSize === "large" ||
-    config.fontSize === "xlarge"
-      ? config.fontSize
-      : "medium"
+  const fontSizeSummary = Math.max(0.8, Math.min(1.5, config.fontSizeSummary))
+  const fontSizeName = Math.max(0.8, Math.min(1.5, config.fontSizeName))
+  const fontSizeNum = Math.max(0.8, Math.min(1.5, config.fontSizeNum))
+  const fontSizeList = Math.max(0.8, Math.min(1.5, config.fontSizeList))
+  const fontSizeDetail = Math.max(0.8, Math.min(1.5, config.fontSizeDetail))
   Storage.set(KEY_WIDGET_CONFIG, {
-    fontSize,
+    fontSizeSummary,
+    fontSizeName,
+    fontSizeNum,
+    fontSizeList,
+    fontSizeDetail,
+    columnGap: Math.max(0, Math.min(20, Number(config.columnGap) || 2)),
     maxFundRows: Math.max(3, Number(config.maxFundRows) || 6),
     maxStockRows: Math.max(3, Number(config.maxStockRows) || 6),
     maxChartRows: Math.max(4, Number(config.maxChartRows) || 7),

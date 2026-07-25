@@ -1,8 +1,8 @@
 import { fetchFundHoldings, fetchFundNavs } from "./api/fund"
 import { fetchStockQuotes, indexQuotes } from "./api/stock"
-import { getCachedSnapshot, setCachedSnapshot } from "./cache/snapshot"
+import { getCachedSnapshot, setCachedSnapshot, computeFundsHash, computeStocksHash } from "./cache/snapshot"
 import { estimateFundChangePct, estimateNav } from "./calc/estimate"
-import { buildFundRow, buildStockRow, summarize } from "./calc/profit"
+import { buildFundRow, buildStockRow, fundDayPnl, holdPnlFromAmount, resolveFundShares, resolveStockQuantity, summarize } from "./calc/profit"
 import { getFunds, getStocks } from "./storage"
 import { parallelLimit } from "./util/async"
 import { anyMarketOpen } from "./util/marketHours"
@@ -13,6 +13,7 @@ import type {
   PortfolioSnapshot,
   StockItem,
 } from "./types"
+import type { CachedSnapshot } from "./cache/snapshot"
 
 export async function loadPortfolioSnapshot(
   options?: { funds?: FundItem[]; stocks?: StockItem[] }
@@ -160,13 +161,90 @@ export async function loadPortfolioSmart(
   if (!force && !marketOpen) {
     // 非交易时段：读本地
     const cached = getCachedSnapshot()
-    if (cached) return cached
+    if (cached) {
+      // 检查用户数据是否手工调整过
+      const fundsHash = computeFundsHash(funds)
+      const stocksHash = computeStocksHash(stocks)
+      if (fundsHash !== cached.fundsHash || stocksHash !== cached.stocksHash) {
+        // 数据有变化：用缓存价格 + 最新用户数据重算，不改缓存价格
+        return rebuildFromCached(cached, funds, stocks)
+      }
+      return cached
+    }
     // 没有本地 → 拉一次（首次使用 / Storage 被清）
   }
 
   // 交易时段或首次：实拉
   const snap = await loadPortfolioSnapshot({ funds, stocks })
-  // 收盘后保存为“最终状态”
-  setCachedSnapshot(snap, !marketOpen)
+  // 收盘后保存为u201c最终状态u201d，同时传入最新用户数据用于哈希检测
+  setCachedSnapshot(snap, !marketOpen, funds, stocks)
   return snap
+}
+
+/** 用缓存价格 + 最新用户数据重建快照（手工调整成本/持仓后，非交易时段也可重算） */
+export function rebuildFromCached(
+  cached: CachedSnapshot,
+  funds: FundItem[],
+  stocks: StockItem[]
+): PortfolioSnapshot {
+  // 重建基金行
+  const fundRows = funds.map((item) => {
+    const cachedRow = cached.funds.find((r) => r.code === item.code)
+    if (!cachedRow) {
+      return buildFundRow(item, undefined, null, null, null, null)
+    }
+    const shares = resolveFundShares(item, cachedRow.nav)
+    const priceForMv = cachedRow.isOfficial ? cachedRow.nav : cachedRow.estNav ?? cachedRow.nav
+    const marketValue = priceForMv != null && shares > 0 ? priceForMv * shares : null
+    const dayPnl = fundDayPnl({
+      shares,
+      nav: cachedRow.nav,
+      navChgPct: cachedRow.changePct,
+      estNav: cachedRow.isOfficial ? null : cachedRow.estNav,
+      isOfficial: cachedRow.isOfficial,
+    })
+    const { holdPnl, holdRate } = holdPnlFromAmount(marketValue, item.costAmount)
+    return {
+      ...cachedRow,
+      costAmount: item.costAmount,
+      shares,
+      marketValue,
+      dayPnl,
+      holdPnl,
+      holdRate,
+    }
+  })
+
+  // 重建股票行
+  const stockRows = stocks.map((item) => {
+    const cachedRow = cached.stocks.find((r) => r.secid === item.secid)
+    if (!cachedRow) {
+      return buildStockRow(item, undefined)
+    }
+    const quantity = resolveStockQuantity(item, cachedRow.price)
+    const marketValue = cachedRow.price != null && quantity > 0 ? cachedRow.price * quantity : null
+    let dayPnl: number | null = null
+    if (quantity > 0 && cachedRow.price != null && cachedRow.changePct != null) {
+      dayPnl = cachedRow.price * quantity * (cachedRow.changePct / 100)
+    }
+    const { holdPnl, holdRate } = holdPnlFromAmount(marketValue, item.costAmount)
+    return {
+      ...cachedRow,
+      costAmount: item.costAmount,
+      quantity,
+      marketValue,
+      dayPnl,
+      holdPnl,
+      holdRate,
+    }
+  })
+
+  return {
+    funds: fundRows,
+    stocks: stockRows,
+    fundSummary: summarize(fundRows),
+    stockSummary: summarize(stockRows),
+    updatedAt: cached.updatedAt,
+    warnings: cached.warnings,
+  }
 }

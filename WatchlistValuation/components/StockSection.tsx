@@ -28,8 +28,8 @@ export type StockSectionProps = {
   // 列表
   stocks: StockItem[]
   updateStockAlias: (secid: string, alias: string) => void
-  debouncedStockCost: (secid: string, raw: string) => void
   debouncedStockBuyPrice: (secid: string, raw: string) => void
+  debouncedStockQuantity: (secid: string, raw: string) => void
   confirmRemoveStock: (secid: string, name: string) => void
   // 过滤
   filter: string
@@ -41,7 +41,7 @@ export function StockSection(props: StockSectionProps) {
   const {
     stockQuery, stockHits, stockSearching, stockCost, pendingStock, addingStock,
     setStockQuery, setStockHits, doSearchStock, setPendingStock, setStockCost, addStock,
-    stocks, updateStockAlias, debouncedStockCost, debouncedStockBuyPrice, confirmRemoveStock,
+    stocks, updateStockAlias, debouncedStockBuyPrice, debouncedStockQuantity, confirmRemoveStock,
     filter, setFilter,
   } = props
   const filteredStocks = stocks.filter(
@@ -54,7 +54,7 @@ export function StockSection(props: StockSectionProps) {
         header={<Text>添加 A 股</Text>}
         footer={
           <Text>
-            只需填写买入金额（填0表示纯监控）。系统用当前现价折算股数（股数=金额÷现价）。可在列表改「买入价」对齐真实成交。
+            持仓股数：你持有的股票数量。添加时系统会自动拉现价作为成本价，总持有金额=股数×成本价自动计算。可在列表改成本价对齐真实成交。
           </Text>
         }
       >
@@ -111,8 +111,8 @@ export function StockSection(props: StockSectionProps) {
           }
         >
           <TextField
-            title="买入金额"
-            prompt="总买入金额（元，填0表示纯监控）"
+            title="持仓股数"
+            prompt="你持有的股票数量"
             value={stockCost}
             onChanged={setStockCost}
             keyboardType="decimalPad"
@@ -127,7 +127,7 @@ export function StockSection(props: StockSectionProps) {
 
       <Section
         header={<Text>自选股票 ({stocks.length})</Text>}
-        footer={<Text>别名用于小组件显示；删除前会二次确认。</Text>}
+        footer={<Text>三行数字含义：①成本价(买入价)=你买入时的成交均价(元/股)；②持仓股数=你实际持有的股票数量；③总持有金额=股数×成本价自动计算，用于算收益。删除前会二次确认。</Text>}
       >
         {stocks.length > 0 ? (
           <ListFilter
@@ -145,41 +145,60 @@ export function StockSection(props: StockSectionProps) {
           filteredStocks.map((s) => {
             const qty = resolveStockQuantity(s, s.buyPrice || null)
             return (
-              <VStack key={s.secid} alignment="leading" spacing={8}>
+              // 整行吞掉 List 默认 tap，避免点名称/输入区误触发删除
+              <VStack
+                key={s.secid}
+                alignment="leading"
+                spacing={8}
+                onTapGesture={() => {}}
+              >
                 <HStack>
                   <VStack alignment="leading" spacing={2}>
                     <Text fontWeight="semibold" lineLimit={2}>{s.name}</Text>
                     <Text font="caption" foregroundStyle="secondaryLabel">
-                      {s.code} · 约 {qty.toFixed(2)} 股
+                      {s.code}
                     </Text>
                   </VStack>
                   <Spacer />
-                  <Button
-                    title="删除"
-                    role="destructive"
-                    action={() => confirmRemoveStock(s.secid, s.name)}
-                  />
+                  {/* 不用 Button：List 会把整行 tap 路由到最后一个 Button */}
+                  <Text
+                    foregroundStyle="red"
+                    onTapGesture={() => confirmRemoveStock(s.secid, s.name)}
+                  >
+                    删除
+                  </Text>
                 </HStack>
                 <TextField
                   title="别名"
-                  prompt="小组件显示名"
+                  prompt="小组件显示名，如 茅台"
                   value={s.alias || ""}
                   onChanged={(v) => updateStockAlias(s.secid, v)}
                 />
                 <TextField
-                  title="买入金额"
-                  prompt="元，0=纯监控"
-                  value={String(s.costAmount ?? "")}
-                  onChanged={(v) => debouncedStockCost(s.secid, v)}
-                  keyboardType="decimalPad"
-                />
-                <TextField
-                  title="买入价"
-                  prompt="成交均价"
+                  title="① 成本价(买入价·元/股)"
+                  prompt="成交均价，如 1580.50"
                   value={s.buyPrice > 0 ? String(s.buyPrice) : ""}
                   onChanged={(v) => debouncedStockBuyPrice(s.secid, v)}
                   keyboardType="decimalPad"
                 />
+                <TextField
+                  title="② 持仓股数(股)"
+                  prompt="实际持有的股票数量"
+                  value={s.quantity != null && s.quantity > 0 ? String(s.quantity) : ""}
+                  onChanged={(v) => debouncedStockQuantity(s.secid, v)}
+                  keyboardType="decimalPad"
+                />
+                <VStack alignment="leading" spacing={4}>
+                  <Text font="caption" foregroundStyle="secondaryLabel">
+                    ③ 总持有金额 = 成本价 × 股数（自动）
+                  </Text>
+                  <Text foregroundStyle="secondaryLabel">
+                    ¥{s.costAmount.toFixed(2)}
+                  </Text>
+                </VStack>
+                <Text font="caption" foregroundStyle="secondaryLabel">
+                  修改成本价或股数后，总持有金额自动重算
+                </Text>
               </VStack>
             )
           })

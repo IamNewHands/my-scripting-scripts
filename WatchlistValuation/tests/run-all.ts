@@ -15,6 +15,7 @@ import "./fontScale.test"
 import "./searchStock.test"
 import "./fetchStockHistory.test"
 import "./marketHours.test"
+import "./storage.test"
 
 async function main() {
   const r = await run()

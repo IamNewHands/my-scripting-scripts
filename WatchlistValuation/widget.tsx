@@ -1,8 +1,8 @@
 import { Widget } from "scripting"
 import { fetchFundHistory, fetchFundHoldings } from "./lib/api/fund"
 import { fetchStockHistory, fetchStockQuotes } from "./lib/api/stock"
-import { getCachedSnapshot, setCachedSnapshot } from "./lib/cache/snapshot"
-import { loadPortfolioSnapshot } from "./lib/portfolio"
+import { getCachedSnapshot, setCachedSnapshot, computeFundsHash, computeStocksHash } from "./lib/cache/snapshot"
+import { loadPortfolioSnapshot, rebuildFromCached } from "./lib/portfolio"
 import {
   getChartHistoryCache,
   getFunds,
@@ -170,7 +170,7 @@ async function run() {
     // 交易时段：实时拉 + 写本地快照
     try {
       snap = await loadPortfolioSnapshot({ funds: fundsList, stocks: stocksList })
-      setCachedSnapshot(snap, false)
+      setCachedSnapshot(snap, false, fundsList, stocksList)
     } catch (e) {
       console.log("[list] snapshot load failed:", e instanceof Error ? e.message : String(e))
       // 拉取失败 → 降级到本地快照
@@ -188,13 +188,21 @@ async function run() {
     // 非交易时段：读本地（开盘后最后一帧的快照）
     const cached = getCachedSnapshot()
     if (cached) {
-      snap = cached
+      // 检查用户数据是否手工调整过（成本/持仓变化）
+      const fundsHash = computeFundsHash(fundsList)
+      const stocksHash = computeStocksHash(stocksList)
+      if (fundsHash !== cached.fundsHash || stocksHash !== cached.stocksHash) {
+        // 数据有变化：用缓存价格 + 最新用户数据重算
+        snap = rebuildFromCached(cached, fundsList, stocksList)
+      } else {
+        snap = cached
+      }
     } else {
       // 没有本地快照（首次使用 / Storage 被清理）→ 只能拉一次
       console.log("[list] no cached snapshot, fetching once...")
       try {
         snap = await loadPortfolioSnapshot({ funds: fundsList, stocks: stocksList })
-        setCachedSnapshot(snap, true)
+        setCachedSnapshot(snap, true, fundsList, stocksList)
       } catch (e) {
         console.log("[list] first fetch failed:", e instanceof Error ? e.message : String(e))
         snap = {

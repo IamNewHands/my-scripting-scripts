@@ -128,24 +128,28 @@ function App() {
     }
   }
 
-  /** 只填买入金额：拉最新净值作 buyNav，份额 = 金额 / 净值 */
+  /** 只填持有份额：拉最新净值作 buyNav，总金额 = 份额 × 净值 */
   async function addFund() {
     if (!pendingFund) {
       setStatus("请先选择搜索结果中的基金")
       return
     }
     if (funds.some((f) => f.code === pendingFund.code)) {
-      setStatus("已在自选中")
+      await Dialog.alert({
+        title: "重复添加",
+        message: `该基金已在自选中：${pendingFund.name} (${pendingFund.code})`,
+        buttonLabel: "知道了",
+      })
       return
     }
-    const costAmount = parseAmount(fundCost)
-    if (costAmount < 0) {
-      setStatus("买入金额不能为负数")
+    const shares = parseAmount(fundCost)
+    if (shares < 0) {
+      setStatus("持有份额不能为负数")
       return
     }
 
     setAddingFund(true)
-    setStatus("正在获取净值并折算份额…")
+    setStatus("正在获取净值并计算持有金额…")
     try {
       const { fetchFundNavs } = await import("./lib/api/fund")
       const navs = await fetchFundNavs([pendingFund.code])
@@ -155,7 +159,8 @@ function App() {
         setStatus("无法获取净值，请稍后重试")
         return
       }
-      const shares = costAmount / buyNav
+      // 金额 = 份额 × 成本价（净值作默认成本价）
+      const costAmount = shares > 0 ? shares * buyNav : 0
       const item: FundItem = {
         code: pendingFund.code,
         name: snap?.name || pendingFund.name,
@@ -169,7 +174,7 @@ function App() {
       setFundHits([])
       setFundQuery("")
       setStatus(
-        `已添加 ${item.name}：买入 ¥${costAmount.toFixed(2)} @${buyNav.toFixed(4)} → 约 ${shares.toFixed(2)} 份`,
+        `已添加 ${item.name}：${shares.toFixed(2)} 份 @${buyNav.toFixed(4)} → 金额 ¥${costAmount.toFixed(2)}`,
       )
     } catch {
       setStatus("添加失败：净值请求异常")
@@ -178,24 +183,28 @@ function App() {
     }
   }
 
-  /** 只填买入金额：拉现价作 buyPrice，股数 = 金额 / 现价 */
+  /** 只填持仓股数：拉现价作 buyPrice，总金额 = 股数 × 现价 */
   async function addStock() {
     if (!pendingStock) {
       setStatus("请先选择股票（中文/拼音/6 位代码）")
       return
     }
     if (stocks.some((s) => s.secid === pendingStock.secid)) {
-      setStatus("已在自选中")
+      await Dialog.alert({
+        title: "重复添加",
+        message: `该股票已在自选中：${pendingStock.name} (${pendingStock.code})`,
+        buttonLabel: "知道了",
+      })
       return
     }
-    const costAmount = parseAmount(stockCost)
-    if (costAmount < 0) {
-      setStatus("买入金额不能为负数")
+    const quantity = parseAmount(stockCost)
+    if (quantity < 0) {
+      setStatus("持仓股数不能为负数")
       return
     }
 
     setAddingStock(true)
-    setStatus("正在获取现价并折算股数…")
+    setStatus("正在获取现价并计算持有金额…")
     try {
       const { fetchStockQuotes } = await import("./lib/api/stock")
       const quotes = await fetchStockQuotes([pendingStock.secid])
@@ -205,7 +214,8 @@ function App() {
         setStatus("无法获取现价，请稍后重试")
         return
       }
-      const quantity = costAmount / buyPrice
+      // 金额 = 股数 × 成本价（现价作默认成本价）
+      const costAmount = quantity > 0 ? quantity * buyPrice : 0
       const item: StockItem = {
         code: pendingStock.code,
         name: q?.name || pendingStock.name,
@@ -221,7 +231,7 @@ function App() {
       setStockHits([])
       setStockQuery("")
       setStatus(
-        `已添加 ${item.name}：买入 ¥${costAmount.toFixed(2)} @${buyPrice.toFixed(2)} → 约 ${quantity.toFixed(2)} 股`,
+        `已添加 ${item.name}：${quantity.toFixed(2)} 股 @${buyPrice.toFixed(2)} → 金额 ¥${costAmount.toFixed(2)}`,
       )
     } catch {
       setStatus("添加失败：行情请求异常")
@@ -243,26 +253,28 @@ function App() {
     persistStocks(stocks.filter((s) => s.secid !== secid))
   }
 
-  /** 改买入金额时按原 buyNav 重算份额；无 buyNav 则保留原逻辑 */
-  function updateFundCost(code: string, raw: string) {
-    const costAmount = parseAmount(raw)
-    const next = fundsRef.current.map((f) => {
-      if (f.code !== code) return f
-      const buyNav = f.buyNav > 0 ? f.buyNav : 0
-      const shares = buyNav > 0 && costAmount > 0 ? costAmount / buyNav : f.shares
-      return { ...f, costAmount, shares }
-    })
-    persistFunds(next)
-  }
-
-  /** 可选：修正买入净值（真实成交净值），并重算份额 */
+  /** 改买入净值时重算总持有金额 = buyNav × shares */
   function updateFundBuyNav(code: string, raw: string) {
     const buyNav = parseAmount(raw)
     const next = fundsRef.current.map((f) => {
       if (f.code !== code) return f
-      if (buyNav <= 0) return f
-      const shares = f.costAmount > 0 ? f.costAmount / buyNav : f.shares
-      return { ...f, buyNav, shares }
+      if (buyNav <= 0) return { ...f, buyNav: 0 }
+      const shares = f.shares || 0
+      const costAmount = shares > 0 ? buyNav * shares : 0
+      return { ...f, buyNav, costAmount }
+    })
+    persistFunds(next)
+  }
+
+  /** 改基金份额时重算总持有金额 = buyNav × shares */
+  function updateFundShares(code: string, raw: string) {
+    const shares = parseAmount(raw)
+    const next = fundsRef.current.map((f) => {
+      if (f.code !== code) return f
+      if (shares <= 0) return { ...f, shares: 0 }
+      const buyNav = f.buyNav || 0
+      const costAmount = buyNav > 0 ? shares * buyNav : 0
+      return { ...f, shares, costAmount }
     })
     persistFunds(next)
   }
@@ -276,27 +288,35 @@ function App() {
     persistFunds(next)
   }
 
-  function updateStockCost(secid: string, raw: string) {
-    const costAmount = parseAmount(raw)
-    const next = stocksRef.current.map((s) => {
-      if (s.secid !== secid) return s
-      const buyPrice = s.buyPrice > 0 ? s.buyPrice : 0
-      const quantity = buyPrice > 0 && costAmount > 0 ? costAmount / buyPrice : s.quantity
-      return { ...s, costAmount, quantity }
-    })
-    persistStocks(next)
-  }
-
+  /** 改买入价时重算总持有金额 = buyPrice × quantity */
   function updateStockBuyPrice(secid: string, raw: string) {
     const buyPrice = parseAmount(raw)
     const next = stocksRef.current.map((s) => {
       if (s.secid !== secid) return s
-      if (buyPrice <= 0) return s
-      const quantity = s.costAmount > 0 ? s.costAmount / buyPrice : s.quantity
-      return { ...s, buyPrice, quantity }
+      if (buyPrice <= 0) return { ...s, buyPrice: 0 }
+      const quantity = s.quantity || 0
+      const costAmount = quantity > 0 ? buyPrice * quantity : 0
+      return { ...s, buyPrice, costAmount }
     })
     persistStocks(next)
   }
+
+  /** 改股票股数时重算总持有金额 = buyPrice × quantity */
+  function updateStockQuantity(secid: string, raw: string) {
+    const quantity = parseAmount(raw)
+    const next = stocksRef.current.map((s) => {
+      if (s.secid !== secid) return s
+      if (quantity <= 0) return { ...s, quantity: 0 }
+      const buyPrice = s.buyPrice || 0
+      const costAmount = buyPrice > 0 ? quantity * buyPrice : 0
+      return { ...s, quantity, costAmount }
+    })
+    persistStocks(next)
+  }
+
+
+
+
 
   /** 更新股票别名（写入是即时的，不需要防抖） */
   function updateStockAlias(secid: string, alias: string) {
@@ -308,18 +328,19 @@ function App() {
   }
 
   // 防抖包装：连续输入 300ms 内只触发一次 persistFunds/persistStocks
-  const debouncedFundCost = useMemo(() => debounce(updateFundCost, 300), [])
-  const debouncedFundBuyNav = useMemo(() => debounce(updateFundBuyNav, 300), [])
-  const debouncedStockCost = useMemo(() => debounce(updateStockCost, 300), [])
   const debouncedStockBuyPrice = useMemo(() => debounce(updateStockBuyPrice, 300), [])
+  const debouncedStockQuantity = useMemo(() => debounce(updateStockQuantity, 300), [])
+  const debouncedFundBuyNav = useMemo(() => debounce(updateFundBuyNav, 300), [])
+  const debouncedFundShares = useMemo(() => debounce(updateFundShares, 300), [])
 
   // 卸载时冲刷未触发任务，避免最后一次输入丢失
   useEffect(() => {
     return () => {
-      debouncedFundCost.flush()
       debouncedFundBuyNav.flush()
-      debouncedStockCost.flush()
+      debouncedFundShares.flush()
       debouncedStockBuyPrice.flush()
+      debouncedStockQuantity.flush()
+      debouncedStockQuantity.flush()
     }
   }, [])
 
@@ -423,8 +444,8 @@ function App() {
             addFund={addFund}
             funds={funds}
             updateFundAlias={updateFundAlias}
-            debouncedFundCost={debouncedFundCost}
             debouncedFundBuyNav={debouncedFundBuyNav}
+            debouncedFundShares={debouncedFundShares}
             confirmRemoveFund={confirmRemoveFund}
             filter={fundFilter}
             setFilter={setFundFilter}
@@ -447,8 +468,8 @@ function App() {
             addStock={addStock}
             stocks={stocks}
             updateStockAlias={updateStockAlias}
-            debouncedStockCost={debouncedStockCost}
             debouncedStockBuyPrice={debouncedStockBuyPrice}
+            debouncedStockQuantity={debouncedStockQuantity}
             confirmRemoveStock={confirmRemoveStock}
             filter={stockFilter}
             setFilter={setStockFilter}

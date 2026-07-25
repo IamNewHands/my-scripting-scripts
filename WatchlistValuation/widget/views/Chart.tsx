@@ -35,10 +35,10 @@ export function ChartWidgetView({
   // 基金总是支持持仓；股票仅 ETF 支持
   const supportsHoldings = !isStock || (chartState.code && isETF(chartState.code))
 
-  const fTitle = getFontSize(12, config.fontSize)
-  const fTab = getFontSize(12, config.fontSize)
-  const pad = layoutPad(config.fontSize)
-  const gap = Math.max(3, getFontSize(4, config.fontSize))
+  const fTitle = getFontSize(12, config.fontSizeDetail)
+  const fTab = getFontSize(12, config.fontSizeDetail)
+  const pad = layoutPad(config.fontSizeDetail)
+  const gap = Math.max(3, getFontSize(4, config.fontSizeDetail))
 
   return (
     <VStack
@@ -61,7 +61,7 @@ export function ChartWidgetView({
       </HStack>
 
       {/* Tab 切换 */}
-      <HStack spacing={Math.max(6, getFontSize(8, config.fontSize))} frame={{ maxWidth: "infinity" }}>
+      <HStack spacing={Math.max(6, getFontSize(8, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }}>
         <Button
           intent={SetChartTabIntent("history")}
           buttonStyle="plain"
@@ -134,16 +134,16 @@ function HistoryTabView({
       ? ((latest.value - first.value) / first.value) * 100
       : 0
 
-  const f = getFontSize(9, config.fontSize)
-  const fSmall = getFontSize(8, config.fontSize)
-  const fTab = getFontSize(12, config.fontSize)
+  const f = getFontSize(9, config.fontSizeDetail)
+  const fSmall = getFontSize(8, config.fontSizeDetail)
+  const fTab = getFontSize(12, config.fontSizeDetail)
   const needPager = total > pageSize
-  const wDate = scaleW(44, config.fontSize)
-  const wChg = scaleW(48, config.fontSize)
+  const wDate = scaleW(44, config.fontSizeDetail)
+  const wChg = scaleW(48, config.fontSizeDetail)
 
   return (
     <>
-      <HStack spacing={Math.max(4, getFontSize(6, config.fontSize))} frame={{ maxWidth: "infinity" }}>
+      <HStack spacing={Math.max(4, getFontSize(6, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }}>
         <Button intent={SetChartDaysIntent("7")} buttonStyle="plain">
           <Text
             font={fTab}
@@ -181,8 +181,8 @@ function HistoryTabView({
       </HStack>
 
       {rows.length > 0 ? (
-        <VStack alignment="leading" spacing={Math.max(1, getFontSize(2, config.fontSize))} frame={{ maxWidth: "infinity" }}>
-          <HStack spacing={Math.max(3, scaleW(4, config.fontSize))} frame={{ maxWidth: "infinity" }}>
+        <VStack alignment="leading" spacing={Math.max(1, getFontSize(2, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }}>
+          <HStack spacing={Math.max(3, scaleW(4, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }}>
             <Text
               font={fSmall}
               foregroundStyle="secondaryLabel"
@@ -210,7 +210,7 @@ function HistoryTabView({
           </HStack>
           <Divider />
           {rows.map((d, i) => (
-            <HStack key={`${d.date}-${i}`} spacing={Math.max(3, scaleW(4, config.fontSize))} frame={{ maxWidth: "infinity" }}>
+            <HStack key={`${d.date}-${i}`} spacing={Math.max(3, scaleW(4, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }}>
               <Text
                 font={f}
                 foregroundStyle="secondaryLabel"
@@ -242,14 +242,14 @@ function HistoryTabView({
           ))}
         </VStack>
       ) : (
-        <Text font={getFontSize(10, config.fontSize)} foregroundStyle="secondaryLabel">
+        <Text font={getFontSize(10, config.fontSizeDetail)} foregroundStyle="secondaryLabel">
           暂无数据
         </Text>
       )}
 
       <Spacer />
       {needPager ? (
-        <HStack spacing={Math.max(4, getFontSize(6, config.fontSize))}>
+        <HStack spacing={Math.max(4, getFontSize(6, config.fontSizeDetail))}>
           <Button intent={ShiftChartPageIntent("prev")} buttonStyle="plain" disabled={curPage <= 0}>
             <Text font={fTab} foregroundStyle={curPage <= 0 ? "tertiaryLabel" : "label"}>
               上页
@@ -290,18 +290,18 @@ function HoldingsTabView({
   updatedAt?: number
   config: WidgetConfig
 }) {
-  const f = getFontSize(9, config.fontSize)
-  const fSmall = getFontSize(8, config.fontSize)
+  const f = getFontSize(9, config.fontSizeDetail)
+  const fSmall = getFontSize(8, config.fontSizeDetail)
   const rows = holdingsData.slice(0, 10) // 只显示前 10
-  const wPrice = scaleW(40, config.fontSize)
-  const wChg = scaleW(46, config.fontSize)
+  const wPrice = scaleW(40, config.fontSizeDetail)
+  const wChg = scaleW(46, config.fontSizeDetail)
 
   return (
     <>
       {rows.length > 0 ? (
-        <VStack alignment="leading" spacing={Math.max(1, getFontSize(2, config.fontSize))} frame={{ maxWidth: "infinity" }}>
+        <VStack alignment="leading" spacing={Math.max(1, getFontSize(2, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }}>
           {/* 表头：名称(代码) | 价格 | 涨跌 */}
-          <HStack spacing={Math.max(3, scaleW(4, config.fontSize))} frame={{ maxWidth: "infinity" }}>
+          <HStack spacing={Math.max(3, scaleW(4, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }}>
             <Text
               font={fSmall}
               foregroundStyle="secondaryLabel"
@@ -333,7 +333,7 @@ function HoldingsTabView({
             const price = q?.price ?? null
             const chg = q?.changePct ?? null
             return (
-              <HStack key={`${h.code}-${i}`} spacing={Math.max(3, scaleW(4, config.fontSize))} frame={{ maxWidth: "infinity" }}>
+              <HStack key={`${h.code}-${i}`} spacing={Math.max(3, scaleW(4, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }}>
                 <VStack alignment="leading" spacing={0} frame={{ maxWidth: "infinity", alignment: "leading" }}>
                   <Text
                     font={f}
@@ -383,7 +383,7 @@ function HoldingsTabView({
           })}
         </VStack>
       ) : (
-        <Text font={getFontSize(10, config.fontSize)} foregroundStyle="secondaryLabel">
+        <Text font={getFontSize(10, config.fontSizeDetail)} foregroundStyle="secondaryLabel">
           暂无持仓数据
         </Text>
       )}

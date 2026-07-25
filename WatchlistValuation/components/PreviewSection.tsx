@@ -110,7 +110,7 @@ export function PreviewSection(props: PreviewSectionProps) {
                     </Text>
                   </HStack>
                   <Text font="caption" foregroundStyle="secondaryLabel">
-                    份额 {r.shares.toFixed(2)} · 净值 {formatPrice(r.nav)} · 市值 {formatPlainMoney(r.marketValue)}
+                    份额 {r.shares.toFixed(2)} · 成本 {formatPlainMoney(r.costAmount)} · 净值 {formatPrice(r.nav)} · 市值 {formatPlainMoney(r.marketValue)}
                   </Text>
                   <HStack>
                     <Text font="caption" foregroundStyle="secondaryLabel">
@@ -147,29 +147,36 @@ export function PreviewSection(props: PreviewSectionProps) {
             {snap.stocks.length === 0 ? (
               <Text foregroundStyle="secondaryLabel">无股票</Text>
             ) : (
-              snap.stocks.map((r) => (
-                <VStack key={r.secid} alignment="leading" spacing={4}>
-                  <HStack>
-                    <Text fontWeight="semibold">{r.name}</Text>
-                    <Spacer />
-                    <Text foregroundStyle={pnlColor(r.changePct, redUp)}>
-                      {formatPct(r.changePct)}
-                    </Text>
-                  </HStack>
-                  <Text font="caption" foregroundStyle="secondaryLabel">
-                    {r.quantity.toFixed(2)} 股 · 现价 {formatPrice(r.price)}
-                  </Text>
-                  <HStack>
+              snap.stocks.map((r) => {
+                const costPrice =
+                  r.costAmount > 0 && r.quantity > 0
+                    ? r.costAmount / r.quantity
+                    : null
+                return (
+                  <VStack key={r.secid} alignment="leading" spacing={4}>
+                    <HStack>
+                      <Text fontWeight="semibold">{r.name}</Text>
+                      <Spacer />
+                      <Text foregroundStyle={pnlColor(r.changePct, redUp)}>
+                        {formatPct(r.changePct)}
+                      </Text>
+                    </HStack>
                     <Text font="caption" foregroundStyle="secondaryLabel">
-                      当日 {formatMoney(r.dayPnl, 2)}
+                      {costPrice != null ? `成本 ${formatPrice(costPrice)} · ` : ""}
+                      {r.quantity.toFixed(2)} 股 · 现价 {formatPrice(r.price)}
                     </Text>
-                    <Spacer />
-                    <Text font="caption" foregroundStyle={pnlColor(r.holdPnl, redUp)}>
-                      持有 {formatMoney(r.holdPnl, 2)}
-                    </Text>
-                  </HStack>
-                </VStack>
-              ))
+                    <HStack>
+                      <Text font="caption" foregroundStyle="secondaryLabel">
+                        当日 {formatMoney(r.dayPnl, 2)}
+                      </Text>
+                      <Spacer />
+                      <Text font="caption" foregroundStyle={pnlColor(r.holdPnl, redUp)}>
+                        持有 {formatMoney(r.holdPnl, 2)}
+                      </Text>
+                    </HStack>
+                  </VStack>
+                )
+              })
             )}
           </Section>
         </>

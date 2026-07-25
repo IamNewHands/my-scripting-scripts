@@ -1,4 +1,4 @@
-/** 红涨绿跌（与金价小组件一致用 red/green 字面量）。redUp=false 则取反 */
+/** 红涨绿跌。redUp=false 则取反 */
 export function pnlColor(
   v: number | null | undefined,
   redUp: boolean = true

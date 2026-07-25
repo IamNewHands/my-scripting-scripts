@@ -28,8 +28,8 @@ export type FundSectionProps = {
   // 列表
   funds: FundItem[]
   updateFundAlias: (code: string, alias: string) => void
-  debouncedFundCost: (code: string, raw: string) => void
   debouncedFundBuyNav: (code: string, raw: string) => void
+  debouncedFundShares: (code: string, raw: string) => void
   confirmRemoveFund: (code: string, name: string) => void
   // 过滤
   filter: string
@@ -41,7 +41,7 @@ export function FundSection(props: FundSectionProps) {
   const {
     fundQuery, fundHits, fundSearching, fundCost, pendingFund, addingFund,
     setFundQuery, setFundHits, doSearchFund, setPendingFund, setFundCost, addFund,
-    funds, updateFundAlias, debouncedFundCost, debouncedFundBuyNav, confirmRemoveFund,
+    funds, updateFundAlias, debouncedFundBuyNav, debouncedFundShares, confirmRemoveFund,
     filter, setFilter,
   } = props
   const filteredFunds = funds.filter(
@@ -54,7 +54,7 @@ export function FundSection(props: FundSectionProps) {
         header={<Text>添加基金</Text>}
         footer={
           <Text>
-            只需填写买入金额（填0表示纯监控）。系统用当前最新净值折算份额（份额=金额÷净值）。若实际确认净值不同，可在列表中改「买入净值」。
+            持有份额：你持有的基金份额数。添加时系统会自动拉最新净值作为成本价，总持有金额=份额×成本价自动计算。
           </Text>
         }
       >
@@ -111,8 +111,8 @@ export function FundSection(props: FundSectionProps) {
           }
         >
           <TextField
-            title="买入金额"
-            prompt="总买入金额（元，填0表示纯监控）"
+            title="持有份额"
+            prompt="你持有的基金份额数"
             value={fundCost}
             onChanged={setFundCost}
             keyboardType="decimalPad"
@@ -129,7 +129,7 @@ export function FundSection(props: FundSectionProps) {
         header={<Text>自选基金 ({funds.length})</Text>}
         footer={
           <Text>
-            别名会显示在小组件中；历史净值请在小组件点基金名称查看。删除前会二次确认。
+            三行数字含义：①成本价(买入净值)=你买入时确认的净值(元/份)；②持有份额=你实际持有的基金份额；③总持有金额=份额×成本价自动计算，用于算收益。删除前会二次确认。
           </Text>
         }
       >
@@ -149,20 +149,28 @@ export function FundSection(props: FundSectionProps) {
           filteredFunds.map((f) => {
             const shares = resolveFundShares(f, f.buyNav || null)
             return (
-              <VStack key={f.code} alignment="leading" spacing={8}>
+              // 整行吞掉 List 默认 tap，避免点名称/输入区误触发删除
+              <VStack
+                key={f.code}
+                alignment="leading"
+                spacing={8}
+                onTapGesture={() => {}}
+              >
                 <HStack>
                   <VStack alignment="leading" spacing={2}>
                     <Text fontWeight="semibold" lineLimit={2}>{f.name}</Text>
                     <Text font="caption" foregroundStyle="secondaryLabel">
-                      {f.code} · 约 {shares.toFixed(2)} 份
+                      {f.code}
                     </Text>
                   </VStack>
                   <Spacer />
-                  <Button
-                    title="删除"
-                    role="destructive"
-                    action={() => confirmRemoveFund(f.code, f.name)}
-                  />
+                  {/* 不用 Button：List 会把整行 tap 路由到最后一个 Button */}
+                  <Text
+                    foregroundStyle="red"
+                    onTapGesture={() => confirmRemoveFund(f.code, f.name)}
+                  >
+                    删除
+                  </Text>
                 </HStack>
                 <TextField
                   title="别名"
@@ -170,20 +178,32 @@ export function FundSection(props: FundSectionProps) {
                   value={f.alias || ""}
                   onChanged={(v) => updateFundAlias(f.code, v)}
                 />
+                {/* 用 title 强制显示中文，避免 label 在 List 里不渲染 */}
                 <TextField
-                  title="买入金额"
-                  prompt="元，0=纯监控"
-                  value={String(f.costAmount ?? "")}
-                  onChanged={(v) => debouncedFundCost(f.code, v)}
-                  keyboardType="decimalPad"
-                />
-                <TextField
-                  title="买入净值"
-                  prompt="成交确认净值"
+                  title="① 成本价(买入净值·元/份)"
+                  prompt="买入时确认的净值，如 3.2824"
                   value={f.buyNav > 0 ? String(f.buyNav) : ""}
                   onChanged={(v) => debouncedFundBuyNav(f.code, v)}
                   keyboardType="decimalPad"
                 />
+                <TextField
+                  title="② 持有份额(份)"
+                  prompt="实际持有的基金份额"
+                  value={shares > 0 ? String(shares) : ""}
+                  onChanged={(v) => debouncedFundShares(f.code, v)}
+                  keyboardType="decimalPad"
+                />
+                <VStack alignment="leading" spacing={4}>
+                  <Text font="caption" foregroundStyle="secondaryLabel">
+                    ③ 总持有金额 = 成本价 × 份额（自动）
+                  </Text>
+                  <Text foregroundStyle="secondaryLabel">
+                    ¥{f.costAmount.toFixed(2)}
+                  </Text>
+                </VStack>
+                <Text font="caption" foregroundStyle="secondaryLabel">
+                  例：成本价 3.2824 × 份额 304.66 ≈ ¥1000
+                </Text>
               </VStack>
             )
           })
