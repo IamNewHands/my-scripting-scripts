@@ -1,5 +1,4 @@
 import type { ApiResponse } from "../../types/appStore"
-import { formatAccountName } from "../../utils"
 import { localApi } from "../appleStore"
 
 interface LoginParams {
@@ -47,10 +46,10 @@ const normalizeLoginData = (data: LoginApiData | undefined): LoginResult | undef
 
   const loginData = "loginData" in data ? data.loginData : undefined
   const account = loginData?.accountInfo?.appleId
-  const username = formatAccountName(
+  const username = [
     loginData?.accountInfo?.address?.firstName,
     loginData?.accountInfo?.address?.lastName,
-  ) || account
+  ].filter(Boolean).join("") || account
 
   if (!account || !loginData?.storeFront) return
   return {

@@ -17,14 +17,6 @@ import {
 import { AppConfig, defaultConfig } from "../../../constants/AppConfig";
 import { makeAppIconColor } from "../../../hooks";
 import type { RGBAColor } from "../../../types/utils";
-import {
-  buildItmsServicesUrl,
-  buildPlistManifestHttpUrl,
-  isPresetPlistServer,
-  probePlistManifest,
-  validatePlistServer,
-} from "../../../utils/installManifest";
-import { onDownloadShowToast } from "../store/toast";
 
 function FetchingIcon({ value, dominantColor }: { value: string, dominantColor?: RGBAColor | null }) {
   const deg = useObservable(0);
@@ -84,47 +76,14 @@ export default function PlayPauseButton({ item, dominantColor }: { item: MergedI
       buttonStyle="borderless"
       action={() => {
         if (item.status === "completed") {
-          // 点击立刻提示 → 探测（自定义）→ 成功短提示 → 再 openURL，避免“点了不知道有没有生效”
-          void (async () => {
-            try {
-              HapticFeedback.mediumImpact();
-              onDownloadShowToast.run("loading", "正在准备安装…");
-
-              const plistServer =
-                AppConfig.install.plistServer?.trim() ||
-                defaultConfig.install.plistServer;
-              const checked = validatePlistServer(plistServer);
-              if (!checked.ok) {
-                onDownloadShowToast.run("error", checked.message);
-                return;
-              }
-
-              const manifestHttpUrl = buildPlistManifestHttpUrl(checked.base, {
-                name: item.name,
-                bundleId: item.bundleId,
-                displayVersion: item.displayVersion,
-                fileName: item.fileName,
-              });
-
-              // 自定义先探测；预设跳过（代理依赖 MitM，App 内 fetch 会误失败）
-              if (!isPresetPlistServer(checked.base)) {
-                onDownloadShowToast.run("loading", "正在校验 Plist 服务…");
-                await probePlistManifest(manifestHttpUrl, 12);
-              }
-
-              // 先换成短 success，让用户看到“已生效”；再 openURL（系统框会抢焦点）
-              onDownloadShowToast.run("success", "已唤起系统安装");
-              await new Promise<void>(resolve => setTimeout(resolve, 220));
-              Safari.openURL(buildItmsServicesUrl(manifestHttpUrl));
-              // 仅清可能残留的 loading；success 由 duration 自动关
-              setTimeout(() => onDownloadShowToast.hideLoading(), 50);
-              setTimeout(() => onDownloadShowToast.hideLoading(), 500);
-            } catch (error) {
-              const message =
-                error instanceof Error ? error.message : String(error);
-              onDownloadShowToast.run("error", message || "安装失败");
-            }
-          })();
+          const meta = encodeURIComponent(
+            `name=${item.name}&bundleId=${item.bundleId}&displayVersion=${item.displayVersion}&fileName=${item.fileName}`
+          );
+          const plistServer =
+            AppConfig.install.plistServer?.trim() || defaultConfig.install.plistServer;
+          Safari.openURL(
+            `itms-services://?action=download-manifest&url=${plistServer}?${meta}`
+          );
         } else if (isQueued) {
           HapticFeedback.mediumImpact();
           cancelQueuedTask(item.appId);

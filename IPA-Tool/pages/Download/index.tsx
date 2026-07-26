@@ -7,8 +7,6 @@ import {
   VStack,
   useMemo,
   useRef,
-  useEffect,
-  AppEvents,
 } from "scripting"
 import {
   EditableGlassList,
@@ -43,7 +41,7 @@ import { AnimText } from "../../components/AnimText"
  * 下载页入口只负责确认用户意图并调用共享删除能力，避免这里变成屎山。
  */
 export default function DownloadV2View() {
-  const { toastConfig, showToast, hideToast, hideLoadingToast } = useLoginToast()
+  const { toastConfig, showToast } = useLoginToast()
   const { items, isEmpty } = useDownloadItems()
   const deleteStateSnapshotsRef = useRef({})
 
@@ -93,15 +91,6 @@ export default function DownloadV2View() {
   const { render, editing, selection } = api
   const toolbar = DownloadToolbar(api)
   onDownloadShowToast.run = showToast
-  onDownloadShowToast.hide = hideToast
-  onDownloadShowToast.hideLoading = hideLoadingToast
-
-  // 回前台只清 loading，避免误清「已唤起系统安装」/错误短提示
-  useEffect(() => {
-    AppEvents.scenePhase.addListener(phase => {
-      if (phase === "active") hideLoadingToast()
-    })
-  }, [hideLoadingToast])
 
   return useMemo(
     () => (

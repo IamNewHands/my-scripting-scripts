@@ -20,7 +20,6 @@ export type MergedItem = {
   size: number
   fileName: string
   status: string
-  errorMessage?: string
   zipPath?: string
   accountEmail?: string
 }
@@ -41,7 +40,7 @@ const taskId = (task: DownloadTaskItem) =>
 const itemFingerprint = (items: MergedItem[]) =>
   items.map(item => {
     const stableSize = item.status === "completed" ? item.size : 0
-    return `${item.source}_${item.appId}_${item.appKey}_${item.status}_${item.errorMessage ?? ""}_${item.path}_${stableSize}`
+    return `${item.source}_${item.appId}_${item.appKey}_${item.status}_${item.path}_${stableSize}`
   }).join(",")
 
 const tasksFingerprint = (tasks: DownloadTaskItem[]) =>
@@ -112,7 +111,6 @@ const buildItems = (tasks: DownloadTaskItem[], appFiles: AppsFilesState) => {
       size: getFileSize(path),
       fileName: `${id}.ipa`,
       status: task.status,
-      errorMessage: task.errorMessage,
       zipPath,
       accountEmail: task.down.accountEmail,
     }

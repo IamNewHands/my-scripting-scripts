@@ -1,4 +1,4 @@
-import { fetch, type RedirectRequest } from "scripting"
+import { fetch } from "scripting"
 
 type HttpMethod = "get" | "post" | "put" | "delete" | "head" | "patch" | "options"
 
@@ -11,8 +11,6 @@ type HttpRequest = {
   $auto?: boolean
   baseURL?: string
   signal?: unknown
-  // 源头协议：允许手动处理 302（authenticate / volumeStoreDownloadProduct）
-  handleRedirect?: (newRequest: RedirectRequest) => Promise<RedirectRequest | null>
   "binary-mode"?: boolean
 }
 
@@ -95,7 +93,7 @@ const createHttp = () => {
       headers: op.headers,
       body: op.body,
       signal: op.signal,
-      handleRedirect: op.handleRedirect,
+      redirect: op.$auto === false ? "manual" : "follow",
     } as any).then(
       async response => {
         const body = op["binary-mode"] ? await response.arrayBuffer() : await response.text()

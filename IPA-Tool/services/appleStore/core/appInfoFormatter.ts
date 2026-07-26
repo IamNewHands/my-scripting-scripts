@@ -1,6 +1,5 @@
 import { plist } from "../runtime"
 import { AuthService } from "./AuthService"
-import { AppConfig } from "../../../constants/AppConfig"
 
 const normalizeSinf = (sinf: unknown) => {
   if (typeof sinf !== "string") return sinf
@@ -30,12 +29,6 @@ export const formatAppInfo = async (appInfo: any) => {
 
   const { accountInfo } = await AuthService.login()
   Object.assign(metadata, { appleId: accountInfo?.appleId })
-
-  // 免更新开关：删除软件更新检查字段，App Store 不再显示更新角标
-  if (AppConfig.install.disableUpdateCheck) {
-    delete metadata.softwareUpdateNeeded
-    delete metadata.softwareUpdateNeededString
-  }
 
   return {
     name,

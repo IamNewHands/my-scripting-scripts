@@ -7,8 +7,6 @@
 import { Section, Button, Path, Navigation } from "scripting";
 import type { ToastType } from "../../../components/Toast";
 import { resetConfig, AppConfig, getAllStorageKeys } from "../../../constants/AppConfig";
-import { clearAppIconAssets } from "../../../modules/AppIconAssetDB";
-import { VersionCacheRepository } from "../../../services/appleStore/core/VersionCacheRepository";
 import { EditableGlassListRow } from "../../../components/EditableGlassListPipeline";
 import { AnimText } from "../../../components/AnimText"
 
@@ -37,7 +35,7 @@ const handleResetConfig = async (
     const selectedIndex = await Dialog.actionSheet({
       title: "是否重置应用",
       message:
-        "重置应用将重启app 并清除所有配置数据，包括下载任务、通知设置、版本缓存、图标缓存等。",
+        "重置应用将重启app 并清除所有配置数据，包括下载任务、通知设置等。",
       actions: [
         {
           label: "是",
@@ -55,12 +53,6 @@ const handleResetConfig = async (
     // 删除文件
     const dir = Path.join(FileManager.documentsDirectory, folder);
     FileManager.existsSync(dir) && FileManager.removeSync(dir);
-
-    // 清空版本缓存与图标库（源头行为）；登录 Keychain 由业务重置/登出路径另行清理
-    await Promise.all([
-      VersionCacheRepository.clear(),
-      clearAppIconAssets(),
-    ]);
 
     // 清空所有本地业务 key
     getAllStorageKeys().forEach(key => Storage.remove(key));

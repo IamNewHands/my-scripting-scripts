@@ -13,13 +13,11 @@ interface NotificationConfigSectionProps {
     downloadSuccess: boolean;
     downloadFailed: boolean;
     serverNotification: boolean;
-    debugLogging: boolean;
   };
   onChange: (value: {
     downloadSuccess: boolean;
     downloadFailed: boolean;
     serverNotification: boolean;
-    debugLogging: boolean;
   }) => void;
 }
 
@@ -55,12 +53,6 @@ export const NotificationConfigSection = ({
     onChange(updatedValue);
   };
 
-  const handleDebugLoggingChange = (newValue: boolean) => {
-    const updatedValue = { ...value, debugLogging: newValue };
-    setValue(updatedValue);
-    onChange(updatedValue);
-  };
-
   return (
     <ConfigSection title="通知配置">
       <ConfigItem
@@ -90,26 +82,13 @@ export const NotificationConfigSection = ({
       <ConfigItem
         title="服务通知"
         description="开启后，接收服务相关通知"
-        showSeparator={true}
+        showSeparator={false}
       >
         <Toggle
           frame={{ width: 50 }}
           title=""
           value={value.serverNotification}
           onChanged={handleServerNotificationChange}
-        />
-      </ConfigItem>
-
-      <ConfigItem
-        title="调试日志"
-        description="开启后写入 IPA-Tool_debug.log，位于 App 文档目录"
-        showSeparator={false}
-      >
-        <Toggle
-          frame={{ width: 50 }}
-          title=""
-          value={value.debugLogging}
-          onChanged={handleDebugLoggingChange}
         />
       </ConfigItem>
     </ConfigSection>

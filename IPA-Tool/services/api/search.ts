@@ -95,7 +95,7 @@ const createAbortError = () => {
 
 type LocalAppInfo = AppinfoResponse["data"]["appInfo"];
 
-type AppIdSearchSource = (appId: string, country: string, signal: AbortController["signal"]) => Promise<AppSearchSuccess[]>;
+type AppIdSearchSource = (appId: string, signal: AbortController["signal"]) => Promise<AppSearchSuccess[]>;
 
 const ensureAppIdResults = async (
   sourceName: string,
@@ -132,16 +132,15 @@ const mapLocalAppInfo = (appInfo: LocalAppInfo): AppSearchSuccess => ({
   currency: appInfo.currency,
 })
 
-const searchAppIdFromLocalApi: AppIdSearchSource = async (appId, _country, signal) => {
+const searchAppIdFromLocalApi: AppIdSearchSource = async (appId, signal) => {
   const { appInfo } = await apiGetAppInfo(appId, undefined, { signal });
   if (signal.aborted) throw createAbortError();
   return [mapLocalAppInfo(appInfo)];
 }
 
-const searchAppIdFromITunesLookup: AppIdSearchSource = async (appId, country, signal) => {
-  // lookup 带 country，避免跨区同 ID 元数据错位
+const searchAppIdFromITunesLookup: AppIdSearchSource = async (appId, signal) => {
   const response = await fetch(
-    `https://itunes.apple.com/lookup?id=${encodeURIComponent(appId)}&country=${encodeURIComponent(country)}`,
+    `https://itunes.apple.com/lookup?id=${encodeURIComponent(appId)}`,
     { signal }
   );
   const { results } = await response.json() as ITunesSearchResponse;
@@ -150,7 +149,7 @@ const searchAppIdFromITunesLookup: AppIdSearchSource = async (appId, country, si
 }
 
 export const apiSearchAppById = debounce(
-  async (appId: string, country: string) => {
+  async (appId: string, _country: string) => {
     const localController = new AbortController();
     const lookupController = new AbortController();
     appIdSearchAbort.current = () => {
@@ -162,11 +161,11 @@ export const apiSearchAppById = debounce(
       const results = await Promise.any([
         ensureAppIdResults(
           "官方下载接口",
-          searchAppIdFromLocalApi(appId, country, localController.signal)
+          searchAppIdFromLocalApi(appId, localController.signal)
         ),
         ensureAppIdResults(
           "Apple Lookup 接口",
-          searchAppIdFromITunesLookup(appId, country, lookupController.signal)
+          searchAppIdFromITunesLookup(appId, lookupController.signal)
         ),
       ]);
 

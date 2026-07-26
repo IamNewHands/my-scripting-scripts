@@ -5,108 +5,43 @@ import { VersionCacheRepository, type VersionTuple } from "./VersionCacheReposit
 import { CustomError, getMac } from "./shared"
 import { formatAppInfo } from "./appInfoFormatter"
 
-type GetAppInfoOptions = {
-  signal?: unknown
-}
-
 export class StoreService {
-  static async #postVolumeStoreDownload(
-    host: string,
-    dataJson: Record<string, unknown>,
-    auth: { dsPersonId?: string | number; Cookie?: string; storeFront?: string },
-    options?: GetAppInfoOptions
-  ) {
-    const path = `/WebObjects/MZFinance.woa/wa/volumeStoreDownloadProduct?guid=${dataJson.guid}`
-    const request: {
-      url: string
-      body: string
-      timeout: number
-      signal?: unknown
-      headers: Record<string, string>
-      handleRedirect: () => Promise<null>
-    } = {
-      url: `https://${host}${path}`,
-      body: String(plist.build(dataJson)),
-      timeout: 6,
-      signal: options?.signal,
-      headers: {
-        Cookie: String(auth.Cookie ?? ""),
-        "X-Apple-Store-Front": String(auth.storeFront ?? ""),
-        "X-Dsid": String(auth.dsPersonId ?? ""),
-        "iCloud-DSID": String(auth.dsPersonId ?? ""),
-        "user-agent": "Configurator/2.15 (Macintosh; OS X 11.0.0; 16G29) AppleWebKit/2603.3.8",
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      handleRedirect: async () => null,
-    }
-
-    let resp = await $http.post(request)
-
-    if (resp.status === 302) {
-      const location = String(resp.headers.location ?? "")
-      // 相对路径补全，避免二次请求打到错误 host
-      request.url = location.startsWith("http")
-        ? location
-        : new URL(location, request.url).toString()
-      resp = await $http.post(request)
-    }
-
-    return resp
-  }
-
-  static async getAppInfo(
-    salableAdamId: number,
-    externalVersionId?: number | string,
-    options?: GetAppInfoOptions
-  ): Promise<any> {
-    const { dsPersonId, Cookie, storeFront } = await AuthService.login()
+  static async getAppInfo(salableAdamId: number, externalVersionId?: number | string): Promise<any> {
+    const { dsPersonId, Cookie } = await AuthService.login()
     const dataJson = {
       creditDisplay: "",
       guid: getMac(),
       salableAdamId,
       externalVersionId,
     }
+    const resp = await $http.post({
+      url: `https://p25-buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/volumeStoreDownloadProduct?guid=${dataJson.guid}`,
+      body: String(plist.build(dataJson)),
+      timeout: 6,
+      headers: {
+        Cookie: String(Cookie ?? ""),
+        "X-Dsid": String(dsPersonId ?? ""),
+        "iCloud-DSID": String(dsPersonId ?? ""),
+      },
+    })
 
-    // 优先源头 p37；HTTP 403/失败再回退维护版常用 p25
-    const hosts = ["p37-buy.itunes.apple.com", "p25-buy.itunes.apple.com"]
-    let lastError: unknown
-
-    for (const host of hosts) {
-      try {
-        const resp = await this.#postVolumeStoreDownload(
-          host,
-          dataJson,
-          { dsPersonId, Cookie, storeFront },
-          options
-        )
-        const appInfo = plist.parse(String(resp.body))
-        this.validateAppInfo(appInfo)
-        return await formatAppInfo(appInfo)
-      } catch (error) {
-        lastError = error
-        // 业务错误优先（不可靠换 host 解决）
-        if (error instanceof Error && error.name === "AppInfoError" && /2042|2034/.test(error.message)) {
-          await AuthService.refreshCookie()
-          return await this.getAppInfo(salableAdamId, externalVersionId, options)
-        }
-        if (error instanceof Error && error.name === "AppInfoError" && error.message.includes("9610")) {
-          await this.purchaseApp(salableAdamId)
-          return await this.getAppInfo(salableAdamId, externalVersionId, options)
-        }
-        const message = error instanceof Error ? error.message : String(error)
-        // 节点/传输/空响应类失败：换 p25 再试
-        if (
-          /\b403\b|\b404\b|\b502\b|\b503\b|timeout|Not Found|HTTPError|应用信息为空|版本号的应用信息为空|获取应用信息失败/.test(
-            message
-          )
-        ) {
-          continue
-        }
-        throw error
+    const appInfo = plist.parse(String(resp.body))
+    try {
+      this.validateAppInfo(appInfo)
+      return await formatAppInfo(appInfo)
+    } catch (error) {
+      if (error instanceof Error && error.name === "AppInfoError" && /2042|2034/.test(error.message)) {
+        await AuthService.refreshCookie()
+        return await this.getAppInfo(salableAdamId, externalVersionId)
       }
-    }
 
-    throw lastError instanceof Error ? lastError : new Error(String(lastError))
+      if (error instanceof Error && error.name === "AppInfoError" && error.message.includes("9610")) {
+        await this.purchaseApp(salableAdamId)
+        return await this.getAppInfo(salableAdamId, externalVersionId)
+      }
+
+      throw error
+    }
   }
 
   static validateAppInfo(appInfo: any) {

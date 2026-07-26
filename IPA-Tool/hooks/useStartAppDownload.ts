@@ -58,8 +58,6 @@ export const useStartAppDownload = () => {
     const appId = id;
     const { onBeforeDownload, onSuccess, onError } = options ?? {};
 
-    let requestController: AbortController | null = null;
-
     Promise.try(async () => {
       let { down, status } = getAppState(appId);
       // 1. 检查登录状态
@@ -77,18 +75,11 @@ export const useStartAppDownload = () => {
       // 3. 缺少 down，或下载已完成时，需要重新获取 appInfo/sinf，避免复用旧下载数据。
       if (!down || status === "completed") {
         if (status === "fetching") {
-          // 再次点击：取消当前前置请求并回到 pending
-          const controller = fetchingController.current;
-          controller?.abort(new Error("已取消前置下载"));
-          if (controller && fetchingController.current === controller) {
-            fetchingController.current = null;
-          }
-          setAppStatus(appId, "pending");
+          fetchingController.current?.abort("已取消前置下载");
           return;
         }
 
         const controller = new AbortController();
-        requestController = controller;
         fetchingController.current = controller;
 
         // 3. 设置前置请求等待ui
@@ -149,39 +140,21 @@ export const useStartAppDownload = () => {
       // 5. 执行成功的回调
       onSuccess?.();
     }).catch((error: unknown) => {
-      // 6. 错误处理（对齐源头取消语义，去掉 debug 日志）
-      const isCurrentRequest =
-        !!requestController && fetchingController.current === requestController;
+      // 6. 错误处理
+      fetchingController.current = null;
       const err = (
         error instanceof Error ? error : new Error(String(error))
       ) as Error & { status?: DownloadStatus };
-
-      if (
-        err.message.includes("已取消前置下载") ||
-        (err.name === "AbortError" && String(err.message).includes("已取消"))
-      ) {
-        if (isCurrentRequest) {
-          fetchingController.current = null;
-          setAppStatus(appId, "pending");
-        }
-        onError?.(err);
-        return;
+      let status = err.status ?? "failed";
+      if (err.name === "AbortError" && err.message === "已取消前置下载") {
+        status = "pending";
       }
-
-      // 过期请求的失败不覆盖新任务状态
-      if (requestController && !isCurrentRequest) return;
-      fetchingController.current = null;
-      const status = err.status ?? "failed";
 
       if (status === "failed") {
         sendNotification("downloadFailed", `${err.toString()}`);
       }
 
-      setAppStatus(
-        appId,
-        status,
-        status === "failed" ? err.message || String(err) : undefined
-      );
+      setAppStatus(appId, status);
       // 7. 执行错误回调
       onError?.(err);
     });

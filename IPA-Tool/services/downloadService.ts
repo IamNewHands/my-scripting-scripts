@@ -49,9 +49,8 @@ export const startDownload = (
       setAppStatus(id, "completed");
       downloadManager.releaseTask(task);
     } catch (e) {
-      const errorMessage = `签名失败：${e instanceof Error ? e.message : String(e)}`;
-      sendNotification("downloadFailed", `${errorMessage} ❌`);
-      setAppStatus(id, "failed", errorMessage);
+      sendNotification("downloadFailed", `签名失败：${String(e)} ❌`);
+      setAppStatus(id, "failed");
     }
   };
 
@@ -63,11 +62,8 @@ export const startDownload = (
     .onStatusChange(handleStatusChange)
     .onRemove(handleRemove)
     .onFailed((status, error) => {
-      if (status === "failed") {
-        const errorMessage = error.message || String(error);
-        setAppStatus(id, "failed", errorMessage);
-        sendNotification("downloadFailed", `${errorMessage} ❌`);
-      }
+      if (status === "failed")
+        sendNotification("downloadFailed", `${error.toString()} ❌`);
     })
     .onFinally(handleFinally)
     .start(isRun);
@@ -113,11 +109,9 @@ export const removeDownloadItems = async (
   const appIds = uniqueItemsBy(taskItems, item => item.appId).map(
     item => item.appId
   );
-  // 仅本地文件源触发派生清理，避免 task 删除误清关联态（源头语义）
-  const fileAppKeys = uniqueItemsBy(
-    mergedItems.filter(item => item.source === "file"),
+  const removedAppKeys = uniqueItemsBy(mergedItems, item => item.appKey).map(
     item => item.appKey
-  ).map(item => item.appKey);
+  );
   const appStateSnapshots = stateSnapshots ?? Object.fromEntries(
     appIds.map(id => [id, getAppState(id)])
   );
@@ -126,8 +120,8 @@ export const removeDownloadItems = async (
     return down ? DownloadTask.filePath(down) + ".zip" : undefined;
   };
 
+  if (removedAppKeys.length) onRemoveDerived?.(removedAppKeys);
   if (appIds.length) removeAppStates(appIds);
-  if (fileAppKeys.length) onRemoveDerived?.(fileAppKeys);
 
   for (const item of mergedItems) {
     try {
@@ -140,10 +134,9 @@ export const removeDownloadItems = async (
         item.path,
         snapshotZipPath
       );
-import { Logger } from "../utils/logger"
-
     } catch (e) {
-      Logger.error(
+      console.log(
+        "downloadFailed",
         `删除 ${item.appKey} 失败：${String(e)} ❌`
       );
     }
