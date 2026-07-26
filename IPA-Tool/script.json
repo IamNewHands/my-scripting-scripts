@@ -1,36 +1,34 @@
 {
-  "color" : "rgba(243, 159, 68,1)",
-  "intentInputTypes" : [
+  "color": "rgba(243, 159, 68,1)",
+  "intentInputTypes": [
     "FileURLs",
     "URLs"
   ],
-  "localizedDescriptions" : {
-    "zh" : "下载旧版IPA并安装。支持自定义plist（自建/代理/Scripting）、Keychain存密码、搜索带国家、源头协议登录下载。原作：小白脸 https://github.com/luestr ；维护：IamNewHands。",
-    "en" : "Download old IPA builds and install them. Custom plist (self-host/proxy/Scripting), Keychain passwords, country-aware search, upstream Apple auth/download protocol. Original: luestr https://github.com/luestr ; maintained by IamNewHands."
+  "localizedDescriptions": {
+    "zh": "下载旧版IPA并安装。支持自定义plist（自建/代理/Scripting）、Keychain存密码、搜索带国家、源头协议登录下载。原作：小白脸 https://github.com/luestr ；维护：IamNewHands。",
+    "en": "Download old IPA builds and install them. Custom plist (self-host/proxy/Scripting), Keychain passwords, country-aware search, upstream Apple auth/download protocol. Original: luestr https://github.com/luestr ; maintained by IamNewHands."
   },
-  "permissions" : null,
-  "remoteResource" : {
-    "autoUpdateInterval" : null,
-    "url" : "https://github.com/IamNewHands/my-scripting-scripts/tree/main/IPA-Tool",
-    "hash" : "af8d89a8c4a634c5decbb5a48722a6be"
+  "permissions": null,
+  "remoteResource": {
+    "autoUpdateInterval": null,
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/IPA-Tool.zip",
+    "hash": "62a6ced89179ad99a15113e04e50d690"
   },
-  "author" : {
-    "name" : "IamNewHands",
-    "email" : null,
-    "homepage" : "https://github.com/IamNewHands"
+  "author": {
+    "name": "IamNewHands",
+    "email": null,
+    "homepage": "https://github.com/IamNewHands"
   },
-  "runInApp" : false,
-  "description" : "Download old IPA builds and install them. Custom plist (self-host/proxy/Scripting), Keychain passwords, country-aware search, upstream Apple auth/download protocol. Original: luestr https://github.com/luestr ; maintained by IamNewHands.",
-  "contributors" : [
-
-  ],
-  "entry" : "index.tsx",
-  "iconImage" : null,
-  "version" : "1.2.0",
-  "localizedNames" : {
-    "zh" : "IPA工具箱",
-    "en" : "IPA-Tool"
+  "runInApp": false,
+  "description": "Download old IPA builds and install them. Custom plist (self-host/proxy/Scripting), Keychain passwords, country-aware search, upstream Apple auth/download protocol. Original: luestr https://github.com/luestr ; maintained by IamNewHands.",
+  "contributors": [],
+  "entry": "index.tsx",
+  "iconImage": null,
+  "version": "1.2.0",
+  "localizedNames": {
+    "zh": "IPA工具箱",
+    "en": "IPA-Tool"
   },
-  "name" : "IPA-Tool",
-  "icon" : "iphone"
+  "name": "IPA-Tool",
+  "icon": "iphone"
 }
