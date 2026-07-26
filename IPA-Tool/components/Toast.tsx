@@ -1,20 +1,13 @@
 /**
  * File: components/Toast.tsx
  *
- * Toast 内容组件
- * 纯 UI 组件，只负责渲染 Toast 内容
+ * Toast 内容组件：普通实底提示（无玻璃特效）
  */
 
-import { VStack, Image, ProgressView, RoundedRectangle } from "scripting"
+import { VStack, Image, ProgressView } from "scripting"
 import { AnimText } from "./AnimText"
 
-const toastRadius = 22
-const toastGlass = UIGlass.clear().interactive(true)
-const toastShape = {
-  type: "rect" as const,
-  cornerRadius: toastRadius,
-  style: "continuous" as const,
-}
+const toastRadius = 12
 
 export type ToastType = "loading" | "success" | "error" | "info"
 
@@ -31,58 +24,54 @@ export const Toast = ({ type, message }: ToastProps) => {
   return (
     <VStack
       spacing={8}
-      padding={16}
-      frame={{ minWidth: 200 }}
+      padding={{ horizontal: 18, vertical: 14 }}
+      frame={{ minWidth: 160, maxWidth: 280 }}
       alignment="center"
-      glassEffect={{ glass: toastGlass, shape: toastShape }}
-      overlay={
-        <RoundedRectangle
-          padding={-0.5}
-          cornerRadius={toastRadius}
-          stroke={{
-            shapeStyle: {
-              light: "rgba(255,255,255,0.54)",
-              dark: "rgba(255,255,255,0.26)",
-            },
-            strokeStyle: { lineWidth: 0.5 },
-          }}
-        />
-      }
-      shadow={{ color: "rgba(0,0,0,0.18)", radius: 18, y: 8 }}
+      // 普通实底，不用 glassEffect
+      background={{
+        style: {
+          light: "rgba(245,245,247,0.96)",
+          dark: "rgba(44,44,46,0.96)",
+        },
+        shape: {
+          type: "rect",
+          cornerRadius: toastRadius,
+          style: "continuous",
+        },
+      }}
       clipShape={{ type: "rect", cornerRadius: toastRadius, style: "continuous" }}
+      shadow={{ color: "rgba(0,0,0,0.16)", radius: 10, y: 4 }}
     >
-      {/* 根据类型显示不同的图标 */}
       {type === "loading" && (
-        <ProgressView progressViewStyle="circular" controlSize="large" />
+        <ProgressView progressViewStyle="circular" controlSize="regular" />
       )}
       {type === "success" && (
         <Image
           systemName="checkmark.circle.fill"
-          font={48}
+          font={28}
           foregroundStyle="systemGreen"
         />
       )}
       {type === "error" && (
         <Image
           systemName="xmark.circle.fill"
-          font={48}
+          font={28}
           foregroundStyle="systemRed"
         />
       )}
       {type === "info" && (
         <Image
           systemName="info.circle.fill"
-          font={48}
+          font={28}
           foregroundStyle="systemBlue"
         />
       )}
 
-
-      {/* 文字 */}
       <AnimText
-        font="body"
+        font="subheadline"
         foregroundStyle="label"
         multilineTextAlignment="center"
+        lineLimit={4}
       >
         {message}
       </AnimText>

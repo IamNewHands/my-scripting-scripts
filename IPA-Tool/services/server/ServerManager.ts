@@ -6,7 +6,14 @@ import { BackgroundManager } from "../../modules/BackgroundManager";
 import { AppEvents, Path } from "scripting";
 import { sendNotification } from "../../utils";
 
+let serverStarted = false;
+
+const isServerAlreadyStartedError = (error: unknown) =>
+  `${error}`.includes("already") || `${error}`.includes("in use");
+
 export const initServerManager = () => {
+  if (serverStarted) return;
+
   // 创建后台管理器实例，用于控制后台保活
   const backgroundManager = new BackgroundManager();
 
@@ -28,7 +35,14 @@ export const initServerManager = () => {
    * 端口：8000
    */
   const error = server.start({ port: 8000 });
-  error && sendNotification("serverNotification", error);
+  if (error) {
+    // 重复启动/端口占用不反复弹通知
+    if (isServerAlreadyStartedError(error)) return;
+    sendNotification("serverNotification", error);
+    return;
+  }
+
+  serverStarted = true;
 
   /**
    * 监听应用生命周期变化

@@ -44,15 +44,18 @@ export const InstallConfigSection = ({
 
   const handlePlistServerChange = (tag: string) => {
     if (tag === customTag) {
-      const updatedValue = { ...value, plistServer: "" };
-      setValue(updatedValue);
-      onChange(updatedValue);
-    } else {
-      // 选中了预设值
-      const updatedValue = { ...value, plistServer: tag };
-      setValue(updatedValue);
-      onChange(updatedValue);
+      // 已是自定义 URL 则保留；从预设切过来才清空便于输入
+      if (isPresetUrl(value.plistServer)) {
+        const updatedValue = { ...value, plistServer: "" };
+        setValue(updatedValue);
+        onChange(updatedValue);
+      }
+      return;
     }
+    // 选中了预设值
+    const updatedValue = { ...value, plistServer: tag };
+    setValue(updatedValue);
+    onChange(updatedValue);
   };
 
   const pickerValue = isPresetUrl(value.plistServer) ? value.plistServer : customTag;
@@ -85,7 +88,9 @@ export const InstallConfigSection = ({
               value={value.plistServer}
               textFieldStyle="plain"
               textInputAutocapitalization="never"
+              keyboardType="URL"
               onChanged={(text: string) => {
+                // 输入中不强 trim 中间空格；落盘时去首尾
                 const updatedValue = { ...value, plistServer: text.trim() };
                 setValue(updatedValue);
                 onChange(updatedValue);

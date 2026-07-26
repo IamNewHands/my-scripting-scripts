@@ -3,10 +3,16 @@ import { StoreService } from "../core/StoreService"
 import { VersionService } from "../core/VersionService"
 import { createResponse, getErrorMessage, validate } from "../core/shared"
 
+type LocalApiSignal = {
+  aborted?: boolean
+  reason?: unknown
+}
+
 type LocalApiOptions = {
   method?: "GET" | "POST"
   body?: Record<string, any>
   query?: Record<string, string | number | undefined>
+  signal?: LocalApiSignal
 }
 
 const match = (path: string, pattern: RegExp) => path.match(pattern)
@@ -51,7 +57,9 @@ export const localApi = async <T = any>(path: string, options: LocalApiOptions =
     const appInfoMatch = match(path, /^\/apps\/(\d+)$/)
     if (method === "GET" && appInfoMatch) {
       const id = appInfoMatch[1]
-      const appInfo = await StoreService.getAppInfo(Number(id), query.appVerId)
+      const appInfo = await StoreService.getAppInfo(Number(id), query.appVerId, {
+        signal: options.signal,
+      })
       return createResponse(true, { appId: id, appInfo }) as T
     }
 
@@ -85,6 +93,8 @@ export const localApi = async <T = any>(path: string, options: LocalApiOptions =
 
     throw new Error(`本地 API 未实现: ${method} ${path}`)
   } catch (error) {
+    // 取消时抛出，避免被包装成失败响应
+    if (options.signal?.aborted) throw options.signal.reason ?? error
     return createResponse(false, null, getErrorMessage(error)) as T
   }
 }

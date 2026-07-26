@@ -19,19 +19,20 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 
 ## 账号密码走向（源码级）
 
-- 登录直连：`POST https://auth.itunes.apple.com/auth/v1/native/fast/`
+- 登录对齐社区原作协议：`POST https://buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/authenticate`（可手动跟随 302）。
 - 请求体 plist，`password` = 密码 + 可选 2FA。
 - Cookie / dsPersonId / storeFront **只写本机** `Storage(AppleLogin)`。
-- 密码走 **iOS Keychain**（`loginPassword:<account>`），不落明文 Storage。
+- 密码走 **iOS Keychain**（`loginPassword:<account>`），不落明文 Storage；历史账号点选**不自动填密码**。
+- 下载节点：`p37-buy…/volumeStoreDownloadProduct`，带 Store-Front；App ID 搜索 lookup **带 country**。
 - `localApi(...)` 是**进程内路由**，不是 HTTP；见 `services/appleStore/api/localApi.ts`。
 
 ## 外部域名（透明清单）
 
 | 域名 | 用途 | 传的内容 |
 |---|---|---|
-| `auth.itunes.apple.com` | 苹果登录 | Apple ID / 密码 / 2FA |
-| `buy.itunes.apple.com` / `p*-buy.itunes.apple.com` | 购买与下载 | dsPersonId、Cookie、App ID |
-| `itunes.apple.com` | 搜索 / lookup | 关键词、App ID |
+| `buy.itunes.apple.com` | 苹果登录 / 购买 | Apple ID / 密码 / 2FA、dsPersonId、Cookie |
+| `p*-buy.itunes.apple.com` | 下载元数据 | dsPersonId、Cookie、App ID、Store-Front |
+| `itunes.apple.com` | 搜索 / lookup | 关键词、App ID、**country** |
 | `api.timbrd.com` / `apis.bilin.eu.org` | 历史版本 ID | 仅 App 数字 ID |
 | `api.scripting.fun/ipa-plist` | 安装 manifest（云端） | 文件名、BundleId、版本 |
 | `xiaobai.app/install` | 安装 manifest（本地代理） | 同上，**不出手机** |
@@ -74,11 +75,15 @@ export default {
 ## 安装步骤
 
 1. 用已获取过目标 App 的 Apple ID 登录 → 搜索 → 选版本 → 下载。
-2. 点安装：本地 `http://localhost:8000` + `itms-services://`。
-3. 需要 Loon/Surge MitM 与信任证书。  
+2. 点安装：本地 `http://localhost:8000` 提供 IPA；系统通过 `itms-services://` 拉 **https** 的 manifest.plist。
+3. **Plist 服务**（设置 → 安装配置）  
+   - **Scripting / 代理模块**：点安装会直接唤起系统（代理仍依赖 MitM）。  
+   - **自定义**：必须 `https://…`；App 会先探测服务再唤起。空 URL / 非 https / 非 XML 会 toast 报错，不再“点了没反应”。  
+   - 查询参数：`name` / `bundleId` / `displayVersion` / `fileName`（已正确编码进 manifest URL）。
+4. 需要 Loon/Surge MitM 与信任证书。  
    - Loon：<https://kelee.one/Tool/Loon/Lpx/IPATool.lpx>  
    - Surge：hub.kelee.one 或 `luestr/ProxyResource` 的 `IPATool.sgmodule`
-4. 装完后 App Store 可能状态异常：关自动更新，别点该 App 的更新。
+5. 装完后 App Store 可能状态异常：关自动更新，别点该 App 的更新。
 
 ## 安全说明（本仓库版本）
 
@@ -104,4 +109,4 @@ export default {
 ## 协议
 
 MIT — 见仓库根目录 [`LICENSE`](../LICENSE)。  
-原作：[luestr](https://github.com/luestr) · 维护：[IamNewHands](https://github.com/IamNewHands)。
+原作 / 源头作者：[小白脸 · luestr](https://github.com/luestr) · 维护本仓版：[IamNewHands](https://github.com/IamNewHands)。

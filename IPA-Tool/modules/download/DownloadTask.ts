@@ -97,14 +97,38 @@ export class DownloadTask {
       if ((this.status as DownloadStatus) === "cancelled")
         throw createAbortError("cancelled");
 
-      const resp = await fetch(this.url, {
+      const filePath = await this.#appFilePath();
+
+      // 仅断点续传时带 Range；bytes=0- 易被 Apple CDN 以 403 拒绝
+      const buildHeaders = (resumeFrom: number) => {
+        const headers: Record<string, string> = {
+          "User-Agent":
+            "Configurator/2.15 (Macintosh; OS X 11.0.0; 16G29) AppleWebKit/2603.3.8",
+        };
+        if (resumeFrom > 0) headers.Range = `bytes=${resumeFrom}-`;
+        return headers;
+      };
+
+      let resumeFrom = this.downloadedSize;
+      let resp = await fetch(this.url, {
         signal: this.#controller.signal,
         timeout: this.timeout,
-        headers: { Range: `bytes=${this.downloadedSize}-` },
+        headers: buildHeaders(resumeFrom),
       });
-      this.totalSize ??= getTotalSize(resp, this.downloadedSize);
 
-      const filePath = await this.#appFilePath();
+      // 续传 403/失败：删半成品后整包重试一次
+      if (!resp.ok && resumeFrom > 0) {
+        if (FileManager.existsSync(filePath)) FileManager.remove(filePath);
+        this.downloadedSize = 0;
+        resumeFrom = 0;
+        resp = await fetch(this.url, {
+          signal: this.#controller.signal,
+          timeout: this.timeout,
+          headers: buildHeaders(0),
+        });
+      }
+
+      this.totalSize ??= getTotalSize(resp, this.downloadedSize);
 
       // 验证响应状态码
       if (!resp.ok) {
@@ -112,7 +136,7 @@ export class DownloadTask {
       }
 
       // 验证 Range 请求成功
-      if (this.downloadedSize > 0 && resp.status !== 206) {
+      if (resumeFrom > 0 && resp.status !== 206) {
         throw new Error("断点续传请求失败, 请删除下载文件后重新下载");
       }
 

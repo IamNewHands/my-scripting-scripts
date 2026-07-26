@@ -15,7 +15,14 @@ export default function DownloadingInfo({ item, dominantColor }: { item: MergedI
         <AnimText font="footnote" fontWeight="regular" foregroundStyle="tertiaryLabel">v{item.displayVersion}</AnimText>
         <Spacer />
       </HStack>
-      {status !== "queued" && <DownloadProgress id={item.appId} status={status} dominantColor={dominantColor} />}
+      {status !== "queued" && (
+        <DownloadProgress
+          id={item.appId}
+          status={status}
+          errorMessage={item.errorMessage}
+          dominantColor={dominantColor}
+        />
+      )}
       {item.accountEmail ? (
         <AnimText font="footnote" foregroundStyle="tertiaryLabel" truncationMode="tail" lineLimit={1}>
           账号 {item.accountEmail}

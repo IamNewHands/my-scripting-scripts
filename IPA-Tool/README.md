@@ -21,11 +21,12 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 
 ## Account & password flow (source-level)
 
-- Login goes **directly** to Apple:  
-  `POST https://auth.itunes.apple.com/auth/v1/native/fast/`
+- Login follows the **upstream community protocol**:  
+  `POST https://buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/authenticate` (manual 302 handling).
 - Request body is a plist; the `password` field is password + optional 2FA code.
 - Cookies / `dsPersonId` / `storeFront` are stored **only on-device** (`Storage` key `AppleLogin`). Nothing is uploaded to third-party backends for login.
-- Passwords are stored in **iOS Keychain** (`loginPassword:<account>`), not plain `Storage`.
+- Passwords are stored in **iOS Keychain** (`loginPassword:<account>`), not plain `Storage`. History pick does **not** auto-fill the password field.
+- Download host: `p37-buy…/volumeStoreDownloadProduct` with Store-Front. App ID lookup includes **`country`**.
 - `localApi(...)` is an **in-process router**, not a network call.  
   `services/appleStore/api/localApi.ts` dispatches paths like `/auth/login` to `AuthService.login()`.
 
@@ -33,9 +34,9 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 
 | Host | Purpose | Data sent |
 |---|---|---|
-| `auth.itunes.apple.com` | Apple login | Apple ID / password / 2FA |
-| `buy.itunes.apple.com` / `p*-buy.itunes.apple.com` | Purchase & download | dsPersonId, Cookie, App ID |
-| `itunes.apple.com` | Search / lookup | Keywords, App ID |
+| `buy.itunes.apple.com` | Apple login / purchase | Apple ID / password / 2FA, dsPersonId, Cookie |
+| `p*-buy.itunes.apple.com` | Download metadata | dsPersonId, Cookie, App ID, Store-Front |
+| `itunes.apple.com` | Search / lookup | Keywords, App ID, **country** |
 | `api.timbrd.com` / `apis.bilin.eu.org` | Historical version IDs | Numeric App ID only |
 | `api.scripting.fun/ipa-plist` | Install manifest (cloud) | File name, Bundle ID, version |
 | `xiaobai.app/install` | Install manifest (local proxy; needs Loon/Surge) | Same fields, **stays on device** |
@@ -86,12 +87,16 @@ export default {
 ## Install steps
 
 1. **Download IPA**: log in with an Apple ID that owns the app → search → pick version → download.
-2. **Tap install**: the script starts `http://localhost:8000` and opens `itms-services://`.
-3. **Required**: Loon or Surge MitM + trusted CA for plist interception / local proxy.
+2. **Tap install**: local `http://localhost:8000` serves the IPA; iOS loads an **https** manifest via `itms-services://`.
+3. **Plist service** (Settings → Install)
+   - **Scripting / proxy module**: opens the system install sheet directly (proxy still needs MitM).
+   - **Custom**: must be `https://…`. The app probes the endpoint first, then opens install. Empty / non-https / non-manifest responses show a toast instead of a silent no-op.
+   - Query params: `name`, `bundleId`, `displayVersion`, `fileName` (properly encoded into the manifest URL).
+4. **Required**: Loon or Surge MitM + trusted CA for plist interception / local proxy.
    - Loon plugin: <https://kelee.one/Tool/Loon/Lpx/IPATool.lpx>  
      Import: `loon://import?plugin=https://kelee.one/Tool/Loon/Lpx/IPATool.lpx`
    - Surge: see <https://hub.kelee.one/> or `luestr/ProxyResource` for `IPATool.sgmodule`.
-4. **App Store “update” noise**: after sideload-style install, App Store may show odd states. Turn off auto-updates and don’t tap Update for that app if you want to keep the older build.
+5. **App Store “update” noise**: after sideload-style install, App Store may show odd states. Turn off auto-updates and don’t tap Update for that app if you want to keep the older build.
 
 ## Security & privacy notes (this fork)
 
@@ -133,4 +138,4 @@ export default {
 ## License
 
 MIT — see repo root [`LICENSE`](../LICENSE).  
-Original: [luestr](https://github.com/luestr) · Maintained by [IamNewHands](https://github.com/IamNewHands).
+Original / upstream author: [luestr (小白脸)](https://github.com/luestr) · Maintained in this repo by [IamNewHands](https://github.com/IamNewHands).

@@ -1,5 +1,6 @@
 import { $cache, $http, plist } from "../runtime"
 import { appleStoreConfig, configureAppleHttp, CustomError, getMac } from "./shared"
+import { formatAccountName } from "../../../utils"
 import { getPassword, deletePassword as deleteLoginPassword } from "../../../utils/loginHistoryStorage"
 
 type LoginParams = {
@@ -60,10 +61,8 @@ const upsertActiveLogin = (session: AppleLoginResponse) => {
 const getDisplayName = (session: AppleLoginResponse) => {
   const account = getAppleId(session)
   const address = session.accountInfo?.address
-  const name = [
-    address?.firstName,
-    address?.lastName,
-  ].filter(Boolean).join("")
+  // 中文姓名按姓+名，其它按名 姓
+  const name = formatAccountName(address?.firstName, address?.lastName)
   return name || account || ""
 }
 
@@ -89,9 +88,28 @@ export class AuthService {
       appleId,
       password: `${password}${code ?? ""}`,
     }
-    const body = plist.build(dataJson)
-    const url = `https://auth.itunes.apple.com/auth/v1/native/fast/?guid=${dataJson.guid}`
-    const resp = await $http.post({ url, body: String(body), timeout: 6 })
+    const body = String(plist.build(dataJson))
+    // 源头协议：buy authenticate + 手动 302；密码仍不入会话缓存
+    const url = `https://buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/authenticate?guid=${dataJson.guid}`
+    let resp = await $http.post({
+      url,
+      body,
+      timeout: 6,
+      handleRedirect: async () => null,
+    })
+
+    if (resp.status === 302) {
+      const location = String(resp.headers.location ?? "")
+      const nextUrl = location.startsWith("http")
+        ? location
+        : new URL(location, url).toString()
+      resp = await $http.post({
+        url: nextUrl,
+        body,
+        timeout: 6,
+      })
+    }
+
     const parsedResp = plist.parse(String(resp.body)) as AppleLoginResponse
 
     this.validate(parsedResp)
