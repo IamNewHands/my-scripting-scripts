@@ -1,75 +1,75 @@
 # my-scripting-scripts
 
-Personal collection of [Scripting App](https://apps.apple.com/app/scripting/id6479691128) scripts for iOS (TypeScript / TSX).
+个人自用的 [Scripting App](https://apps.apple.com/app/scripting/id6479691128) 脚本合集（TypeScript / TSX）。
 
-> **中文说明**：[README.zh-CN.md](./README.zh-CN.md)  
-> Per-script details live in each folder’s `README.md` (EN) and `README.zh-CN.md` (ZH). This root file stays short as more scripts are added.
+> **English**：[README.zh-CN.md](./README.zh-CN.md)  
+> 各脚本细则见对应文件夹内的 `README.zh-CN.md`（英文）与 `README.md`（中文）。根说明只保留目录与通用用法，避免随脚本增多而膨胀。
 
 ---
 
-## Catalog
+## 目录
 
-| Script | Summary | Docs | Import |
+| 脚本 | 摘要 | 说明 | 导入 |
 |---|---|---|---|
-| [IPA-Tool](./IPA-Tool) | Download older IPAs & install; custom plist; Keychain passwords | [EN](./IPA-Tool/README.md) · [中文](./IPA-Tool/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D) |
-| [App-Store-Translate](./App-Store-Translate) | Translate App Store notes/descriptions to Chinese (system or AI) | [EN](./App-Store-Translate/README.md) · [中文](./App-Store-Translate/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Store-Translate%22%5D) |
-| [App-Region-Price](./App-Region-Price) | Search apps & compare prices across regions with CNY conversion and auto-translated metadata | [EN](./App-Region-Price/README.md) · [中文](./App-Region-Price/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Region-Price%22%5D) |
-| [PDD-Quick-Submit](./PDD-Quick-Submit) | Submit Pinduoduo team codes to multiple helper sites; first success returns with N/3 score | [EN](./PDD-Quick-Submit/README.md) · [中文](./PDD-Quick-Submit/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FPDD-Quick-Submit%22%5D) |
-| [Yoinks](./Yoinks) | Paste a public media link, pick a format, download with yt-dlp, save to Photos or Files | [EN](./Yoinks/README.md) · [中文](./Yoinks/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FYoinks%22%5D) |
-| [WatchlistValuation](./WatchlistValuation) | Track fund estimated NAV (holdings-weighted) + A/HK/US stock quotes in a widget; 7/15/30-day history; sub-100ms off-hours render | [EN](./WatchlistValuation/README.md) · [中文](./WatchlistValuation/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FWatchlistValuation%22%5D) |
+| [IPA-Tool](./IPA-Tool) | 下载旧版 IPA 并安装；自定义 plist；密码 Keychain | [中文](./IPA-Tool/README.md) · [EN](./IPA-Tool/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D) |
+| [App-Store-Translate](./App-Store-Translate) | App Store 更新说明与描述译中文（系统或 AI） | [中文](./App-Store-Translate/README.md) · [EN](./App-Store-Translate/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Store-Translate%22%5D) |
+| [App-Region-Price](./App-Region-Price) | 搜索 App 对比多区价格，自动换算人民币，简介按需翻译 | [中文](./App-Region-Price/README.md) · [EN](./App-Region-Price/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Region-Price%22%5D) |
+| [PDD-Quick-Submit](./PDD-Quick-Submit) | 多站点提交拼多多组队码；首成功即返回，结果显示成功数/总数 | [中文](./PDD-Quick-Submit/README.md) · [EN](./PDD-Quick-Submit/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FPDD-Quick-Submit%22%5D) |
+| [Yoinks](./Yoinks) | 粘贴公开媒体链接，选择格式后用 yt-dlp 下载，保存到相册或文件 | [EN](./Yoinks/README.zh-CN.md) · [中文](./Yoinks/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FYoinks%22%5D) |
+| [WatchlistValuation](./WatchlistValuation) | 小组件追踪基金盘中估值 + A股/港股/美股行情；7/15/30日历史；非交易时段毫秒级本地渲染 | [EN](./WatchlistValuation/README.zh-CN.md) · [中文](./WatchlistValuation/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FWatchlistValuation%22%5D) |
 
-**Docs** columns link to the full per-script write-up (features, code map, privacy, limits).
-
----
-
-## How to use
-
-1. Install [Scripting App](https://apps.apple.com/app/scripting/id6479691128) on iOS.
-2. Open a script’s **one-tap import** link (📥 in the table) in Safari, or import the GitHub tree URL in Scripting.
-3. Run the script from Scripting. Some scripts also accept **Share Sheet / Shortcuts** input (see that script’s README).
-4. If `script.json` has `remoteResource`, Scripting can **auto-update** from the GitHub Release zip.
-
-Optional: copy a script folder into iCloud `Scripting/Documents/scripts/<name>/`.
+**说明** 列为该脚本完整文档（功能、代码结构、隐私、边界等）。
 
 ---
 
-## Repo layout
+## 使用方法
+
+1. 在 iOS 安装 [Scripting App](https://apps.apple.com/app/scripting/id6479691128)。
+2. 用 Safari 打开表格中的 **一键导入** 链接，或在 Scripting 里导入对应 GitHub 目录。
+3. 在 Scripting 中运行。部分脚本支持 **分享菜单 / 快捷指令**（见该脚本自己的说明）。
+4. 若 `script.json` 配置了 `remoteResource`，可从 GitHub Release zip **自动更新**。
+
+也可把脚本文件夹拷到 iCloud `Scripting/Documents/scripts/<名称>/`。
+
+---
+
+## 仓库结构
 
 ```
 my-scripting-scripts/
-├── README.md                 # English — catalog + common usage
-├── README.zh-CN.md           # Chinese — same scope
+├── README.zh-CN.md                 # 英文 — 目录 + 通用用法
+├── README.md           # 中文 — 同上范围
 ├── LICENSE
 ├── IPA-Tool/
-│   ├── README.md
 │   ├── README.zh-CN.md
+│   ├── README.md
 │   └── …
 └── App-Store-Translate/
-    ├── README.md
     ├── README.zh-CN.md
+    ├── README.md
     └── …
 ```
 
-### Adding a script
+### 新增脚本约定
 
-1. Create `Your-Script/` with source and `script.json`.
-2. Write **`Your-Script/README.md`** (English) and **`Your-Script/README.zh-CN.md`** (Chinese).
-3. Add **one row** to the catalog table in **both** root README files.
-4. Do **not** paste long per-script docs into the root README.
-
----
-
-## Auto-update note
-
-- Release asset: `https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/<ScriptFolder>.zip`
-- `remoteResource.hash` = **MD5 of the whole zip**
-- Zip root must contain `index.tsx` / `script.json` directly (no nested folder)
-
-Details and publish steps: see each script’s README.
+1. 创建 `Your-Script/`，放入源码与 `script.json`。
+2. 编写 **`Your-Script/README.zh-CN.md`**（英文）与 **`Your-Script/README.md`**（中文）。
+3. 在根目录 **两个** README 的目录表各加 **一行**。
+4. **不要**把长文细则写进根 README。
 
 ---
 
-## License
+## 自动更新说明
 
-MIT — see [`LICENSE`](./LICENSE).  
-Third-party originals remain with their authors; see each `script.json` `author` field.
+- Release 资源：`https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/<脚本文件夹>.zip`
+- `remoteResource.hash` = **整个 zip 的 MD5**
+- zip 根目录须直接包含 `index.tsx` / `script.json`（不要再包一层文件夹）
+
+细节与发版步骤见各脚本说明。
+
+---
+
+## 协议
+
+MIT — 见 [`LICENSE`](./LICENSE)。  
+第三方原作版权归原作者；见各脚本 `script.json` 的 `author`。
