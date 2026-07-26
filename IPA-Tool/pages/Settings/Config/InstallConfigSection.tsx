@@ -4,7 +4,7 @@
  * 安装配置组件
  */
 
-import { EmptyView, Picker, TextField, useState, useEffect, VStack } from "scripting";
+import { EmptyView, Picker, TextField, Toggle, useState, useEffect, VStack } from "scripting";
 import { ConfigSection } from "./ConfigSection";
 import { ConfigItem } from "./ConfigItem";
 import { AnimText } from "../../../components/AnimText";
@@ -23,9 +23,11 @@ const isPresetUrl = (url: string) => presetUrls.includes(url);
 interface InstallConfigSectionProps {
   initialValue: {
     plistServer: string;
+    disableUpdateCheck: boolean;
   };
   onChange: (value: {
     plistServer: string;
+    disableUpdateCheck: boolean;
   }) => void;
 }
 
@@ -61,12 +63,18 @@ export const InstallConfigSection = ({
   const pickerValue = isPresetUrl(value.plistServer) ? value.plistServer : customTag;
   const showCustomInput = !isPresetUrl(value.plistServer);
 
+  const handleDisableUpdateCheckChange = (disableUpdateCheck: boolean) => {
+    const updatedValue = { ...value, disableUpdateCheck };
+    setValue(updatedValue);
+    onChange(updatedValue);
+  };
+
   return (
     <ConfigSection title="安装配置">
       <ConfigItem
         title="Plist 服务"
         description="选择用于生成安装描述文件的服务"
-        showSeparator={false}
+        showSeparator={true}
       >
         <VStack alignment="trailing" spacing={8}>
           <Picker
@@ -98,6 +106,18 @@ export const InstallConfigSection = ({
             />
           )}
         </VStack>
+      </ConfigItem>
+      <ConfigItem
+        title="禁用更新检查"
+        description="安装后移除软件更新字段，App Store 不再提示更新（旧版降级保留）"
+        showSeparator={false}
+      >
+        <Toggle
+          frame={{ width: 50 }}
+          title=""
+          value={value.disableUpdateCheck}
+          onChanged={handleDisableUpdateCheckChange}
+        />
       </ConfigItem>
     </ConfigSection>
   );

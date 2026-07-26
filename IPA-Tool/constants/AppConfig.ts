@@ -36,6 +36,7 @@ export const defaultConfig = Object.freeze({
   // 安装配置
   install: Object.freeze({
     plistServer: "https://api.scripting.fun/ipa-plist",
+    disableUpdateCheck: false, // 安装后是否禁用 App Store 更新检查（免更新）
   }),
 
   // 全局存储键统一管理（供 useAppsState 使用）
@@ -56,7 +57,16 @@ if (!config) {
   config = JSON.parse(JSON.stringify(defaultConfig));
   Storage.set(DOWNLOAD_CONFIG_STORAGE_KEY, config);
 } else {
-  config = { ...JSON.parse(JSON.stringify(defaultConfig)), ...config };
+  // 深度合并：确保旧配置不覆盖新加的默认字段
+  const deep = JSON.parse(JSON.stringify(defaultConfig)) as Record<string, any>
+  for (const [key, stored] of Object.entries(config)) {
+    if (typeof stored === "object" && stored !== null && !Array.isArray(stored)) {
+      deep[key] = { ...deep[key], ...stored }
+    } else {
+      deep[key] = stored
+    }
+  }
+  config = deep
   Storage.set(DOWNLOAD_CONFIG_STORAGE_KEY, config);
 }
 
