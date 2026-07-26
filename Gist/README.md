@@ -1,70 +1,60 @@
-# Gist
+# Gist（GitHub Gist 管理）
 
-Manage GitHub Gists on your iPhone/iPad inside [Scripting App](https://apps.apple.com/app/scripting/id6479691128).
+在 [Scripting App](https://apps.apple.com/app/scripting/id6479691128) 内管理你的 GitHub Gist。
 
-> **中文说明**：[README.zh-CN.md](./README.zh-CN.md)  
-> Repo index：[../README.md](../README.md) · [../README.zh-CN.md](../README.zh-CN.md)
+> **English**：[README.zh-CN.md](./README.zh-CN.md)  
+> 仓库目录：[../README.zh-CN.md](../README.zh-CN.md) · [../README.md](../README.md)
 
-**One-tap import**  
+**一键导入**  
 https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FGist%22%5D
 
 ---
 
-## What it does
+## 它是干什么的
 
-- List your own GitHub Gists with expandable file tree
-- Create new Gists (public or private) with **description** support
-- Edit file content inline with a code editor
-- Add / rename / delete files within an existing Gist
-- Copy raw file URL to clipboard
-- Switch between multiple GitHub accounts via **named profiles**
-- Tokens stored in **iOS Keychain** (per-script scoped), not in plain Storage
+- 列出你的 GitHub Gist，可展开文件树
+- 新建公开/私有 Gist，支持**写入描述**
+- 内嵌代码编辑器编辑文件内容
+- 在已有 Gist 里添加/重命名/删除文件
+- 拷贝文件 raw 链接到剪贴板
+- **多账号切换**：通过命名档案维护多个 GitHub Token
+- Token 全部存 **iOS Keychain**（本脚本独立域），不落明文 Storage
 
-## Token & profiles
+## Token 与档案管理
 
-1. Open **Settings** → tap **+** to add a profile.
-2. Give it a **name** (e.g. "Work", "Personal") and paste a **GitHub PAT** with `gist` scope.
-3. The script will try to fetch your `@login` from GitHub `/user` for display.
-4. Use the **picker** to switch between profiles — the list reloads automatically.
-5. Delete a profile by entering `DELETE` to confirm.
+1. 打开**设置** → 点右上角 **+** 添加档案
+2. 给档案起个**名字**（如「工作号」「个人号」），粘贴有 `gist` 权限的 GitHub PAT
+3. 保存时会自动请求 `/user` 拉取 @login 方便辨认
+4. 用**切换器**在档案间切换，列表自动刷新
+5. 删除档案需输入 `DELETE` 确认
 
-### How to create a PAT
+### 如何创建 PAT
 
-- **One‑click**: [Generate PAT with `gist` scope](https://github.com/settings/tokens/new?scopes=gist&description=Scripting%20Gist)
-- Classic PAT with `gist` scope is sufficient; fine‑grained tokens with Gist R/W also work.
+- **一键**：[生成含 `gist` 权限的 PAT](https://github.com/settings/tokens/new?scopes=gist&description=Scripting%20Gist)
+- 经典 PAT 勾 `gist` 即可；Fine-grained 带 Gist 读写也可用。
 
-## External domains
+## 外部域名
 
-| Host | Purpose | Data sent |
-|------|---------|-----------|
-| `api.github.com` | Gist CRUD + user info | Token (Bearer auth) |
+| 域名 | 用途 | 传输内容 |
+|------|------|----------|
+| `api.github.com` | Gist CRUD + 用户信息 | Token（Bearer 认证） |
 
-No data is sent to any third‑party backend.
+所有请求直连 GitHub，不经任何第三方后端。
 
-## Known limits
+## 已知边界
 
-- Gist API returns only the first 30 gists (no pagination in this version).
-- Deleting the last file of a Gist via the UI is not supported — delete the whole Gist instead.
-- The `script.json` `remoteResource` is set up for future auto‑update; a release zip has not been published yet.
+- Gist API 默认只返回前 30 个（本版未加分页）
+- 不支持通过 UI 删除 Gist 最后一个文件（请直接删整个 Gist）
+- `script.json` 的 `remoteResource` 已配置为未来自动更新用；暂未发布 release zip
 
-## Import & auto-update
+## 导入与自动更新
 
-- **One-tap import**  
+- 一键导入：  
   https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FGist%22%5D
 
-- **Auto-update** via `script.json` → `remoteResource`:
+- `remoteResource.hash` = **zip 整包 MD5**；zip 根目录直接放 `index.tsx` / `script.json`。
 
-```json
-"remoteResource": {
-  "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/Gist.zip",
-  "autoUpdateInterval": 86400,
-  "hash": "<md5-of-zip>"
-}
-```
+## 协议
 
-`hash` is the **MD5 of the whole zip file**. Release zip root must contain `index.tsx` / `script.json` directly (no extra top-level folder).
-
-## License
-
-MIT — see repo root [`LICENSE`](../LICENSE).  
-Original author: [001](https://github.com/001ProMax) · Maintained in this repo by [IamNewHands](https://github.com/IamNewHands).
+MIT — 见仓库根目录 [`LICENSE`](../LICENSE)。  
+原作作者：[001](https://github.com/001ProMax) · 本仓维护：[IamNewHands](https://github.com/IamNewHands)。

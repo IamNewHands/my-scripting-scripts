@@ -1,33 +1,35 @@
 {
-  "description": "Submit Pinduoduo 8-digit team codes to multiple mirror sites. First success returns immediately with score display.",
-  "name": "PDD 快捷提交",
-  "localizedDescriptions": {
-    "en": "Paste 8-digit (or 8N) Pinduoduo team codes and submit to multiple helper sites in parallel. Returns as soon as any site succeeds (CODE_DEADLINE 5s). Shows success count as N/3.",
-    "zh": "粘贴拼多多 8 位（或 8N 连写）组队码，并行提交到多个互助站点。任一站点成功即立即返回（单码总时限 5 秒），结果用成功数/总数（如 1/3）显示。支持快捷指令文本输入。"
+  "color" : "rgba(28, 140, 255,1)",
+  "entry" : "index.tsx",
+  "localizedDescriptions" : {
+    "zh" : "粘贴拼多多 8 位（或 8N 连写）组队码，并行提交到多个互助站点。任一站点成功即立即返回（单码总时限 5 秒），结果用成功数\/总数（如 1\/3）显示。支持快捷指令文本输入。",
+    "en" : "Paste 8-digit (or 8N) Pinduoduo team codes and submit to multiple helper sites in parallel. Returns as soon as any site succeeds (CODE_DEADLINE 5s). Shows success count as N\/3."
   },
-  "runInApp": true,
-  "localizedNames": {
-    "zh": "PDD 快捷提交",
-    "en": "PDD Quick Submit"
-  },
-  "version": "1.2.0",
-  "intentInputTypes": [
+  "permissions" : null,
+  "name" : "PDD 快捷提交",
+  "version" : "1.2.0",
+  "contributors" : [
+
+  ],
+  "intentInputTypes" : [
     "Text"
   ],
-  "icon": "paperplane.fill",
-  "remoteResource": {
-    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/PDD-Quick-Submit.zip",
-    "hash": "12c4e95be83e424e9f388b4de39cd5e3",
-    "autoUpdateInterval": 86400
+  "iconImage" : "",
+  "author" : {
+    "email" : null,
+    "homepage" : "https:\/\/github.com\/IamNewHands\/my-scripting-scripts\/tree\/main\/PDD-Quick-Submit",
+    "name" : "IamNewHands"
   },
-  "permissions": null,
-  "color": "rgba(28, 140, 255,1)",
-  "contributors": [],
-  "iconImage": "",
-  "entry": "index.tsx",
-  "author": {
-    "email": null,
-    "name": "IamNewHands",
-    "homepage": "https://github.com/IamNewHands/my-scripting-scripts/tree/main/PDD-Quick-Submit"
+  "localizedNames" : {
+    "zh" : "PDD 快捷提交",
+    "en" : "PDD Quick Submit"
+  },
+  "runInApp" : true,
+  "description" : "Submit Pinduoduo 8-digit team codes to multiple mirror sites. First success returns immediately with score display.",
+  "icon" : "paperplane.fill",
+  "remoteResource" : {
+    "hash" : "6808101a1a9ef8437e06d51ecb22da08",
+    "autoUpdateInterval" : 86400,
+    "url" : "https:\/\/github.com\/IamNewHands\/my-scripting-scripts\/releases\/latest\/download\/PDD-Quick-Submit.zip"
   }
 }
