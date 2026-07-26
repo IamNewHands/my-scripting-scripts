@@ -17,7 +17,7 @@
   "description": "Manage GitHub Gists. List, create, edit, delete Gists and files. Multi-account profile switching with Keychain-stored tokens. Original: 001 https://github.com/001ProMax ; maintained by IamNewHands.",
   "runInApp": false,
   "remoteResource": {
-    "hash": "",
+    "hash": "f5805b3442e5e46c8e9d028e8c99dd46",
     "autoUpdateInterval": 86400,
     "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/Gist.zip"
   },
