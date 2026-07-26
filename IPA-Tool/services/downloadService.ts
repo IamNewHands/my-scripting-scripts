@@ -140,9 +140,10 @@ export const removeDownloadItems = async (
         item.path,
         snapshotZipPath
       );
+import { Logger } from "../utils/logger"
+
     } catch (e) {
-      console.log(
-        "downloadFailed",
+      Logger.error(
         `删除 ${item.appKey} 失败：${String(e)} ❌`
       );
     }

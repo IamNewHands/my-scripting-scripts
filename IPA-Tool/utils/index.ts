@@ -8,3 +8,4 @@ export * from "./notification";
 export * from "./plist-parser";
 export * from "./redirectIpaToApp";
 export * from "./installManifest";
+export * from "./logger";

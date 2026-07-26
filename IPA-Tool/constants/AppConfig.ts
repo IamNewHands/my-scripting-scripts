@@ -26,6 +26,7 @@ export const defaultConfig = Object.freeze({
     downloadSuccess: true, // 下载成功通知开关
     downloadFailed: true, // 下载失败通知开关
     serverNotification: true, // 服务通知开关
+    debugLogging: false, // 调试日志（写入 IPA-Tool_debug.log）
   }),
 
   // 外观配置

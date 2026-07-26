@@ -38,6 +38,8 @@ const getTotalSize = (
     : downloadedSize + Number(resp.headers.get("content-length") ?? 0);
 };
 
+import { Logger } from "../../utils/logger"
+
 export class DownloadTask {
   static #rootDir = FileManager.documentsDirectory;
 
@@ -188,7 +190,7 @@ export class DownloadTask {
     if (!["fetching", "downloading"].includes(this.status)) return;
     this.status = "cancelled";
     this.#controller.abort("cancelled");
-    console.log("取消下载任务", this.name);
+    Logger.debug("取消下载任务", this.name);
   }
 
   /**
@@ -203,7 +205,7 @@ export class DownloadTask {
       if (options.emitRemove !== false)
         this.bus.emit("downloadRemove", "deleted");
       this.dispose();
-      console.log("删除下载任务", this.name);
+      Logger.debug("删除下载任务", this.name);
     });
   }
 

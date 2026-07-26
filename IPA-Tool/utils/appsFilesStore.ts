@@ -129,6 +129,8 @@ export const scanAppsFiles = async () => {
   }
 }
 
+import { Logger } from "../utils/logger"
+
 const removeFileIfExists = async (path?: string) => {
   if (path && FileManager.existsSync(path)) await FileManager.remove(path)
 }
@@ -138,7 +140,7 @@ const siblingPackagePath = (path?: string) =>
 
 const removeFileLater = (id: string, path?: string) => {
   removeFileIfExists(path).catch(e => {
-    console.log("downloadFailed", `删除 ${id} 文件失败：${String(e)} ❌`)
+    Logger.error(`删除 ${id} 文件失败：${String(e)} ❌`)
   })
 }
 
@@ -155,6 +157,6 @@ export const removeAppFile = async (id: string, path?: string, zipPath?: string)
 
   targets.forEach(target => removeFileLater(id, target.path))
   removeApp(id).catch(e => {
-    console.log("downloadFailed", `删除 ${id} SQL 元数据失败：${String(e)} ❌`)
+    Logger.error(`删除 ${id} SQL 元数据失败：${String(e)} ❌`)
   })
 }
