@@ -5,8 +5,8 @@
     "URLs"
   ],
   "localizedDescriptions": {
-    "zh": "下载旧版IPA并安装。支持自定义plist（自建/代理/Scripting）、Keychain存密码、搜索带国家、源头协议、免更新开关、调试日志。原作：小白脸 https://github.com/luestr ；维护：IamNewHands。",
-    "en": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, upstream Apple auth, disable update check, debug logging toggle. Original: luestr https://github.com/luestr ; maintained by IamNewHands."
+    "zh": "下载旧版IPA并安装。支持自定义plist（自建/代理/Scripting）、Keychain存密码、搜索带国家、源头协议、免更新开关、调试日志。原作社区脚本：https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ；维护：IamNewHands。",
+    "en": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, upstream Apple auth, disable update check, debug logging toggle. Original community script: https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ; maintained by IamNewHands."
   },
   "permissions": null,
   "remoteResource": {
@@ -20,7 +20,7 @@
     "homepage": "https://github.com/IamNewHands"
   },
   "runInApp": false,
-  "description": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, upstream Apple auth, disable update check, debug logging toggle. Original: luestr https://github.com/luestr ; maintained by IamNewHands.",
+  "description": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, upstream Apple auth, disable update check, debug logging toggle. Original community script: https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ; maintained by IamNewHands.",
   "contributors": [],
   "entry": "index.tsx",
   "iconImage": null,

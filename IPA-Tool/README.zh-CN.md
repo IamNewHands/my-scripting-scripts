@@ -109,4 +109,4 @@ export default {
 ## 协议
 
 MIT — 见仓库根目录 [`LICENSE`](../LICENSE)。  
-原作 / 源头作者：[小白脸 · luestr](https://github.com/luestr) · 维护本仓版：[IamNewHands](https://github.com/IamNewHands)。
+原作社区脚本：[ScriptingApp Community-Scripts](https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting) · 维护本仓版：[IamNewHands](https://github.com/IamNewHands)。

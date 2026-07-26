@@ -138,4 +138,4 @@ export default {
 ## License
 
 MIT — see repo root [`LICENSE`](../LICENSE).  
-Original / upstream author: [luestr (小白脸)](https://github.com/luestr) · Maintained in this repo by [IamNewHands](https://github.com/IamNewHands).
+Original community script: [ScriptingApp Community-Scripts](https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting) · Maintained in this repo by [IamNewHands](https://github.com/IamNewHands).
