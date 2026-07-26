@@ -104,6 +104,8 @@ export default {
 - Login session (Cookie / tokens): on-device Storage only.
 - Debug logging for icon color extraction and download metadata has been stripped in recent builds to reduce log noise and accidental leakage.
 - Local HTTP server serves IPA files from the app temp folder on port `8000` for install only.
+- **Disable update check toggle**: Settings → Install → enable to suppress App Store update badges.
+- **Debug logging toggle**: Settings → Notifications → enable to write `IPA-Tool_debug.log` for troubleshooting.
 
 ## Known limits
 
