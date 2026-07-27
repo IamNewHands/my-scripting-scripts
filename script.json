@@ -1,0 +1,31 @@
+{
+  "icon": "chart.line.uptrend.xyaxis",
+  "runInApp": false,
+  "contributors": [],
+  "permissions": null,
+  "color": "rgba(255, 69, 58, 1)",
+  "name": "自选估值",
+  "author": {
+    "homepage": "https://github.com/IamNewHands/my-scripting-scripts/tree/main/WatchlistValuation",
+    "name": "IamNewHands",
+    "email": null
+  },
+  "description": "Watchlist with fund estimated NAV (holdings-weighted), A/HK/US stock quotes and historical chart. Large widget switches fund/stock pages and shows 7/15/30-day history. Off-hours render from local cache for sub-100ms launch.",
+  "iconImage": null,
+  "intentInputTypes": [],
+  "remoteResource": {
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/WatchlistValuation.zip",
+    "autoUpdateInterval": 86400,
+    "hash": "0dc3c0df18eac83df5edf1d54cc06cde"
+  },
+  "localizedNames": {
+    "en": "Watchlist Valuation",
+    "zh": "自选估值"
+  },
+  "entry": "index.tsx",
+  "localizedDescriptions": {
+    "en": "Estimate off-exchange fund NAV from portfolio holdings + stock quotes. Manage fund, A-share, HK and US watchlists with day/hold P&L. Click a name in the widget to view 7/15/30-day history. Non-trading hours render from local cache.",
+    "zh": "场外基金按重仓股加权估算盘中估值，管理基金 / A股 / 港股 / 美股自选，展示当日/持有收益。小组件点击名称查看 7/15/30 日历史图表。非交易时段直接读本地缓存，毫秒级启动。"
+  },
+  "version": "2.1.0"
+}

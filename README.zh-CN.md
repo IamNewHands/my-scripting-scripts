@@ -1,75 +1,155 @@
-# my-scripting-scripts
+# Watchlist Valuation (自选估值)
 
-个人自用的 [Scripting App](https://apps.apple.com/app/scripting/id6479691128) 脚本合集（TypeScript / TSX）。
+> 简体中文文档：[README.md](./README.md)
 
-> **English**：[README.md](./README.md)  
-> 各脚本细则见对应文件夹内的 `README.md`（英文）与 `README.zh-CN.md`（中文）。根说明只保留目录与通用用法，避免随脚本增多而膨胀。
+Track your fund estimated NAV (holdings-weighted), A-share, HK and US stock quotes in a home-screen widget. The widget shows day/hold P&L, intra-day valuation, and 7/15/30-day historical chart. Non-trading hours render from a local cache for sub-100ms launch.
 
----
+![version](https://img.shields.io/badge/version-2.0.0-blue)
+![platform](https://img.shields.io/badge/platform-iOS-lightgrey)
+![license](https://img.shields.io/badge/license-MIT-green)
 
-## 目录
+## Features
 
-| 脚本 | 摘要 | 说明 | 导入 |
-|---|---|---|---|
-| [IPA-Tool](./IPA-Tool) | 下载旧版 IPA 并安装；自定义 plist；密码 Keychain | [中文](./IPA-Tool/README.zh-CN.md) · [EN](./IPA-Tool/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FIPA-Tool%22%5D) |
-| [App-Store-Translate](./App-Store-Translate) | App Store 更新说明与描述译中文（系统或 AI） | [中文](./App-Store-Translate/README.zh-CN.md) · [EN](./App-Store-Translate/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Store-Translate%22%5D) |
-| [App-Region-Price](./App-Region-Price) | 搜索 App 对比多区价格，自动换算人民币，简介按需翻译 | [中文](./App-Region-Price/README.zh-CN.md) · [EN](./App-Region-Price/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FApp-Region-Price%22%5D) |
-| [PDD-Quick-Submit](./PDD-Quick-Submit) | 多站点提交拼多多组队码；首成功即返回，结果显示成功数/总数 | [中文](./PDD-Quick-Submit/README.zh-CN.md) · [EN](./PDD-Quick-Submit/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FPDD-Quick-Submit%22%5D) |
-| [Yoinks](./Yoinks) | 粘贴公开媒体链接，选择格式后用 yt-dlp 下载，保存到相册或文件 | [EN](./Yoinks/README.md) · [中文](./Yoinks/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FYoinks%22%5D) |
-| [WatchlistValuation]| [Magnet-Preview](./Magnet-Preview) | 磁力、ED2K 与下载链接搜索预览；xcili 搜索、whatslink 预览、whos.tv 以图搜片 | [中文](./Magnet-Preview/README.zh-CN.md) · [EN](./Magnet-Preview/README.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FMagnet-Preview%22%5D) |(./WatchlistValuation) | 小组件追踪基金盘中估值 + A股/港股/美股行情；7/15/30日历史；非交易时段毫秒级本地渲染 | [EN](./WatchlistValuation/README.md) · [中文](./WatchlistValuation/README.zh-CN.md) | [📥](https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FWatchlistValuation%22%5D) |
+- **Mutual funds** — weighted by top-10 holdings; when the API provides `gsz/gszzl` (fund estimated NAV) it is used directly; otherwise the script estimates NAV by re-weighting the holding quotes
+- **A-share / HK / US stocks** — full name / pinyin / ticker search via Tencent smartbox; 1-5 letter US tickers are also matched through a fallback to East Money quotes
+- **Historical chart** — 7/15/30-day history per holding (A-share + HK from Tencent daily K-line; US not yet supported)
+- **Holdings tab** — for funds / ETFs, show the top 10 holdings with live price and day change
+- **Off-hours cache** — when markets are closed, the widget reads the last snapshot from local Storage and renders in 1ms; manual "Refresh" button always pulls fresh
+- **Color direction** — choose between red-up / green-down (CN convention) or green-up / red-down (US convention)
+- **Search filter** — filter your watchlist by name / code / alias
+- **Debounced input** — continuous text input is debounced 300ms before persisting
 
-**说明** 列为该脚本完整文档（功能、代码结构、隐私、边界等）。
+## Data Sources
 
----
+| Source | Used for | Notes |
+|--------|----------|-------|
+| `fundmobapi.eastmoney.com` | Fund NAV, holdings, previous-day NAV | Fund-only data |
+| `push2.eastmoney.com` / `push2delay.eastmoney.com` | A-share / HK / US quotes | Sina fallback for CN |
+| `web.ifzq.gtimg.cn` (Tencent) | Stock search (smartbox), A-share & HK K-line (fqkline) | Unified A-share + HK K-line |
+| Local Storage | All caches, watchlist, config, snapshot | Survives process restart |
 
-## 使用方法
-
-1. 在 iOS 安装 [Scripting App](https://apps.apple.com/app/scripting/id6479691128)。
-2. 用 Safari 打开表格中的 **一键导入** 链接，或在 Scripting 里导入对应 GitHub 目录。
-3. 在 Scripting 中运行。部分脚本支持 **分享菜单 / 快捷指令**（见该脚本自己的说明）。
-4. 若 `script.json` 配置了 `remoteResource`，可从 GitHub Release zip **自动更新**。
-
-也可把脚本文件夹拷到 iCloud `Scripting/Documents/scripts/<名称>/`。
-
----
-
-## 仓库结构
+## Project Layout
 
 ```
-my-scripting-scripts/
-├── README.md                 # 英文 — 目录 + 通用用法
-├── README.zh-CN.md           # 中文 — 同上范围
-├── LICENSE
-├── IPA-Tool/
-│   ├── README.md
-│   ├── README.zh-CN.md
-│   └── …
-└── App-Store-Translate/
-    ├── README.md
-    ├── README.zh-CN.md
-    └── …
+自选估值/
+├── index.tsx                    490 lines  Control panel (entry)
+├── widget.tsx                   220 lines  Widget entry (run() + cache loader)
+├── app_intents.tsx              196 lines  9 AppIntents (page / chart / refresh)
+├── script.json                            Metadata
+├── CHANGELOG.md                           Version history
+├── README.md / README.zh-CN.md            This file
+│
+├── lib/                                   Business logic
+│   ├── api/{fund,stock}.ts                A/HK/US data fetch
+│   ├── cache/
+│   │   ├── prevnav.ts                     Fund previous-day NAV (48h + neg 5min)
+│   │   └── snapshot.ts                    Widget off-hours snapshot
+│   ├── calc/{estimate,profit}.ts          NAV estimation & P&L
+│   ├── format.ts                          Color / currency / percent
+│   ├── http.ts                            fetch + parseNumber
+│   ├── portfolio.ts                       loadPortfolioSnapshot + loadPortfolioSmart
+│   ├── storage.ts                         9 Storage keys + migrations
+│   ├── types.ts                           All TS types
+│   └── util/{async,debounce,marketHours}.ts
+│
+├── components/                            Control-panel sub-components
+│   ├── FundSection.tsx            194
+│   ├── StockSection.tsx           190
+│   ├── PreviewSection.tsx         179
+│   ├── SettingsSection.tsx        129
+│   └── ListFilter.tsx              33
+│
+├── widget/                                Widget sub-views
+│   ├── common/fontScale.ts               Font / layout helpers
+│   └── views/
+│       ├── Chart.tsx               400
+│       └── List.tsx                478
+│
+└── tests/                                69 unit tests
+    ├── runner.ts                          Mini expect DSL
+    ├── run-all.ts                         Entry
+    └── {format,estimate,profit,http,debounce,
+       fontScale,searchStock,fetchStockHistory,
+       marketHours}.test.ts
 ```
 
-### 新增脚本约定
+## Storage Keys
 
-1. 创建 `Your-Script/`，放入源码与 `script.json`。
-2. 编写 **`Your-Script/README.md`**（英文）与 **`Your-Script/README.zh-CN.md`**（中文）。
-3. 在根目录 **两个** README 的目录表各加 **一行**。
-4. **不要**把长文细则写进根 README。
+| Key | Contents | Lifetime |
+|-----|----------|----------|
+| `watchlist.funds` | User's fund watchlist | Permanent |
+| `watchlist.stocks` | User's stock watchlist (A/HK/US) | Permanent |
+| `watchlist.widgetConfig` | Font / rows / color direction | Permanent |
+| `watchlist.widgetPage` | Last page (fund / stock / chart) | Permanent |
+| `watchlist.listPage.fund` | Last fund list page | Permanent |
+| `watchlist.listPage.stock` | Last stock list page | Permanent |
+| `watchlist.widgetChart` | Current chart state (code, kind, days, page, tab) | Permanent |
+| `watchlist.holdings.<code>` | Fund top-10 holdings (12h TTL) | Temporary |
+| `fund_prevnav_cache` | Fund previous-day NAV (48h + cross-day) | Temporary |
+| `fund_prevnav_negcache` | Negative cache (5min) | Temporary |
+| `watchlist.chartHistory.<kind>.<secid>` | 30-day K-line (5min TTL) | Temporary |
+| `watchlist.snapshot` | Last full portfolio snapshot for off-hours | Until next day |
 
----
+## Off-Hours Behavior
 
-## 自动更新说明
+The widget detects market hours automatically:
 
-- Release 资源：`https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/<脚本文件夹>.zip`
-- `remoteResource.hash` = **整个 zip 的 MD5**
-- zip 根目录须直接包含 `index.tsx` / `script.json`（不要再包一层文件夹）
+- **A-shares** — Mon-Fri 09:30-11:30 / 13:00-15:00 (Asia/Shanghai)
+- **HK** — Mon-Fri 09:30-12:00 / 13:00-16:00
+- **US** — Mon-Fri 22:30-04:00 next day (cross-midnight, summer/winter midpoint)
 
-细节与发版步骤见各脚本说明。
+When all held markets are closed (lunch break, after close, weekends), the widget skips the network and renders from the local snapshot. The first refresh on a new trading day (or after the cache expires) re-pulls and re-saves.
 
----
+Note: the current implementation does **not** include a public holiday table. On CN public holidays (Spring Festival, National Day, etc.) the widget will still treat Mon-Fri 09:30-15:00 as trading hours; if the API returns no data, the previous trading day's snapshot is reused.
 
-## 协议
+## Search Behavior
 
-MIT — 见 [`LICENSE`](./LICENSE)。  
-第三方原作版权归原作者；见各脚本 `script.json` 的 `author`。
+| Keyword | Tencent smartbox | East Money fallback |
+|---------|------------------|---------------------|
+| Chinese name (e.g. "兆易") | Returns ranked hits | – |
+| Pinyin / abbreviation (e.g. "maotai") | Returns ranked hits | – |
+| 6-digit CN code (e.g. "600519") | – | Direct quote fetch (gets name) |
+| 5-digit HK code (e.g. "00700") | – | Direct quote fetch (gets name) |
+| 1-5 letter US ticker (e.g. "AAPL") | – | Direct quote fetch (gets name) |
+
+Tencent's response escapes CJK as `\uXXXX`; the parser unescapes it via `JSON.parse('"' + s + '"')`.
+
+## K-Line Coverage
+
+| Market | Provider | Field | Note |
+|--------|----------|-------|------|
+| A-share | Tencent fqkline | `qfqday` (前复权) | 30-day window |
+| HK | Tencent fqkline | `day` | 30-day window |
+| US | – | – | Not yet supported (Tencent usfqkline returns "type error") |
+
+In the widget, the chart view auto-preloads 30 days and slices the last N days for 7/15/30-day display. Cache TTL: 5 minutes.
+
+## Tests
+
+```bash
+scripting-ts run tests/run-all.ts
+```
+
+Output:
+```
+总测试数: 69
+通过:     69
+失败:     0
+耗时:     ~2000ms
+```
+
+## Privacy
+
+This script calls public market-data APIs (East Money, Tencent) directly. The watchlist is stored in your local Scripting Storage (per-device, not uploaded). The script does **not** collect, upload, or share any personal information.
+
+## External Domains
+
+- `fundmobapi.eastmoney.com` — fund NAV / holdings
+- `push2.eastmoney.com` / `push2delay.eastmoney.com` — stock quotes
+- `hq.sinajs.cn` — Sina fallback (CN quotes only)
+- `smartbox.gtimg.cn` — Tencent search
+- `web.ifzq.gtimg.cn` — Tencent daily K-line
+
+## License
+
+MIT
