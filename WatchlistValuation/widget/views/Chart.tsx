@@ -8,7 +8,9 @@ import {
 import { formatPct, formatPrice, pnlColor } from "../../lib/format"
 import type {
   FundHoldingRow,
+  FundOverview,
   HistoryTableRow,
+  StockOverview,
   WidgetChartState,
   WidgetConfig,
 } from "../../lib/types"
@@ -21,6 +23,7 @@ export function ChartWidgetView({
   holdingsData,
   holdingsQuotes,
   holdingsUpdatedAt,
+  overviewData,
   config,
 }: {
   chartState: WidgetChartState
@@ -28,6 +31,7 @@ export function ChartWidgetView({
   holdingsData: FundHoldingRow[]
   holdingsQuotes: Map<string, { price: number | null; changePct: number | null }>
   holdingsUpdatedAt?: number
+  overviewData?: FundOverview | StockOverview | null
   config: WidgetConfig
 }) {
   const isStock = chartState.kind === "stock"
@@ -55,9 +59,14 @@ export function ChartWidgetView({
           </Text>
         </Button>
         <Spacer />
-        <Text font={fTitle} fontWeight="medium" lineLimit={1} minScaleFactor={0.75}>
-          {chartState.name}
-        </Text>
+        <VStack spacing={1} alignment="trailing">
+          <Text font={fTitle} fontWeight="medium" lineLimit={1} minScaleFactor={0.75}>
+            {chartState.name}
+          </Text>
+          <Text font={getFontSize(9, config.fontSizeDetail)} foregroundStyle="secondaryLabel" lineLimit={1}>
+            {chartState.code}
+          </Text>
+        </VStack>
       </HStack>
 
       {/* Tab 切换 */}
@@ -90,11 +99,26 @@ export function ChartWidgetView({
             </Text>
           </Button>
         ) : null}
+        <Button
+          intent={SetChartTabIntent("overview")}
+          buttonStyle="plain"
+          padding={{ top: 4, bottom: 4, leading: 8, trailing: 8 }}
+        >
+          <Text
+            font={fTab}
+            fontWeight={currentTab === "overview" ? "bold" : "regular"}
+            foregroundStyle={currentTab === "overview" ? "red" : "secondaryLabel"}
+          >
+            概况
+          </Text>
+        </Button>
         <Spacer />
       </HStack>
 
       {currentTab === "history" ? (
         <HistoryTabView chartState={chartState} chartData={chartData} config={config} />
+      ) : currentTab === "overview" ? (
+        <OverviewTabView isStock={isStock} overviewData={overviewData} config={config} />
       ) : (
         <HoldingsTabView
           holdingsData={holdingsData}
@@ -396,5 +420,133 @@ function HoldingsTabView({
           : ""}
       </Text>
     </>
+  )
+}
+
+/** 概况 tab：显示基金/股票基础信息 */
+function OverviewTabView({
+  isStock,
+  overviewData,
+  config,
+}: {
+  isStock: boolean
+  overviewData: FundOverview | StockOverview | null | undefined
+  config: WidgetConfig
+}) {
+  const baseFont = getFontSize(11, config.fontSizeDetail)
+  const labelFont = getFontSize(9, config.fontSizeDetail)
+
+  /** 将数据行两两配对成 [标签, 值] 的二维网格 */
+  function chunkRows<T>(items: T[]): T[][] {
+    const result: T[][] = []
+    for (let i = 0; i < items.length; i += 2) {
+      result.push(items.slice(i, i + 2))
+    }
+    return result
+  }
+
+  /** 渲染一个数据网格单元：标签和值同行显示 */
+  function DataCell({ label, value }: { label: string; value: string }) {
+    return (
+      <HStack spacing={3} frame={{ maxWidth: "infinity" }}>
+        <Text font={baseFont} fontWeight="bold" foregroundStyle="label" lineLimit={1} minScaleFactor={0.7}>
+          {label}：
+        </Text>
+        <Text font={baseFont} fontWeight="bold" foregroundStyle="label" lineLimit={1} minScaleFactor={0.7}>
+          {value}
+        </Text>
+        <Spacer />
+      </HStack>
+    )
+  }
+
+  if (!overviewData) {
+    return (
+      <Text font={getFontSize(10, config.fontSizeDetail)} foregroundStyle="secondaryLabel">
+        暂无数据
+      </Text>
+    )
+  }
+
+  if (isStock) {
+    const d = overviewData as StockOverview
+    const items = [
+      { label: "最新价", value: d.price != null ? d.price.toFixed(2) : "--" },
+      { label: "涨跌额", value: d.change != null ? (d.change >= 0 ? "+" : "") + d.change.toFixed(2) : "--" },
+      { label: "涨跌幅", value: d.changePct != null ? (d.changePct >= 0 ? "+" : "") + d.changePct.toFixed(2) + "%" : "--" },
+      { label: "最高", value: d.high != null ? d.high.toFixed(2) : "--" },
+      { label: "最低", value: d.low != null ? d.low.toFixed(2) : "--" },
+      { label: "今开", value: d.open != null ? d.open.toFixed(2) : "--" },
+      { label: "昨收", value: d.preClose != null ? d.preClose.toFixed(2) : "--" },
+      { label: "成交量", value: d.volume != null ? (d.volume / 10000).toFixed(0) + "万手" : "--" },
+      { label: "成交额", value: d.amount != null ? (d.amount / 100000000).toFixed(2) + "亿" : "--" },
+      { label: "市盈率(动)", value: d.pe != null ? d.pe.toFixed(2) : "--" },
+      { label: "总市值", value: d.totalMarketCap != null ? (d.totalMarketCap / 100000000).toFixed(2) + "亿" : "--" },
+      { label: "流通市值", value: d.circulatingMarketCap != null ? (d.circulatingMarketCap / 100000000).toFixed(2) + "亿" : "--" },
+      { label: "换手率", value: d.turnoverRate != null ? d.turnoverRate.toFixed(2) + "%" : "--" },
+      { label: "量比", value: d.volumeRatio != null ? d.volumeRatio.toFixed(2) : "--" },
+    ]
+    return (
+      <VStack alignment="leading" spacing={Math.max(4, getFontSize(4, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }}>
+        {chunkRows(items).map((pair, i) => (
+          <HStack spacing={8} frame={{ maxWidth: "infinity" }} key={i}>
+            {pair.map((item) => (
+              <DataCell key={item.label} label={item.label} value={item.value} />
+            ))}
+            {pair.length === 1 ? <VStack frame={{ maxWidth: "infinity" }} /> : null}
+          </HStack>
+        ))}
+      </VStack>
+    )
+  }
+
+  // 基金概况
+  const d = overviewData as FundOverview
+  const total = d.assetAllocation
+  const ret = d.returns
+  const sections = [
+    { title: "费率", rows: [
+      { label: "申购费率", value: d.subscribeRate != null ? d.subscribeRate + "%" : "--" },
+      { label: "管理费率", value: d.manageFee != null ? d.manageFee + "%" : "--" },
+      { label: "托管费率", value: d.custodianFee != null ? d.custodianFee + "%" : "--" },
+      { label: "销售服务费", value: d.serviceFee != null ? d.serviceFee + "%" : "--" },
+    ]},
+    { title: "资产配置", rows: [
+      { label: "股票占比", value: total?.stock != null ? total.stock.toFixed(2) + "%" : "--" },
+      { label: "债券占比", value: total?.bond != null ? total.bond.toFixed(2) + "%" : "--" },
+      { label: "现金占比", value: total?.cash != null ? total.cash.toFixed(2) + "%" : "--" },
+    ]},
+    { title: "阶段收益", rows: [
+      { label: "近1月", value: ret?.m1 != null ? (ret.m1 >= 0 ? "+" : "") + ret.m1.toFixed(2) + "%" : "--" },
+      { label: "近3月", value: ret?.m3 != null ? (ret.m3 >= 0 ? "+" : "") + ret.m3.toFixed(2) + "%" : "--" },
+      { label: "近6月", value: ret?.m6 != null ? (ret.m6 >= 0 ? "+" : "") + ret.m6.toFixed(2) + "%" : "--" },
+      { label: "近1年", value: ret?.y1 != null ? (ret.y1 >= 0 ? "+" : "") + ret.y1.toFixed(2) + "%" : "--" },
+    ]},
+    { title: "基本信息", rows: [
+      { label: "基金规模", value: d.fundSize != null ? d.fundSize.toFixed(2) + "亿" : "--" },
+      { label: "基金经理", value: d.fundManager?.name ?? "--" },
+      { label: "任职时长", value: d.fundManager?.workTime ?? "--" },
+      { label: "管理规模", value: d.fundManager?.fundSize ?? "--" },
+    ]},
+  ]
+
+  return (
+    <VStack alignment="leading" spacing={Math.max(6, getFontSize(6, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }}>
+      {sections.map((s) => (
+        <VStack alignment="leading" spacing={Math.max(2, getFontSize(3, config.fontSizeDetail))} frame={{ maxWidth: "infinity" }} key={s.title}>
+          <Text font={labelFont} fontWeight="medium" foregroundStyle="secondaryLabel">
+            {s.title}
+          </Text>
+          {chunkRows(s.rows).map((pair, i) => (
+            <HStack spacing={8} frame={{ maxWidth: "infinity" }} key={i}>
+              {pair.map((item) => (
+                <DataCell key={item.label} label={item.label} value={item.value} />
+              ))}
+              {pair.length === 1 ? <VStack frame={{ maxWidth: "infinity" }} /> : null}
+            </HStack>
+          ))}
+        </VStack>
+      ))}
+    </VStack>
   )
 }

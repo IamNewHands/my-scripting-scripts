@@ -21,7 +21,7 @@
   "runInApp" : false,
   "remoteResource" : {
     "url" : "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/Gold-Price-Widget.zip",
-    "hash" : "",
+    "hash" : "6cc5b2342729f1c48a447f16418576e3",
     "autoUpdateInterval" : null
   }
 }

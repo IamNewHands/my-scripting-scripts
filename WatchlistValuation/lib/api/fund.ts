@@ -1,3 +1,4 @@
+import { fetch } from "scripting"
 import { fetchJson, parseNumber } from "../http"
 import { getHoldingsCache, setHoldingsCache } from "../storage"
 import type {
@@ -74,7 +75,7 @@ export async function fetchFundPrevNav(
   if (list.length < 2) return null
   const prev = list[1]
   const prevNav = parseNumber(prev.DWJZ)
-  const prevChgPct = parseNumber(prev.JZZZL)
+  const prevChgPct = parseNumber(list[0].JZZZL)
   if (prevNav == null) return null
   return { prevNav, prevChgPct: prevChgPct ?? 0 }
 }
@@ -263,4 +264,131 @@ export async function fetchFundHistory(
   const sorted = points.reverse()
   // 只保留最近 days 个点
   return sorted.length > days ? sorted.slice(sorted.length - days) : sorted
+}
+
+/** 从 pingzhongdata.js 提取基金变量值 */
+function extractVar(text: string, name: string): any {
+  const re = new RegExp(`var\\s+${name}\\s*=\\s*([^;]+);`, "")
+  const m = text.match(re)
+  if (!m) return null
+  try {
+    return JSON.parse(m[1])
+  } catch {
+    try {
+      return new Function(`return (${m[1]})`)()
+    } catch {
+      return null
+    }
+  }
+}
+
+/** 获取基金费率（从 F10 费率页） */
+export async function fetchFundFees(
+  code: string
+): Promise<{ manageFee: number | null; custodianFee: number | null; serviceFee: number | null }> {
+  const result = { manageFee: null as number | null, custodianFee: null as number | null, serviceFee: null as number | null }
+  try {
+    const resp = await fetch(`https://fund.eastmoney.com/f10/jjfl_${encodeURIComponent(code)}.html`, { timeout: 10 })
+    const html = await resp.text()
+    const mgmt = html.match(/管理费率[^<]*<[^>]*>[^<]*<[^>]*>([\d.]+)/)
+    if (mgmt) result.manageFee = parseFloat(mgmt[1])
+    const cust = html.match(/托管费率[^<]*<[^>]*>[^<]*<[^>]*>([\d.]+)/)
+    if (cust) result.custodianFee = parseFloat(cust[1])
+    const serv = html.match(/销售服务费率[^<]*<[^>]*>[^<]*<[^>]*>([\d.]+)/)
+    if (serv) result.serviceFee = parseFloat(serv[1])
+  } catch {}
+  return result
+}
+
+/** 获取基金概况（从 pingzhongdata.js） */
+export async function fetchFundDetail(
+  code: string
+): Promise<{
+  subscribeRate: number | null
+  subscribeSourceRate: number | null
+  minSubscribe: number | null
+  assetAllocation: { stock: number | null; bond: number | null; cash: number | null } | null
+  returns: { m1: number | null; m3: number | null; m6: number | null; y1: number | null } | null
+  fundSize: number | null
+  fundManager: { name: string; workTime: string; fundSize: string } | null
+  holderStructure: { institution: number | null; individual: number | null } | null
+}> {
+  const empty = {
+    subscribeRate: null,
+    subscribeSourceRate: null,
+    minSubscribe: null,
+    assetAllocation: null,
+    returns: null,
+    fundSize: null,
+    fundManager: null,
+    holderStructure: null,
+  }
+  try {
+    const resp = await fetch(`https://fund.eastmoney.com/pingzhongdata/${encodeURIComponent(code)}.js`, { timeout: 10 })
+    const text = await resp.text()
+
+    const subscribeRate = parseFloat(extractVar(text, "fund_Rate") ?? "")
+    const subscribeSourceRate = parseFloat(extractVar(text, "fund_sourceRate") ?? "")
+    const minSubscribe = parseFloat(extractVar(text, "fund_minsg") ?? "")
+
+    // 资产配置：取最新一期
+    const alloc = extractVar(text, "Data_assetAllocation") as any
+    let assetAllocation = null
+    if (alloc?.series && alloc.categories) {
+      const lastIdx = alloc.categories.length - 1
+      const stock = alloc.series.find((s: any) => s.name?.includes("股票"))?.data?.[lastIdx] ?? null
+      const bond = alloc.series.find((s: any) => s.name?.includes("债券"))?.data?.[lastIdx] ?? null
+      const cash = alloc.series.find((s: any) => s.name?.includes("现金"))?.data?.[lastIdx] ?? null
+      assetAllocation = { stock: stock ?? null, bond: bond ?? null, cash: cash ?? null }
+    }
+
+    // 阶段收益
+    const m1 = parseFloat(extractVar(text, "syl_1y") ?? "")
+    const m3 = parseFloat(extractVar(text, "syl_3y") ?? "")
+    const m6 = parseFloat(extractVar(text, "syl_6y") ?? "")
+    const y1 = parseFloat(extractVar(text, "syl_1n") ?? "")
+    const returns = { m1: isNaN(m1) ? null : m1, m3: isNaN(m3) ? null : m3, m6: isNaN(m6) ? null : m6, y1: isNaN(y1) ? null : y1 }
+
+    // 基金规模：取最新一期
+    const scale = extractVar(text, "Data_fluctuationScale") as any
+    let fundSize = null
+    if (scale?.series?.length > 0) {
+      const last = scale.series[scale.series.length - 1]
+      fundSize = last.y ?? null
+    }
+
+    // 基金经理
+    const mgr = extractVar(text, "Data_currentFundManager") as any
+    let fundManager = null
+    if (Array.isArray(mgr) && mgr.length > 0) {
+      fundManager = {
+        name: mgr[0].name ?? "",
+        workTime: mgr[0].workTime ?? "",
+        fundSize: mgr[0].fundSize ?? "",
+      }
+    }
+
+    // 持有人结构
+    const holder = extractVar(text, "Data_holderStructure") as any
+    let holderStructure = null
+    if (holder?.series && holder.categories) {
+      const lastIdx = holder.categories.length - 1
+      const inst = holder.series.find((s: any) => s.name?.includes("机构"))?.data?.[lastIdx] ?? null
+      const indiv = holder.series.find((s: any) => s.name?.includes("个人"))?.data?.[lastIdx] ?? null
+      holderStructure = { institution: inst != null ? inst * 100 : null, individual: indiv != null ? indiv * 100 : null }
+    }
+
+    return {
+      subscribeRate: isNaN(subscribeRate) ? null : subscribeRate,
+      subscribeSourceRate: isNaN(subscribeSourceRate) ? null : subscribeSourceRate,
+      minSubscribe: isNaN(minSubscribe) ? null : minSubscribe,
+      assetAllocation,
+      returns,
+      fundSize,
+      fundManager,
+      holderStructure,
+    }
+  } catch {
+    return empty
+  }
 }

@@ -145,8 +145,8 @@ function FundColHeader({ config }: { config: WidgetConfig }) {
   const nW = Math.max(34, scaleW(42, config.fontSizeList))
   const wShares = scaleW(28, config.fontSizeList)
   const wn = scaleW(26, config.fontSizeList)
-  const wPrev = scaleW(26, config.fontSizeList)
-  const wToday = scaleW(28, config.fontSizeList)
+  const wPrev = scaleW(28, config.fontSizeList)
+  const wToday = scaleW(30, config.fontSizeList)
   const wPnl = scaleW(28, config.fontSizeList)
   const gap = Math.max(1, config.columnGap || 2)
   return (
@@ -186,8 +186,8 @@ function FundRow({ row, config }: { row: FundRowView; config: WidgetConfig }) {
   const nW = Math.max(34, scaleW(42, config.fontSizeList))
   const wShares = scaleW(28, config.fontSizeList)
   const wn = scaleW(26, config.fontSizeList)
-  const wPrev = scaleW(26, config.fontSizeList)
-  const wToday = scaleW(28, config.fontSizeList)
+  const wPrev = scaleW(28, config.fontSizeList)
+  const wToday = scaleW(30, config.fontSizeList)
   const wPnl = scaleW(28, config.fontSizeList)
   const chartParams = `fund|${row.code}|${row.alias || row.name}`
   const costPrice =
@@ -233,9 +233,9 @@ function FundRow({ row, config }: { row: FundRowView; config: WidgetConfig }) {
         foregroundStyle={pnlColor(row.prevChgPct, config.redUp)}
         frame={{ width: wPrev, alignment: "trailing" }}
         lineLimit={1}
-        minScaleFactor={0.7}
+        minScaleFactor={0.5}
       >
-        {row.prevChgPct != null ? formatPct(row.prevChgPct, 1) : "--"}
+        {row.prevChgPct != null ? formatPct(row.prevChgPct, 2) : "--"}
       </Text>
       <Text
         font={numFont}
@@ -243,10 +243,10 @@ function FundRow({ row, config }: { row: FundRowView; config: WidgetConfig }) {
         foregroundStyle={todayColor}
         frame={{ width: wToday, alignment: "trailing" }}
         lineLimit={1}
-        minScaleFactor={0.7}
+        minScaleFactor={0.5}
       >
         {todayTag}
-        {formatPct(row.changePct, 1)}
+        {formatPct(row.changePct, 2)}
       </Text>
       <Text
         font={numFont}
@@ -369,7 +369,7 @@ function StockRow({ row, config }: { row: StockRowView; config: WidgetConfig }) 
         lineLimit={1}
         minScaleFactor={0.5}
       >
-        {formatPct(row.changePct, 1)}
+        {formatPct(row.changePct, 2)}
       </Text>
       <Text
         font={numFont}

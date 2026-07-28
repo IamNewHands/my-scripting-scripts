@@ -74,8 +74,8 @@ export type WidgetConfig = {
 /** 历史明细类型：基金净值 / 股票日K */
 export type WidgetHistoryKind = "fund" | "stock"
 
-/** 历史明细 tab：历史数据 / 持仓明细 */
-export type HistoryTab = "history" | "holdings"
+/** 历史明细 tab：历史数据 / 持仓明细 / 概况 */
+export type HistoryTab = "history" | "holdings" | "overview"
 
 /** 小组件内嵌历史明细状态 */
 export type WidgetChartState = {
@@ -161,6 +161,50 @@ export type StockSearchHit = {
   name: string
   market: StockMarket
   secid: string
+}
+
+/** 基金概况（从 pingzhongdata.js + F10 费率页解析） */
+export type FundOverview = {
+  /** 申购费率（现费率） */
+  subscribeRate: number | null
+  /** 申购费率（原费率） */
+  subscribeSourceRate: number | null
+  /** 最低申购金额 */
+  minSubscribe: number | null
+  /** 管理费率 % */
+  manageFee: number | null
+  /** 托管费率 % */
+  custodianFee: number | null
+  /** 销售服务费率 % */
+  serviceFee: number | null
+  /** 资产配置：股票/债券/现金占比 */
+  assetAllocation: { stock: number | null; bond: number | null; cash: number | null } | null
+  /** 阶段收益率（近1月/3月/6月/1年） */
+  returns: { m1: number | null; m3: number | null; m6: number | null; y1: number | null } | null
+  /** 基金规模（亿） */
+  fundSize: number | null
+  /** 基金经理信息 */
+  fundManager: { name: string; workTime: string; fundSize: string } | null
+  /** 持有人结构 */
+  holderStructure: { institution: number | null; individual: number | null } | null
+}
+
+/** 股票概况（从东财 stock API 解析） */
+export type StockOverview = {
+  price: number | null
+  change: number | null
+  changePct: number | null
+  high: number | null
+  low: number | null
+  open: number | null
+  preClose: number | null
+  volume: number | null
+  amount: number | null
+  pe: number | null
+  totalMarketCap: number | null
+  circulatingMarketCap: number | null
+  turnoverRate: number | null
+  volumeRatio: number | null
 }
 
 /** 单只基金计算结果 */

@@ -16,14 +16,14 @@ export function resolveFundShares(
 ): number {
   const cost = item.costAmount || 0
   if (item.buyNav != null && item.buyNav > 0 && cost > 0) {
-    return cost / item.buyNav
+    return Number((cost / item.buyNav).toFixed(2))
   }
   if (item.shares != null && item.shares > 0) {
     return item.shares
   }
   // 兜底：按当前净值折算（持有收益会接近 0，仅防数据不全）
   if (currentNav != null && currentNav > 0 && cost > 0) {
-    return cost / currentNav
+    return Number((cost / currentNav).toFixed(2))
   }
   return 0
 }
@@ -35,13 +35,13 @@ export function resolveStockQuantity(
 ): number {
   const cost = item.costAmount || 0
   if (item.buyPrice != null && item.buyPrice > 0 && cost > 0) {
-    return cost / item.buyPrice
+    return Math.round(cost / item.buyPrice)
   }
   if (item.quantity != null && item.quantity > 0) {
     return item.quantity
   }
   if (currentPrice != null && currentPrice > 0 && cost > 0) {
-    return cost / currentPrice
+    return Math.round(cost / currentPrice)
   }
   return 0
 }
@@ -106,7 +106,12 @@ export function holdPnlFromAmount(
  */
 export function isOfficialNavDay(navDate: string): boolean {
   if (!navDate || navDate === "--") return false
-  return navDate.slice(0, 10) === todayDateStr()
+  // NAV 日期在最近 3 个自然日内即视为官方（覆盖周末和节假日延迟）
+  const d = new Date(navDate.slice(0, 10))
+  if (isNaN(d.getTime())) return false
+  const now = new Date()
+  const diff = now.getTime() - d.getTime()
+  return diff >= 0 && diff < 3 * 24 * 60 * 60 * 1000
 }
 
 export function buildFundRow(

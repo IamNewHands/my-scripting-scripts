@@ -128,7 +128,7 @@ export function getWidgetChart(): WidgetChartState | null {
   const days = raw.days === 15 ? 15 : raw.days === 30 ? 30 : 7
   const page = Math.max(0, Math.floor(Number(raw.page) || 0))
   const kind = raw.kind === "stock" ? "stock" : "fund"
-  const tab = raw.tab === "holdings" ? "holdings" : "history"
+  const tab = raw.tab === "overview" ? "overview" : raw.tab === "holdings" ? "holdings" : "history"
   return {
     kind,
     code: String(raw.code),

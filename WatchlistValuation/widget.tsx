@@ -1,6 +1,6 @@
 import { Widget } from "scripting"
-import { fetchFundHistory, fetchFundHoldings } from "./lib/api/fund"
-import { fetchStockHistory, fetchStockQuotes } from "./lib/api/stock"
+import { fetchFundDetail, fetchFundFees, fetchFundHistory, fetchFundHoldings } from "./lib/api/fund"
+import { fetchStockDetail, fetchStockHistory, fetchStockQuotes } from "./lib/api/stock"
 import { getCachedSnapshot, setCachedSnapshot, computeFundsHash, computeStocksHash } from "./lib/cache/snapshot"
 import { loadPortfolioSnapshot, rebuildFromCached } from "./lib/portfolio"
 import {
@@ -16,17 +16,110 @@ import {
 import type {
   FundHoldingRow,
   FundItem,
+  FundOverview,
   HistoryTableRow,
   PortfolioSnapshot,
   StockItem,
+  StockOverview,
   WidgetChartState,
 } from "./lib/types"
-import { anyMarketOpen } from "./lib/util/marketHours"
+import { anyMarketOpen, marketKeyOfCode } from "./lib/util/marketHours"
+import type { MarketKey } from "./lib/util/marketHours"
 import { ChartWidgetView } from "./widget/views/Chart"
 import { CompactWidgetView, WatchlistWidgetView } from "./widget/views/List"
 
 /** 图表历史缓存 TTL：5 分钟。切 days/tab 在 TTL 内只切视图不重拉 */
 const CHART_CACHE_TTL_MS = 5 * 60 * 1000
+
+/**
+ * 根据自选市场的交易时段，计算小组件下次刷新时间。
+ *
+ * 策略：
+ * - 交易时段 → 刷新最近一个收盘（保证当日最后数据）
+ * - 非交易时段 → 刷新最近一个开盘（保证开盘即更新）
+ * - 周末 → 下周一 9:30
+ */
+function getNextRefreshDate(items: Array<{ code?: string; secid?: string }>): Date {
+  const now = new Date()
+  const day = now.getDay()
+
+  // 周末：下周一 9:30
+  if (day === 0 || day === 6) {
+    const monday = new Date(now)
+    monday.setDate(monday.getDate() + (day === 6 ? 2 : 1))
+    monday.setHours(9, 30, 0, 0)
+    return monday
+  }
+
+  // 收集所有自选涉及的市场
+  const markets = new Set<MarketKey>()
+  for (const it of items) {
+    const k = marketKeyOfCode(it.code || "", it.secid || "")
+    if (k) markets.add(k)
+  }
+  if (markets.size === 0) markets.add("cn")
+
+  // 跳过周末
+  function nextWeekday(d: Date): Date {
+    const r = new Date(d)
+    while (r.getDay() === 0 || r.getDay() === 6) {
+      r.setDate(r.getDate() + 1)
+    }
+    return r
+  }
+
+  // 交易时段 → 找最近收盘
+  if (anyMarketOpen(items, now)) {
+    const candidates: Date[] = []
+    for (const m of markets) {
+      if (m === "cn") {
+        const c = new Date(now)
+        c.setHours(15, 0, 0, 0)
+        if (c > now) candidates.push(c)
+      } else if (m === "hk") {
+        const c = new Date(now)
+        c.setHours(16, 0, 0, 0)
+        if (c > now) candidates.push(c)
+      } else if (m === "us") {
+        // 美股收盘 05:00 北京时间
+        let c = new Date(now)
+        c.setHours(5, 0, 0, 0)
+        if (c <= now) c = new Date(c.getTime() + 86400000)
+        c = nextWeekday(c)
+        if (c > now) candidates.push(c)
+      }
+    }
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => a.getTime() - b.getTime())
+      return candidates[0]
+    }
+  }
+
+  // 非交易时段 → 找最近开盘
+  const candidates: Date[] = []
+  for (const m of markets) {
+    if (m === "cn" || m === "hk") {
+      let o = new Date(now)
+      o.setHours(9, 30, 0, 0)
+      if (o <= now) o = new Date(o.getTime() + 86400000)
+      o = nextWeekday(o)
+      candidates.push(o)
+    } else if (m === "us") {
+      let o = new Date(now)
+      o.setHours(21, 30, 0, 0)
+      if (o <= now) o = new Date(o.getTime() + 86400000)
+      o = nextWeekday(o)
+      candidates.push(o)
+    }
+  }
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => a.getTime() - b.getTime())
+    return candidates[0]
+  }
+
+  // 兜底：1 小时后
+  return new Date(now.getTime() + 3600000)
+}
 
 /**
  * 加载图表历史数据（含缓存）。
@@ -84,12 +177,22 @@ async function run() {
   const config = getWidgetConfig()
   const chartState = getWidgetChart()
 
+  // 提前获取自选列表（用于计算刷新时间）
+  const fundsList: FundItem[] = getFunds()
+  const stocksList: StockItem[] = getStocks()
+  const allItems = [
+    ...fundsList.map((f) => ({ code: f.code, secid: undefined })),
+    ...stocksList.map((s) => ({ code: s.code, secid: s.secid })),
+  ]
+  const nextRefresh = getNextRefreshDate(allItems)
+
   // 历史表：提前加载（基金净值 / 股票日K + 持仓明细）
   if (page === "chart" && chartState) {
     const currentTab = chartState.tab || "history"
     let chartData: HistoryTableRow[] = []
     let holdingsData: FundHoldingRow[] = []
     let holdingsUpdatedAt: number | undefined
+    let overviewData: FundOverview | StockOverview | null = null
     const holdingsQuotes = new Map<string, { price: number | null; changePct: number | null }>()
 
     try {
@@ -135,6 +238,25 @@ async function run() {
             }
           }
         }
+      } else if (currentTab === "overview") {
+        // 加载概况数据
+        if (chartState.kind === "stock" && chartState.secid) {
+          const d = await fetchStockDetail(chartState.secid)
+          if (d) overviewData = d
+        } else {
+          const [detail, fees] = await Promise.all([
+            fetchFundDetail(chartState.code),
+            fetchFundFees(chartState.code),
+          ])
+          if (detail) {
+            overviewData = {
+              ...detail,
+              manageFee: fees.manageFee,
+              custodianFee: fees.custodianFee,
+              serviceFee: fees.serviceFee,
+            } as FundOverview
+          }
+        }
       }
     } catch (e) {
       // 记录错误便于诊断，但不要阻断 UI 呈现
@@ -150,20 +272,16 @@ async function run() {
         holdingsData={holdingsData}
         holdingsQuotes={holdingsQuotes}
         holdingsUpdatedAt={holdingsUpdatedAt}
+        overviewData={overviewData}
         config={config}
-      />
+      />,
+      { policy: "after", date: nextRefresh }
     )
     return
   }
 
   // 列表模式：非交易时段读本地快照，交易时段才拉接口。
   let snap: PortfolioSnapshot
-  const fundsList: FundItem[] = getFunds()
-  const stocksList: StockItem[] = getStocks()
-  const allItems = [
-    ...fundsList.map((f) => ({ code: f.code, secid: undefined })),
-    ...stocksList.map((s) => ({ code: s.code, secid: s.secid })),
-  ]
   const marketOpen = anyMarketOpen(allItems)
 
   if (marketOpen) {
@@ -219,9 +337,9 @@ async function run() {
 
   const family = Widget.family
   if (family === "systemSmall" || family === "accessoryRectangular") {
-    Widget.present(<CompactWidgetView page={page} snap={snap} config={config} />)
+    Widget.present(<CompactWidgetView page={page} snap={snap} config={config} />, { policy: "after", date: nextRefresh })
   } else {
-    Widget.present(<WatchlistWidgetView page={page} snap={snap} config={config} />)
+    Widget.present(<WatchlistWidgetView page={page} snap={snap} config={config} />, { policy: "after", date: nextRefresh })
   }
 }
 

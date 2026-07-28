@@ -1,0 +1,36 @@
+{
+  "entry": "index.tsx",
+  "name": "磁力资源预览",
+  "permissions": null,
+  "intentInputTypes": [],
+  "runInApp": false,
+  "author": {
+    "name": "IamNewHands",
+    "email": null,
+    "homepage": "https://github.com/IamNewHands/my-scripting-scripts/tree/main/Magnet-Resource-Preview"
+  },
+  "contributors": [
+    {
+      "name": "Waa",
+      "homepage": "https://github.com/iamwaa"
+    }
+  ],
+  "version": "1.0.0",
+  "localizedNames": {
+    "zh": "磁力资源预览",
+    "en": "Magnet Preview"
+  },
+  "remoteResource": {
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/Magnet-Resource-Preview.zip",
+    "hash": "",
+    "autoUpdateInterval": null
+  },
+  "color": "rgba(10, 132, 255, 1)",
+  "iconImage": "",
+  "icon": "link",
+  "description": "Search magnet resources via xcili.net, preview metadata via whatslink.info, and recognize codes from screenshots via whos.tv image search.",
+  "localizedDescriptions": {
+    "en": "Search magnet resources via xcili.net, preview metadata via whatslink.info, and recognize codes from screenshots via whos.tv image search.",
+    "zh": "磁力、ED2K 与下载链接资源预览工具。支持 xcili.net 磁力搜索、whatslink.info 预览，以及 whos.tv 以图搜片识别番号。"
+  }
+}

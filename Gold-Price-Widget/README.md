@@ -1,50 +1,52 @@
-# Gold Price Widget
+# 金价小组件
 
-A real-time gold price widget for iOS home screen and lock screen, supporting multiple Chinese banks.
+实时查询多家银行黄金价格的 iOS 桌面 / 锁屏小组件。
 
-## Features
+> English: [README.en.md](./README.en.md)
 
-- **Multi-bank support**: China Merchants Bank (CMB), Zheshang Bank, ICBC, Minsheng Bank, CGB, CIB, JD Gold, International London Gold (USD)
-- **Widget sizes**: systemSmall, systemMedium, systemLarge, accessoryRectangular (lock screen)
-- **Price display**: Buy/sell prices, change value, change percentage
-- **Trend chart**: 10-slot bar chart showing recent price trend
-- **Data source switching**: Tap the bank name to cycle through all data sources
-- **Manual refresh**: Tap the refresh button to update prices
+## 功能
 
-## Data Sources
+- 支持 **招商银行**、**浙商银行**、**工商银行**、**民生银行**、**广发银行**、**兴业银行**、**京东黄金**、**国际伦敦金**
+- 显示实时金价、涨跌幅百分比
+- 趋势图展示近期价格走势
+- 数据源切换
+- 桌面小组件 + 锁屏小组件 + App Intent 快捷查询
 
-| Bank | Type | API |
-|------|------|-----|
-| China Merchants Bank (CMB) | Buy/Sell | `mbmodule-openapi.paas.cmbchina.com` (POST) |
-| Zheshang Bank (ZS) | Single price | `api.jdjygold.com` (GET) |
-| ICBC / Minsheng / CGB / CIB / JD Gold / London Gold | Single price | `jin.20021002.xyz/api.php` (GET) - GoldMonitor aggregator |
+## 数据源
 
-## File Structure
+| 来源 | 说明 |
+|------|------|
+| 各银行官网/API | 银行金价实时查询 |
+| 伦敦金 | 国际现货黄金价格 |
+
+## 项目结构
 
 ```
 Gold-Price-Widget/
-  index.tsx           # Settings page (data source selection)
-  widget.tsx          # Widget rendering (WidgetHeader / TrendBars)
-  app_intents.tsx     # RefreshGoldIntent + SwitchBankIntent
-  script.json         # Script metadata
-  utils/
-    fetchGold.ts      # Gold price API wrapper
-CLAUDE.md             # Project documentation
+├── index.tsx               控制台入口
+├── widget.tsx              小组件入口
+├── app_intents.tsx         快捷指令入口
+├── script.json             元数据
+├── utils/
+│   └── fetchGold.ts        金价获取逻辑
+├── README.md               本文件（中文）
+└── README.en.md            英文文档
 ```
 
-## Usage
+## 隐私
 
-1. Install via Scripting app
-2. Add the widget to your home screen or lock screen
-3. Tap the bank name to switch data sources
-4. Tap the refresh button to update prices
+- 脚本直接调用银行公开金价接口，不经过任何中转服务
+- 不收集、不上传、不分享任何用户信息
 
-## Privacy
+## 外部域名
 
-- All data is fetched directly from public APIs
-- No user data is collected or transmitted
-- External domains: `mbmodule-openapi.paas.cmbchina.com`, `api.jdjygold.com`, `jin.20021002.xyz`
+- 各银行金价公开接口
 
-## License
+## 仓库中的其他脚本
+
+- [自选估值](../WatchlistValuation/README.md) — 基金/股票自选估值小组件
+- [磁力资源预览](../Magnet-Resource-Preview/README.md) — 磁力搜索与资源预览工具
+
+## 许可
 
 MIT

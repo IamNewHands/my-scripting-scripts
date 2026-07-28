@@ -1,3 +1,4 @@
+import { fetch } from "scripting"
 import { fetchJson, fetchText, parseNumber } from "../http"
 import type { StockMarket, StockQuote, StockSearchHit } from "../types"
 
@@ -392,4 +393,55 @@ function parseTqKlines(
     prevClose = close
   }
   return points.length > days ? points.slice(points.length - days) : points
+}
+
+/** 获取股票概况（从东财 stock API） */
+export async function fetchStockDetail(
+  secid: string
+): Promise<{
+  price: number | null
+  change: number | null
+  changePct: number | null
+  high: number | null
+  low: number | null
+  open: number | null
+  preClose: number | null
+  volume: number | null
+  amount: number | null
+  pe: number | null
+  totalMarketCap: number | null
+  circulatingMarketCap: number | null
+  turnoverRate: number | null
+  volumeRatio: number | null
+}> {
+  const empty = {
+    price: null, change: null, changePct: null, high: null, low: null,
+    open: null, preClose: null, volume: null, amount: null, pe: null,
+    totalMarketCap: null, circulatingMarketCap: null, turnoverRate: null, volumeRatio: null,
+  }
+  try {
+    const fields = "f43,f44,f45,f46,f47,f48,f55,f57,f58,f60,f116,f117,f162,f168,f169,f170,f171"
+    const resp = await fetch(`https://push2.eastmoney.com/api/qt/stock/get?secid=${encodeURIComponent(secid)}&fields=${fields}`, { timeout: 10 })
+    const json = await resp.json()
+    const d = json?.data
+    if (!d) return empty
+    return {
+      price: d.f43 != null ? d.f43 / 100 : null,
+      change: d.f169 != null ? d.f169 / 100 : null,
+      changePct: d.f170 != null ? d.f170 / 100 : null,
+      high: d.f44 != null ? d.f44 / 100 : null,
+      low: d.f45 != null ? d.f45 / 100 : null,
+      open: d.f46 != null ? d.f46 / 100 : null,
+      preClose: d.f60 != null ? d.f60 / 100 : null,
+      volume: d.f47 != null ? d.f47 : null,
+      amount: d.f48 != null ? d.f48 : null,
+      pe: d.f55 != null ? d.f55 : null,
+      totalMarketCap: d.f116 != null ? d.f116 : null,
+      circulatingMarketCap: d.f117 != null ? d.f117 : null,
+      turnoverRate: d.f162 != null ? d.f162 / 100 : null,
+      volumeRatio: d.f168 != null ? d.f168 / 100 : null,
+    }
+  } catch {
+    return empty
+  }
 }
