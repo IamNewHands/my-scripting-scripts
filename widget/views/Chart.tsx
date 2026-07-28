@@ -449,7 +449,7 @@ function OverviewTabView({
   function DataCell({ label, value }: { label: string; value: string }) {
     return (
       <HStack spacing={3} frame={{ maxWidth: "infinity" }}>
-        <Text font={labelFont} foregroundStyle="tertiaryLabel" lineLimit={1}>
+        <Text font={baseFont} fontWeight="bold" foregroundStyle="label" lineLimit={1} minScaleFactor={0.7}>
           {label}：
         </Text>
         <Text font={baseFont} fontWeight="bold" foregroundStyle="label" lineLimit={1} minScaleFactor={0.7}>

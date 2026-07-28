@@ -45,6 +45,13 @@ function parseAmount(s: string): number {
   return Number.isFinite(n) && n >= 0 ? n : 0
 }
 
+/** 解析金额/数值并限制小数位 */
+function parseAmountFixed(s: string, digits: number): number {
+  const n = parseAmount(s)
+  if (n === 0) return 0
+  return Number(n.toFixed(digits))
+}
+
 function App() {
   const [tab, setTab] = useState<TabKey>("fund")
   const [funds, setFundsState] = useState<FundItem[]>(() => getFunds())
@@ -142,7 +149,7 @@ function App() {
       })
       return
     }
-    const shares = parseAmount(fundCost)
+    const shares = parseAmountFixed(fundCost, 2)
     if (shares < 0) {
       setStatus("持有份额不能为负数")
       return
@@ -197,7 +204,7 @@ function App() {
       })
       return
     }
-    const quantity = parseAmount(stockCost)
+    const quantity = parseAmountFixed(stockCost, 0)
     if (quantity < 0) {
       setStatus("持仓股数不能为负数")
       return

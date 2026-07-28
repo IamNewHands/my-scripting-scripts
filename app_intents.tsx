@@ -9,6 +9,7 @@ import {
   setWidgetChart,
   setWidgetPage,
 } from "./lib/storage"
+import { clearCachedSnapshot } from "./lib/cache/snapshot"
 import type { WidgetPage } from "./lib/types"
 
 /** 切换到基金列表页 */
@@ -186,11 +187,12 @@ export const ShiftListPageIntent = AppIntentManager.register({
   },
 })
 
-/** 仅触发刷新 */
+/** 仅触发刷新：先清缓存再重载，确保从源头拉数据 */
 export const RefreshWatchlistIntent = AppIntentManager.register({
   name: "RefreshWatchlistIntent",
   protocol: AppIntentProtocol.AppIntent,
   perform: async (_params: undefined) => {
+    clearCachedSnapshot()
     Widget.reloadAll()
   },
 })
