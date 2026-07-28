@@ -6,26 +6,17 @@
 
 ## 脚本列表
 
-### [自选估值](./WatchlistValuation/README.md)
-
-场外基金按重仓股加权估算盘中估值，管理基金 / A 股 / 港股 / 美股自选，展示当日/持有收益。小组件点击名称查看 7/15/30 日历史图表。非交易时段直接读本地缓存，毫秒级启动。
-
-- [📖 中文文档](./WatchlistValuation/README.md) | [📖 English Docs](./WatchlistValuation/README.en.md)
-- 一键导入：`https://scripting.fun/import_scripts?urls=` + URL 编码 `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/WatchlistValuation"]`
-
-### [金价小组件](./Gold-Price-Widget/README.md)
-
-实时查询多家银行黄金价格的桌面 / 锁屏小组件。支持招商银行、浙商银行、工商银行、民生银行、广发银行、兴业银行、京东黄金、国际伦敦金，含涨跌幅百分比和趋势图。
-
-- [📖 中文文档](./Gold-Price-Widget/README.md) | [📖 English Docs](./Gold-Price-Widget/README.en.md)
-- 一键导入：`https://scripting.fun/import_scripts?urls=` + URL 编码 `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/Gold-Price-Widget"]`
-
-### [磁力资源预览](./Magnet-Resource-Preview/README.md)
-
-磁力搜索与资源预览工具。支持通过 xcili.net 搜索资源、提取纯磁力链接和文件列表，基于 whatslink.info 查询磁力、ED2K 与下载链接的资源元数据；支持 whos.tv 以图搜片识别番号后跳转磁力搜索；支持收藏、复制链接、保存预览截图。
-
-- [📖 中文文档](./Magnet-Resource-Preview/README.md) | [📖 English Docs](./Magnet-Resource-Preview/README.en.md)
-- 一键导入：`https://scripting.fun/import_scripts?urls=` + URL 编码 `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/Magnet-Resource-Preview"]`
+| 脚本 | 目录 | 说明 |
+|------|------|------|
+| **自选估值** | [WatchlistValuation](./WatchlistValuation/README.md) | 场外基金按重仓股加权估算盘中估值，管理基金/A股/港股/美股自选，展示当日/持有收益。小组件点击名称查看 7/15/30 日历史图表。非交易时段直接读本地缓存，毫秒级启动。 |
+| **金价小组件** | [Gold-Price-Widget](./Gold-Price-Widget/README.md) | 实时查询多家银行黄金价格的桌面/锁屏小组件。支持招商银行、浙商银行、工商银行、民生银行、广发银行、兴业银行、京东黄金、国际伦敦金，含涨跌幅百分比和趋势图。 |
+| **磁力资源预览** | [Magnet-Resource-Preview](./Magnet-Resource-Preview/README.md) | 磁力搜索与资源预览工具。支持 xcili.net 搜索、whatslink.info 预览元数据、whos.tv 以图搜片识别番号。支持收藏、复制链接、保存预览截图。 |
+| **App 多区价格查询** | [App-Region-Price](./App-Region-Price/README.md) | 查询 App Store 各区价格，支持汇率换算人民币、搜索按名称匹配度排序，展示版本/更新说明/简介。 |
+| **App Store 翻译** | [App-Store-Translate](./App-Store-Translate/README.md) | App Store 应用页面翻译工具，支持多语言互译。 |
+| **Gist** | [Gist](./Gist/README.md) | GitHub Gist 管理工具，支持创建、编辑、查看和管理 Gist 代码片段。 |
+| **IPA-Tool** | [IPA-Tool](./IPA-Tool/README.md) | IPA 文件管理工具，支持安装、签名、查看应用信息等。 |
+| **PDD 快捷提交** | [PDD-Quick-Submit](./PDD-Quick-Submit/README.md) | 多站点并行提交拼多多组队码，首成功立即返回，单码总时限 5s。 |
+| **Yoinks** | [Yoinks](./Yoinks/README.md) | 媒体下载工具，支持 yt-dlp 下载视频/音频，含历史记录、设置和平台 Cookie 登录。 |
 
 ## 通用用法
 
@@ -45,11 +36,18 @@
 
 ```
 my-scripting-scripts/
-├── WatchlistValuation/         自选估值
-├── Gold-Price-Widget/          金价小组件
-├── Magnet-Resource-Preview/    磁力资源预览
-├── README.md                   本文件（中文）
-└── README.en.md                英文文档
+├── App-Region-Price/          App 多区价格查询
+├── App-Store-Translate/       App Store 翻译
+├── Gist/                      Gist 管理
+├── Gold-Price-Widget/         金价小组件
+├── IPA-Tool/                  IPA 工具
+├── Magnet-Resource-Preview/   磁力资源预览
+├── PDD-Quick-Submit/          PDD 快捷提交
+├── WatchlistValuation/        自选估值
+├── Yoinks/                    媒体下载
+├── README.md                  本文件（中文）
+├── README.en.md               英文文档
+└── LICENSE                    许可证
 ```
 
 ## 新增脚本
