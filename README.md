@@ -155,6 +155,6 @@ scripting-ts run tests/run-all.ts
 - `smartbox.gtimg.cn` — 腾讯搜索
 - `web.ifzq.gtimg.cn` — 腾讯日 K
 
-## License
+## Other Scripts in This Reponn### [Gold Price Widget](./Gold-Price-Widget/README.md)nnReal-time gold price widget for iOS home screen and lock screen. Supports CMB, Zheshang Bank, ICBC, Minsheng Bank, CGB, CIB, JD Gold, International London Gold. Includes trend chart and data source switching.nn- [🇨🇳 中文文档](./Gold-Price-Widget/README.zh-CN.md)n- [README](./Gold-Price-Widget/README.md)nn## License
 
 MIT

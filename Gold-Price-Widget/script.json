@@ -1,0 +1,27 @@
+{
+  "name" : "招行浙商金价",
+  "icon" : "yensign.circle.fill",
+  "color" : "rgba(243, 159, 68,1)",
+  "version" : "1.2.0",
+  "description" : "Real-time gold price widget for multiple Chinese banks. Supports CMB, Zheshang, ICBC, Minsheng, CGB, CIB, JD Gold, London Gold.",
+  "entry" : "index.tsx",
+  "author" : {
+    "name" : "IamNewHands",
+    "homepage" : "https://github.com/IamNewHands/my-scripting-scripts/tree/main/Gold-Price-Widget"
+  },
+  "localizedNames" : {
+    "zh" : "招行浙商金价",
+    "en" : "Gold Price Widget"
+  },
+  "localizedDescriptions" : {
+    "zh" : "实时查询多家银行黄金价格的桌面/锁屏小组件。支持招商银行、浙商银行、工商银行、民生银行、广发银行、兴业银行、京东黄金、国际伦敦金，含涨跌幅百分比和趋势图。",
+    "en" : "Real-time gold price widget for home screen and lock screen. Supports CMB, Zheshang Bank, ICBC, Minsheng Bank, CGB, CIB, JD Gold, International London Gold. Includes change percentage and trend chart."
+  },
+  "intentInputTypes" : [],
+  "runInApp" : false,
+  "remoteResource" : {
+    "url" : "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/Gold-Price-Widget.zip",
+    "hash" : "",
+    "autoUpdateInterval" : null
+  }
+}

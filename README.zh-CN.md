@@ -150,6 +150,6 @@ This script calls public market-data APIs (East Money, Tencent) directly. The wa
 - `smartbox.gtimg.cn` — Tencent search
 - `web.ifzq.gtimg.cn` — Tencent daily K-line
 
-## License
+## 仓库中的其他脚本nn### [金价小组件](./Gold-Price-Widget/README.zh-CN.md)nn实时查询多家银行黄金价格的 iOS 桌面/锁屏小组件。支持招商银行、浙商银行、工商银行、民生银行、广发银行、兴业银行、京东黄金、国际伦敦金。含趋势图和数据源切换。nn- [🇬🇧 English Docs](./Gold-Price-Widget/README.md)n- [README](./Gold-Price-Widget/README.zh-CN.md)nn## License
 
 MIT
