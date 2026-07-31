@@ -1,4 +1,5 @@
 import { type Dispatch } from "../types";
+import { Logger } from "../../../utils/logger";
 
 /**
  * 日志中间件 - 记录 action 派发和状态变化
@@ -13,21 +14,21 @@ export const useLogger =
     // 安全地获取 action type
     const actionType = action.type ? String(action.type) : "Unknown";
 
-    console.log(`🚀 ${label} - Action: ${actionType}`);
-    console.log("📤 Action:", action);
-    console.log("📊 Previous State:", prevState);
+    Logger.debug(`🚀 ${label} - Action: ${actionType}`);
+    Logger.debug("📤 Action:", action);
+    Logger.debug("📊 Previous State:", prevState);
 
     // 执行 action
     const result = next(action);
 
-    // // 获取执行后状态
+    // 获取执行后状态
     const nextState = result;
     // 抽取打印日志的公共函数
     const logStateAndTime = (state: unknown) => {
       const executionTime = Date.now() - timer;
-      console.log("📊 Next State:", state);
-      console.log("⏱️ Execution Time:", `${executionTime}ms`);
-      console.log("---");
+      Logger.debug("📊 Next State:", state);
+      Logger.debug("⏱️ Execution Time:", `${executionTime}ms`);
+      Logger.debug("---");
     };
 
     if (nextState instanceof Promise) {

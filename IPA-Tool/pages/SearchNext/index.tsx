@@ -117,8 +117,6 @@ export default function SearchNextView() {
               },
               content: (
                 <AppVersionList
-                  presentationDragIndicator={"visible"}
-                  presentationDetents={[700]}
                   id={versionApp.id}
                   name={versionApp.name}
                   callback={(id, item) => {

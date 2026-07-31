@@ -22,6 +22,8 @@ export type DownloadTaskDown = Omit<DownloadTaskOptions, "id"> & {
 export type DownloadTaskState = {
   down?: DownloadTaskDown
   status: DownloadStatus
+  // 失败原因，供下载列表展示（不写敏感凭证）
+  errorMessage?: string
   localPath?: string
   localSize?: number
   downloadOrder?: number
@@ -100,9 +102,15 @@ cleanupOrphanRows(AppConfig.file.folder, protectedSqlIds).catch(() => { })
 /** 读单项快照（非响应式），不触发组件订阅 */
 export const getAppState = (id: string): Partial<DownloadTaskState> => useAppsHook.getState()?.[id] ?? {}
 
-/** 更新状态 */
-export const setAppStatus = (id: string, status: DownloadStatus) => {
-  useAppsHook.dispatchState(prev => ({ [id]: { ...prev[id], status } }))
+/** 更新状态；failed 时可附带 errorMessage */
+export const setAppStatus = (id: string, status: DownloadStatus, errorMessage?: string) => {
+  useAppsHook.dispatchState(prev => ({
+    [id]: {
+      ...prev[id],
+      status,
+      ...(errorMessage === undefined ? {} : { errorMessage }),
+    },
+  }))
 }
 
 /** 更新应用完整属性（合并） */

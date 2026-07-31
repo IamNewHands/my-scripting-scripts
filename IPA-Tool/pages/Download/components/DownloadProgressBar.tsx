@@ -7,7 +7,17 @@ import type { RGBAColor } from "../../../types/utils"
 
 const tintColor = (color?: RGBAColor | null) => color ? makeAppIconColor(color) : undefined
 
-export default function DownloadProgress({ id , status, dominantColor }: { id: string, status: string, dominantColor?: RGBAColor | null }) {
+export default function DownloadProgress({
+  id,
+  status,
+  errorMessage,
+  dominantColor,
+}: {
+  id: string
+  status: string
+  errorMessage?: string
+  dominantColor?: RGBAColor | null
+}) {
   const progress = useProgress(id, status)
   const data = useRef({ time: Date.now(), size: 0, speed: "0B/s" })
 
@@ -34,7 +44,13 @@ export default function DownloadProgress({ id , status, dominantColor }: { id: s
       currentValueLabel={
         <HStack alignment={"center"}>
           {status === "failed" ? (
-            <AnimText foregroundStyle={"systemRed"}>下载失败</AnimText>
+            <AnimText
+              foregroundStyle={"systemRed"}
+              lineLimit={1}
+              truncationMode="tail"
+            >
+              {errorMessage || "下载失败"}
+            </AnimText>
           ) : (
             <>
               <AnimText anim="numericTextCountsUp">

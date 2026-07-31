@@ -80,3 +80,9 @@ export const putAppIconAsset = async ({
     [MAX_APP_ICON_ASSET_COUNT]
   )
 }
+
+/** 清空图标资产缓存（重置应用时调用） */
+export const clearAppIconAssets = async () => {
+  const db = await getAppIconAssetDB()
+  await db.execute("DELETE FROM app_icon_assets")
+}

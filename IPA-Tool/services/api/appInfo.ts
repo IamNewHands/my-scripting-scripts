@@ -16,6 +16,7 @@ const fetchAppInfo = async (
   const { success, data, error } = await localApi<AppinfoResponse>(`/apps/${id}`, {
     method: "GET",
     query: { appVerId },
+    signal: options?.signal,
   });
 
   if (!success || !data || error) {
