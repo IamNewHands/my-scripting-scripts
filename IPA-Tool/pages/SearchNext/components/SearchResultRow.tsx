@@ -65,15 +65,10 @@ export default function SearchResultRow({ app }: SearchResultRowProps) {
       {...(appIconAccent ? appIcon.rowStyleProps : {})}
     >
       <HStack spacing={8}>
-        <Button
-          action={handleVersionTap}
-          buttonStyle="plain"
-          frame={{ maxWidth: "infinity", alignment: "leading" }}
-        >
-          <Text {...fontAppName} truncationMode="tail" lineLimit={1}>
-            {successApp.name}
-          </Text>
-        </Button>
+        <Text {...fontAppName} truncationMode="tail" lineLimit={1}>
+          {successApp.name}
+        </Text>
+        <Spacer />
         <Button action={handleVersionTap} buttonStyle="plain"
           transition={Transition.opacity()}
         >

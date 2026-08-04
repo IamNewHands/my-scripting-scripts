@@ -1,0 +1,30 @@
+{
+  "name": "局域网文件传输",
+  "icon": "document.badge.arrow.up",
+  "color": "rgba(0, 198, 165,1)",
+  "version": "2.0.0",
+  "description": "Transfer files, images and text between any device's browser over LAN or hotspot. Scan the QR code to connect, no app install required.",
+  "entry": "index.tsx",
+  "author": {
+    "name": "IamNewHands",
+    "homepage": "https://github.com/IamNewHands/my-scripting-scripts/tree/main/LAN-File-Transfer"
+  },
+  "localizedNames": {
+    "zh": "局域网文件传输",
+    "en": "LAN File Transfer"
+  },
+  "localizedDescriptions": {
+    "zh": "在局域网或热点下与任意设备的浏览器互传文件、图片和文字，扫码即连，无需安装应用。",
+    "en": "Transfer files, images and text between any device's browser over LAN or hotspot. Scan the QR code to connect, no app install required."
+  },
+  "intentInputTypes": [
+    "FileURLs",
+    "Images"
+  ],
+  "runInApp": true,
+  "remoteResource": {
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/LAN-File-Transfer.zip",
+    "hash": "",
+    "autoUpdateInterval": null
+  }
+}

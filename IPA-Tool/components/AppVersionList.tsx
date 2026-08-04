@@ -3,7 +3,7 @@
  * 使用 EditableGlassList 增强组件，数据加载后渐进添加
  */
 
-import { Button, Divider, EmptyView, HStack, Image, Navigation, ProgressView, Section, Text, TextField, VStack, useCallback, useEffect, useObservable, useRef, useState } from "scripting"
+import { Button, Divider, HStack, Image, Navigation, ProgressView, Section, Text, VStack, useCallback, useEffect, useObservable, useRef, useState } from "scripting"
 import {
   EditableGlassList,
   useEditableGlassList,
@@ -51,40 +51,6 @@ export function AppVersionList({ id, name, callback }: Props) {
   const list = useEditableGlassList(items)
   const { startAppDownload } = useStartAppDownload()
 
-  const [query, setQuery] = useState("")
-  const queryRef = useRef("")
-  const allEntriesRef = useRef<VersionEntry[]>([])
-  const stoppedRef = useRef(false)
-
-  const isQueryMatch = (item: VersionEntry, q: string) => {
-    const needle = q.trim().toLowerCase()
-    if (!needle) return true
-    return (
-      item.version.toLowerCase().includes(needle) ||
-      item.bundleId.toLowerCase().includes(needle)
-    )
-  }
-
-  const handleQueryChange = (value: string) => {
-    queryRef.current = value
-    setQuery(value)
-    // 同步重建列表，避免先渲染一帧未过滤数据
-    if (!loadingRef.current) {
-      applyCurrentFilter()
-    }
-  }
-
-  const applyCurrentFilter = useCallback(() => {
-    // 停止渐进添加，直接按当前搜索词重建完整列表
-    stoppedRef.current = true
-    clearLoadingTimer()
-    const q = queryRef.current.trim().toLowerCase()
-    const all = allEntriesRef.current
-    const filtered = q ? all.filter(item => isQueryMatch(item, q)) : all
-    const emptyEntry = items.value.find(item => item.id === "empty")
-    items.setValue([HEADER_ENTRY, ...(emptyEntry ? [emptyEntry] : []), ...filtered])
-  }, [])
-
   const clearLoadingTimer = () => {
     if (!timerRef.current) return
     clearTimeout(timerRef.current)
@@ -102,8 +68,6 @@ export function AppVersionList({ id, name, callback }: Props) {
     setLoading(true)
     setError(null)
     clearLoadingTimer()
-    stoppedRef.current = false
-    allEntriesRef.current = []
     items.setValue([HEADER_ENTRY])
 
     try {
@@ -122,36 +86,24 @@ export function AppVersionList({ id, name, callback }: Props) {
       }
 
       const entries = toVersionEntries(versions).filter(e => e.id !== "header")
-      allEntriesRef.current = entries
       let index = 0
 
       const addNext = () => {
-        if (stoppedRef.current) {
-          timerRef.current = null
-          finishLoading()
-          return
-        }
-
         if (index >= entries.length) {
           timerRef.current = null
           finishLoading()
-          applyCurrentFilter()
           return
         }
 
         if (index >= 9) {
-          list.data.add(entries.slice(index).filter(item => isQueryMatch(item, queryRef.current)))
+          list.data.add(entries.slice(index))
           timerRef.current = null
           finishLoading()
-          applyCurrentFilter()
           return
         }
 
-        const item = entries[index]
+        list.data.add(entries[index])
         index += 1
-        if (isQueryMatch(item, queryRef.current)) {
-          list.data.add(item)
-        }
         timerRef.current = setTimeout(addNext, 100)
       }
 
@@ -172,52 +124,12 @@ export function AppVersionList({ id, name, callback }: Props) {
     }
   }, [id])
 
-  // 搜索词变化时按版本号/版本ID过滤（加载中由渐进添加自行过滤，完成后统一重建）
-  useEffect(() => {
-    if (loadingRef.current) return
-    applyCurrentFilter()
-  }, [query])
-
-  const showNoMatch =
-    query.trim() !== "" &&
-    !loading &&
-    !items.value.some(
-      item => item.id !== "header" && isQueryMatch(item, query)
-    )
 
   return (
-    <VStack
-      spacing={0}
-      frame={{ maxHeight: "infinity" }}
-      presentationDragIndicator={"visible"}
-      presentationDetents={["large"]}
+    <EditableGlassList
+      items={items}
+      scrollContentBackground="hidden"
     >
-      <HStack
-        spacing={8}
-        padding={{ horizontal: 16, top: 20, bottom: 6 }}
-      >
-        <Image systemName="magnifyingglass" imageScale="medium" foregroundStyle="secondaryLabel" />
-        <TextField
-          title=""
-          prompt="搜索版本号或版本ID"
-          value={query}
-          onChanged={handleQueryChange}
-          textFieldStyle="plain"
-          textInputAutocapitalization="never"
-        />
-        {query.length > 0 && (
-          <Button
-            action={() => handleQueryChange("")}
-            buttonStyle="plain"
-          >
-            <Image systemName="xmark.circle.fill" imageScale="medium" foregroundStyle="secondaryLabel" />
-          </Button>
-        )}
-      </HStack>
-      <EditableGlassList
-        items={items}
-        scrollContentBackground="hidden"
-      >
       <Section header={
         <Text
           padding={{ leading: true }}
@@ -225,12 +137,8 @@ export function AppVersionList({ id, name, callback }: Props) {
           lineLimit={1}
         >{name}</Text>
       }>
-        {list.render(item => {
-          if (item.id !== "header" && !isQueryMatch(item, query)) {
-            return <EmptyView />
-          }
-          return (
-            <VStack>
+        {list.render(item => (
+          <VStack>
             <Button
               key={item.id}
               action={() => {
@@ -278,21 +186,11 @@ export function AppVersionList({ id, name, callback }: Props) {
               </HStack>
             </Button>
             <Divider />
-            </VStack>
-          )
-        }, {
+          </VStack>
+        ), {
           glassEffect: undefined,
           overlay: undefined,
         })}
-        <HStack
-          spacing={8}
-          hidden={!showNoMatch}
-          frame={{ maxWidth: "infinity", alignment: "center" }}
-          padding={{ vertical: 12 }}
-        >
-          <Image systemName="magnifyingglass" imageScale="medium" foregroundStyle="secondaryLabel" />
-          <Text foregroundStyle="secondaryLabel">未找到匹配的版本号或版本ID</Text>
-        </HStack>
         <HStack
           spacing={8}
           hidden={error == null}
@@ -314,7 +212,6 @@ export function AppVersionList({ id, name, callback }: Props) {
           />
       </Section>
     </EditableGlassList>
-    </VStack>
   )
 }
 

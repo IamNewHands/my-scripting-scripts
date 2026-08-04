@@ -1,34 +1,69 @@
 {
-  "version": "1.5.0",
-  "icon": "iphone",
-  "entry": "index.tsx",
-  "localizedNames": {
-    "en": "IPA-Tool",
-    "zh": "IPA工具箱"
-  },
-  "description": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, upstream Apple auth, disable update check, debug logging toggle. Original community script: https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ; maintained by IamNewHands.",
-  "localizedDescriptions": {
-    "en": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, upstream Apple auth, disable update check, debug logging toggle. Original community script: https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ; maintained by IamNewHands.",
-    "zh": "下载旧版IPA并安装。支持自定义plist（自建/代理/Scripting）、Keychain存密码、搜索带国家、源头协议、免更新开关、调试日志。原作社区脚本：https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ；维护：IamNewHands。"
-  },
-  "permissions": null,
+  "color": "rgba(243, 159, 68,1)",
   "intentInputTypes": [
     "FileURLs",
     "URLs"
   ],
-  "name": "IPA-Tool",
+  "localizedDescriptions": {
+    "zh": "下载旧版IPA并安装。支持自定义plist（自建/代理/Scripting）、Keychain存密码、搜索带国家、源头协议、免更新开关、调试日志。原作社区脚本：https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ；维护：IamNewHands。",
+    "en": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, upstream Apple auth, disable update check, debug logging toggle. Original community script: https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ; maintained by IamNewHands."
+  },
+  "permissions": null,
   "remoteResource": {
     "autoUpdateInterval": 86400,
-    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/download/IPA-Tool-v1.5.0/IPA-Tool.zip",
-    "hash": "6fc5a3a0fb5646cb87630d4349178200"
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/download/IPA-Tool-v1.4.0/IPA-Tool.zip",
+    "hash": "52eaa5f8a71dcc1713b9a925cb077845"
   },
-  "contributors": [],
-  "runInApp": false,
-  "iconImage": null,
   "author": {
+    "name": "IamNewHands",
     "email": null,
-    "homepage": "https://github.com/IamNewHands",
-    "name": "IamNewHands"
+    "homepage": "https://github.com/IamNewHands"
   },
-  "color": "rgba(243, 159, 68,1)"
+  "runInApp": false,
+  "description": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, upstream Apple auth, disable update check, debug logging toggle. Original community script: https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ; maintained by IamNewHands.",
+  "contributors": [],
+  "entry": "index.tsx",
+  "iconImage": null,
+  "version": "1.4.0",
+  "localizedNames": {
+    "zh": "IPA工具箱",
+    "en": "IPA-Tool"
+  },
+  "name": "IPA-Tool",
+  "icon": "iphone",
+  "autoUpdateInterval": 86400,
+  "import": [
+    {
+      "key": "zh-cn",
+      "label": "中文"
+    },
+    {
+      "key": "ru",
+      "label": "Русский"
+    },
+    {
+      "key": "de",
+      "label": "Deutsch"
+    },
+    {
+      "key": "it",
+      "label": "Italiano"
+    },
+    {
+      "key": "es",
+      "label": "Español"
+    },
+    {
+      "key": "pt",
+      "label": "Português"
+    },
+    {
+      "key": "ja",
+      "label": "日本語"
+    },
+    {
+      "key": "fr",
+      "label": "Français"
+    }
+  ]
 }
