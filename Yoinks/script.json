@@ -3,30 +3,34 @@
     "URLs",
     "Text"
   ],
-  "entry" : "index.tsx",
-  "remoteResource" : {
-    "autoUpdateInterval" : null,
-    "url" : "https:\/\/github.com\/ckldy\/Yoinks",
-    "hash" : "70e67b0168c4a546a2deae4be621dbb0"
-  },
-  "iconImage" : null,
   "runInApp" : true,
-  "name" : "Yoinks",
+  "localizedNames" : {
+    "en" : "Yoinks",
+    "zh" : "Yoinks"
+  },
+  "icon" : "arrow.down.to.line.compact",
   "contributors" : [
 
   ],
-  "version" : "1.1.1",
-  "author" : null,
+  "author" : {
+    "homepage" : null,
+    "name" : "vcncv",
+    "email" : null
+  },
+  "name" : "Yoinks",
+  "permissions" : null,
+  "description" : "Download public media with a focused Yoinks-style workflow, including sequential batch queues.",
+  "entry" : "index.tsx",
+  "iconImage" : "",
+  "color" : "rgba(52, 199, 89, 1)",
   "localizedDescriptions" : {
-    "zh" : "粘贴或分享公开媒体链接，选择输出格式后保存到相册或文件。",
+    "zh" : "粘贴或分享公开媒体链接，选择格式下载；支持批量添加后顺序下载，并保存到相册或文件。",
     "en" : "Paste or share a public media link, choose an output format, then save it to Photos or Files."
   },
-  "permissions" : null,
-  "color" : "rgba(52, 199, 89, 1)",
-  "icon" : "arrow.down.to.line.compact",
-  "description" : "Download public media with a focused Yoinks-style workflow.",
-  "localizedNames" : {
-    "zh" : "Yoinks",
-    "en" : "Yoinks"
-  }
+  "remoteResource" : {
+    "url" : "https:\/\/github.com\/ckldy\/Yoinks",
+    "hash" : "0fce8eb73f0c9143d220742c28f70c04",
+    "autoUpdateInterval" : 86400
+  },
+  "version" : "1.6.13"
 }

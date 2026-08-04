@@ -3,6 +3,15 @@ import os
 import sys
 import threading
 import time
+from urllib.parse import urlparse
+
+# ios_system 常驻 python 进程跨命令缓存 sys.modules，且 yt-dlp 的插件发现
+# （all_plugins_loaded）只在首次加载时执行——改插件（如 yt-dlp-ytse 补丁）后
+# 不清理缓存会继续用旧字节码。每次运行前清掉 yt_dlp 全家（含 yt_dlp_plugins）
+# 与 protobug，强制重新扫描插件并让 ytse 从 --plugin-dir（项目目录）重新加载依赖。
+for _m in list(sys.modules):
+    if _m.startswith('yt_dlp') or _m.startswith('protobug'):
+        del sys.modules[_m]
 
 from yt_dlp import YoutubeDL
 
@@ -11,31 +20,20 @@ class DownloadCancelled(Exception):
     pass
 
 
-def media_files_under(directory, since):
-    extensions = {".mp4", ".m4v", ".mov", ".mkv", ".webm", ".m4a", ".aac", ".opus", ".mp3"}
-    if not os.path.isdir(directory):
-        return []
-
-    result = []
-    for root, _, files in os.walk(directory):
-        for name in files:
-            path = os.path.join(root, name)
-            if os.path.splitext(path)[1].lower() not in extensions:
-                continue
-            try:
-                if os.path.getmtime(path) >= since:
-                    result.append(os.path.abspath(path))
-            except OSError:
-                pass
-    return sorted(result, key=lambda item: os.path.getmtime(item) if os.path.exists(item) else 0)
+def safe_http_url(value):
+    if not isinstance(value, str):
+        return False
+    parsed = urlparse(value)
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
-def cleanup_media_files(directory, since):
-    for path in media_files_under(directory, since):
-        try:
-            os.remove(path)
-        except OSError:
-            pass
+def require_path_within(value, root, name):
+    if not isinstance(value, str) or not os.path.isabs(value):
+        raise SystemExit(f"Invalid {name}")
+    path = os.path.abspath(value)
+    if os.path.commonpath([path, root]) != root:
+        raise SystemExit(f"Invalid {name}")
+    return path
 
 
 def best_thumbnail(info):
@@ -62,13 +60,23 @@ def main():
     if len(sys.argv) < 2:
         raise SystemExit("Missing config path")
 
-    with open(sys.argv[1], "r", encoding="utf-8") as file:
+    config_path = os.path.abspath(sys.argv[1])
+    task_root = os.path.dirname(config_path)
+    with open(config_path, "r", encoding="utf-8") as file:
         config = json.load(file)
 
-    started_at = time.time()
+    source_url = config.get("url")
+    output_directory = require_path_within(config.get("paths"), task_root, "output directory")
+    if not safe_http_url(source_url):
+        raise SystemExit("Invalid media URL")
+    if not isinstance(config.get("format"), str) or not config["format"]:
+        raise SystemExit("Invalid media format")
+    if not isinstance(config.get("output"), str) or not config["output"]:
+        raise SystemExit("Invalid output template")
+    progress_path = require_path_within(config.get("progress_path"), task_root, "progress path")
+    cancel_flag = require_path_within(config.get("cancel_flag"), task_root, "cancel path")
+
     finished_paths = []
-    cancel_flag = config.get("cancel_flag")
-    progress_path = config.get("progress_path")
 
     def write_progress(status):
         if not progress_path:
@@ -113,21 +121,52 @@ def main():
         if filename:
             finished_paths.append(os.path.abspath(filename))
 
+    # YouTube web player client requires a JS runtime (deno) to decrypt nsig.
+    # This device has no JS runtime; prefer android_vr so downloads also work.
+    extractor_args = {"youtube": {"player_client": ["android_vr"]}}
+
+    # 合并调用方传入的 extractor_args（如 yt-dlp-ytse 的 youtube.formats=ump），
+    # 保留默认 player_client=android_vr 不覆盖。
+    extra_args = config.get("extractor_args")
+    if isinstance(extra_args, dict):
+        for client, args in extra_args.items():
+            if isinstance(args, dict):
+                extractor_args.setdefault(client, {}).update(args)
+            else:
+                extractor_args[client] = args
+
     options = {
         "format": config["format"],
         "format_sort": config.get("format_sort") or [],
         "noplaylist": True,
-        "quiet": False,
-        "no_warnings": False,
+        # X/Twitter multi-video posts ignore noplaylist and still yield a playlist.
+        # Limit to the first item so a bare status URL cannot fail on later videos.
+        "playlist_items": "1",
+        # Progress is written via progress_hooks; keep stdout small so Shell.run keeps final path lines.
+        "quiet": True,
+        "no_warnings": True,
         "nocheckcertificate": bool(config.get("no_check_certificates", False)),
         "retries": 3,
         "fragment_retries": 3,
-        "overwrites": True,
+        "overwrites": False,
+        "extractor_args": extractor_args,
     }
+
+    # UMP 组件插件目录（项目内，脱离 AppGroup usersite）：yt-dlp 会把该目录
+    # 插入 sys.path 并加载其中的 yt_dlp_plugins 包，protobug 同目录可被 ytse import。
+    plugin_dirs = config.get("plugin_dirs")
+    if isinstance(plugin_dirs, list):
+        valid = []
+        for p in plugin_dirs:
+            if isinstance(p, str) and os.path.isdir(p):
+                valid.append(os.path.abspath(p))
+        if valid:
+            options["plugin_dirs"] = valid
 
     cookiefile = config.get("cookiefile")
     if cookiefile:
-        if not isinstance(cookiefile, str) or not os.path.isfile(cookiefile):
+        cookiefile = require_path_within(cookiefile, task_root, "cookie file")
+        if not os.path.isfile(cookiefile):
             raise SystemExit("Cookie file is unavailable")
         options["cookiefile"] = cookiefile
 
@@ -142,9 +181,12 @@ def main():
         })
 
     options["concurrent_fragment_downloads"] = min(8, max(1, int(config.get("concurrent_fragments", 2))))
+    user_agent = config.get("user_agent")
+    if user_agent:
+        options["user_agent"] = user_agent
     options.update({
         "outtmpl": config["output"],
-        "paths": {"home": config["paths"]},
+        "paths": {"home": output_directory},
         "progress_hooks": [progress_hook],
     })
 
@@ -152,17 +194,21 @@ def main():
         with YoutubeDL(options) as ydl:
             info = ydl.extract_info(config["url"], download=True)
     except DownloadCancelled as error:
-        cleanup_media_files(config["paths"], started_at)
         print("MEDIA_DOWNLOADER_CANCELLED " + str(error))
         raise SystemExit(130)
     except BaseException:
         if cancel_flag and os.path.exists(cancel_flag):
-            cleanup_media_files(config["paths"], started_at)
             print("MEDIA_DOWNLOADER_CANCELLED Download canceled")
             raise SystemExit(130)
         raise
 
-    print_metadata(info, config["url"])
+    print_metadata(info, source_url)
+
+    # 输出实际下载协议（ump = yt-dlp-ytse UMP 通道；https = 普通直连），供 media.ts 日志标记。
+    for item in info.get("requested_downloads") or []:
+        proto = item.get("protocol")
+        if proto:
+            print(f"MEDIA_DOWNLOADER_PROTOCOL {proto}")
 
     with YoutubeDL(options) as ydl:
         for item in info.get("requested_downloads") or []:
@@ -174,16 +220,25 @@ def main():
             if path:
                 finished_paths.append(os.path.abspath(path))
 
-    finished_paths.extend(media_files_under(config["paths"], started_at))
-
     seen = set()
+    existing = []
+    missing = []
     for path in finished_paths:
-        if not os.path.exists(path):
-            continue
         if path in seen:
             continue
         seen.add(path)
-        print(path)
+        if os.path.exists(path):
+            existing.append(path)
+            print(path)
+        else:
+            missing.append(path)
+
+    if not existing:
+        if missing:
+            print("ERROR: finished paths missing on disk: " + "; ".join(missing))
+        else:
+            print("ERROR: no output file produced")
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
