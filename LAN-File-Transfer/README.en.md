@@ -64,6 +64,15 @@ LAN-File-Transfer/
 
 - None (pure LAN direct connection, no external services)
 
+## Original Author & Credits
+
+This is a community-maintained fork of the original script. Original authorship is preserved:
+
+- **Original author**: Keywos ([GitHub](https://github.com/Keywos))
+- **Contributor**: Waa ([GitHub](https://github.com/iamwaa)), the original script is hosted in [iamwaa/Scripting](https://github.com/iamwaa/Scripting)
+
+This fork only adds enhancements and maintenance; the original author's license and attribution remain unchanged.
+
 ## Other Scripts in This Repo
 
 - [Watchlist Valuation](../WatchlistValuation/README.en.md) — Fund/stock watchlist with estimated NAV widget

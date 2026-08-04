@@ -64,6 +64,15 @@ LAN-File-Transfer/
 
 - 无（纯局域网直连，不访问任何外部服务）
 
+## 原作者与致谢
+
+本脚本为社区二开维护版，原作者保留如下署名：
+
+- **原作者**：Keywos ([GitHub](https://github.com/Keywos))
+- **贡献者**：Waa ([GitHub](https://github.com/iamwaa))，原始脚本收录于 [iamwaa/Scripting](https://github.com/iamwaa/Scripting)
+
+二开仅做功能增强与维护，未改变原作者授权与署名。
+
 ## 仓库中的其他脚本
 
 - [自选估值](../WatchlistValuation/README.md) — 基金/股票自选估值小组件
