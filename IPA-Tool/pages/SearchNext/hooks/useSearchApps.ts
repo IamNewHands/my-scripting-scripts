@@ -5,7 +5,8 @@ import { storeIdToCode } from "../../../utils/countries";
 import {
   createErrorResult,
   DEFAULT_SEARCH_COUNT,
-  DEFAULT_SEARCH_TYPE,
+  DEFAULT_SEARCH_ENTITY,
+  type SearchEntity,
   getErrorMessage,
   isAppIdQuery,
   toResultEntries,
@@ -22,6 +23,7 @@ export const useSearchApps = () => {
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [storeRegion, setStoreRegion] = useState("CN");
   const [searchCount, setSearchCount] = useState(DEFAULT_SEARCH_COUNT);
+  const [searchEntity, setSearchEntity] = useState<SearchEntity>(DEFAULT_SEARCH_ENTITY);
   const [loading, setLoading] = useState<string | null>(null);
   const [isSearchPresented, setIsSearchPresented] = useState(false);
   const resultItems = useObservable<SearchResultEntry[]>([]);
@@ -79,7 +81,7 @@ export const useSearchApps = () => {
         : await apiSearchApp({
             term: nextQuery,
             country: storeRegion,
-            entity: DEFAULT_SEARCH_TYPE,
+            entity: searchEntity,
             limit: searchCount,
           });
 
@@ -133,6 +135,8 @@ export const useSearchApps = () => {
     setStoreRegion,
     searchCount,
     setSearchCount,
+    searchEntity,
+    setSearchEntity,
     loading,
     setLoading,
     isSearchPresented,

@@ -18,6 +18,7 @@ import { onSearchShowToast } from "./store/toast"
 import { useLoginToast, useDownload } from "../../hooks"
 import RegionPicker from "./components/RegionPicker"
 import SearchCountPicker from "./components/SearchCountPicker"
+import SearchPlatformPicker from "./components/SearchPlatformPicker"
 import QuickSwitchAccountMenu from "./components/QuickSwitchAccountMenu"
 import SearchResultRow from "./components/SearchResultRow"
 import SearchSkeletonRow from "./components/SearchSkeletonRow"
@@ -117,8 +118,6 @@ export default function SearchNextView() {
               },
               content: (
                 <AppVersionList
-                  presentationDragIndicator={"visible"}
-                  presentationDetents={[700]}
                   id={versionApp.id}
                   name={versionApp.name}
                   callback={(id, item) => {
@@ -192,6 +191,11 @@ export default function SearchNextView() {
               value={search.storeRegion}
               label={search.storeRegion}
               onChanged={search.setStoreRegion}
+            />
+
+            <SearchPlatformPicker
+              value={search.searchEntity}
+              onChanged={search.setSearchEntity}
             />
 
             <SearchCountPicker

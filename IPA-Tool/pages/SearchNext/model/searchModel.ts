@@ -16,7 +16,8 @@ export type SearchResultEntry = EditableListEntry & (
 )
 
 export const DEFAULT_SEARCH_COUNT = 10
-export const DEFAULT_SEARCH_TYPE = "software,iPadSoftware"
+export type SearchEntity = "software" | "iPadSoftware"
+export const DEFAULT_SEARCH_ENTITY: SearchEntity = "software"
 export const MAX_ANIMATED_SKELETONS = 9
 export const MAX_SKELETON_COUNT = 30
 export const SKELETON_INTERVAL_MS = 100
