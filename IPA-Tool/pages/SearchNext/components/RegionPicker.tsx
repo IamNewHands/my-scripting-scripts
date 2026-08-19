@@ -1,6 +1,7 @@
-import { Button, Divider, HStack, Menu, Text, useEffect, useMemo, useObservable } from "scripting"
+import { Button, Divider, HStack, Menu } from "scripting"
 import { AnimText } from "../../../components/AnimText"
 import { COUNTRIES, countryCodeToFlag } from "../../../utils/countries"
+import CountryFlag from "../../../components/CountryFlag"
 
 interface RegionPickerProps {
   value: string
@@ -8,29 +9,12 @@ interface RegionPickerProps {
   onChanged: (value: string) => void
 }
 
-function RotatingGlobe() {
-  const deg = useObservable(0)
-  const animation = useMemo(() => ({
-    rotationEffect: deg.value,
-    animation: {
-      animation: Animation.linear(4).repeatForever(false),
-      value: deg.value,
-    },
-  }), [deg.value])
-
-  useEffect(() => {
-    deg.setValue(360)
-  }, [])
-
-  return <Text {...animation}>🌍</Text>
-}
-
 export default function RegionPicker({ value, label, onChanged }: RegionPickerProps) {
   return (
     <Menu
       label={
-        <HStack spacing={0}>
-          <RotatingGlobe />
+        <HStack spacing={6}>
+          <CountryFlag value={countryCodeToFlag(value)} size={20} />
           <AnimText foregroundStyle="label">{label}</AnimText>
         </HStack>
       }

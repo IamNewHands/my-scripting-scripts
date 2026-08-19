@@ -1,5 +1,6 @@
 import { Button, Divider, HStack, Image, Menu, Text } from "scripting"
 import { useAuth, useQuickSwitchAccount } from "../../../hooks"
+import CountryFlag from "../../../components/CountryFlag"
 
 export default function QuickSwitchAccountMenu() {
   const { authState } = useAuth()
@@ -34,9 +35,7 @@ export default function QuickSwitchAccountMenu() {
           <Text font="caption" fontWeight="semibold" lineLimit={1}>
             {activeInfo?.username ?? "账号"}
           </Text>
-          <Text font="body" lineLimit={1}>
-            {activeInfo?.flag ?? "🌐"}
-          </Text>
+          <CountryFlag value={activeInfo?.flag} />
         </HStack>
       )}
     >
@@ -45,9 +44,8 @@ export default function QuickSwitchAccountMenu() {
         return [
           <Button
             key={account.account}
-            title={`${info.flag}${info.email}`}
+            title={`${info.flag} ${info.email}`}
             systemImage={account.account === authState.account ? "checkmark" : undefined}
-           
             action={() => handleSwitchAccount(account)}
           />,
           index < accounts.length - 1 ? <Divider key={`${account.account}-divider`} /> : null,

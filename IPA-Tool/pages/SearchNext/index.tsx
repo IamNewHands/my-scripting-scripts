@@ -13,8 +13,9 @@ import {
   PageBackground,
   useEditableGlassList,
 } from "../../components/EditableGlassListPipeline"
-import CloseButton from "../../components/CloseButton"
+import CloseScriptButton from "../../components/CloseScriptButton"
 import MinimizeButton from "../../components/MinimizeButton"
+import AddAccountButton from "../../components/AddAccountButton"
 import { onSearchShowToast } from "./store/toast"
 import { useLoginToast, useDownload } from "../../hooks"
 import RegionPicker from "./components/RegionPicker"
@@ -147,12 +148,15 @@ export default function SearchNextView() {
 
         toolbar={{
           topBarTrailing: (
-            <QuickSwitchAccountMenu />
+            <HStack spacing={15}>
+              <AddAccountButton />
+              <QuickSwitchAccountMenu />
+            </HStack>
           ),
           topBarLeading: (
             <HStack spacing={15}>
               <MinimizeButton />
-              <CloseButton />
+              <CloseScriptButton />
             </HStack>
           ),
         }}

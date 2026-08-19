@@ -9,8 +9,8 @@
     }
   ],
   "remoteResource": {
-    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/download/IPA-Tool-v1.6.1/IPA-Tool.zip",
-    "hash": "4d4652020043fe135fb874d424f2f4d1",
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/download/IPA-Tool-v1.6.2/IPA-Tool.zip",
+    "hash": "e838c57b7845cfd3250a0037ad7a72ed",
     "autoUpdateInterval": 86400
   },
   "intentInputTypes": [
@@ -35,7 +35,7 @@
     "name": "IamNewHands"
   },
   "iconImage": null,
-  "version": "1.6.1",
+  "version": "1.6.2",
   "icon": "iphone",
   "name": "IPA-Tool",
   "description": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, iPhone/iPad platform picker, multi-accent app icon theming, download concurrency limit, upstream Apple auth, disable update check, debug logging toggle. Original community script: https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ; maintained by IamNewHands.",

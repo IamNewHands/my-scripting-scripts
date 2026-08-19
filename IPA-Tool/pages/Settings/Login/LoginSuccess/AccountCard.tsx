@@ -1,5 +1,6 @@
 import { Circle, Divider, HStack, Image, Spacer, VStack, ZStack } from "scripting";
 import { AnimText } from "../../../../components/AnimText";
+import CountryFlag from "../../../../components/CountryFlag";
 import { glassCardProps } from "./styles";
 import { formatLastLogin } from "./utils";
 
@@ -37,9 +38,12 @@ export function AccountCard({
         </ZStack>
 
         <VStack spacing={4} alignment="leading">
-          <AnimText font="title2" fontWeight="semibold" foregroundStyle="label">
-            {displayName} {flag}
-          </AnimText>
+          <HStack spacing={8} alignment="center">
+            <AnimText font="title2" fontWeight="semibold" foregroundStyle="label">
+              {displayName}
+            </AnimText>
+            <CountryFlag value={flag} size={28} />
+          </HStack>
           <AnimText font="callout" foregroundStyle="secondaryLabel">
             Apple ID
           </AnimText>
