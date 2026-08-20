@@ -1,42 +1,44 @@
 {
-  "name": "GitHub 工具箱",
-  "icon": "hammer.fill",
-  "color": "rgba(10, 132, 255, 1)",
-  "version": "1.0.0",
-  "entry": "index.tsx",
-  "runInApp": true,
-  "description": "GitHub Toolbox: manage Gists, browse starred repositories, monitor Actions workflows — three tools in one entry. Gist by 001, Star by 瀬戸 明日葉; maintained by IamNewHands.",
-  "localizedNames": {
-    "en": "GitHub Toolbox",
-    "zh": "GitHub 工具箱"
+  "localizedNames" : {
+    "en" : "GitHub Toolbox",
+    "zh" : "GitHub 工具箱"
   },
-  "localizedDescriptions": {
-    "en": "GitHub Toolbox: manage Gists, browse starred repositories, monitor Actions workflows — three tools in one entry. Gist by 001, Star by 瀬戸 明日葉; maintained by IamNewHands.",
-    "zh": "GitHub 工具箱：Gist 管理、Star 仓库浏览、Actions 工作流监控，一个入口三个工具。Gist 原作 001，Star 原作 瀬戸 明日葉；维护：IamNewHands。"
+  "remoteResource" : {
+    "hash" : "0b7947237fd981b3a052bdae9ddabf95",
+    "autoUpdateInterval" : 86400,
+    "url" : "https:\/\/github.com\/IamNewHands\/my-scripting-scripts\/releases\/latest\/download\/GitHub-Toolbox.zip"
   },
-  "author": {
-    "name": "IamNewHands",
-    "email": null,
-    "homepage": "https://github.com/IamNewHands"
+  "color" : "rgba(10, 132, 255, 1)",
+  "description" : "GitHub Toolbox: manage Gists, browse starred repositories, monitor Actions workflows — three tools in one entry. Gist by 001, Star by 瀬戸 明日葉; maintained by IamNewHands.",
+  "version" : "1.0.0",
+  "icon" : "hammer.fill",
+  "intentInputTypes" : [
+
+  ],
+  "name" : "GitHub 工具箱",
+  "author" : {
+    "name" : "IamNewHands",
+    "email" : null,
+    "homepage" : "https:\/\/github.com\/IamNewHands"
   },
-  "contributors": [
+  "localizedDescriptions" : {
+    "zh" : "GitHub 工具箱：Gist 管理、Star 仓库浏览、Actions 工作流监控，一个入口三个工具。Gist 原作 001，Star 原作 瀬戸 明日葉；维护：IamNewHands。",
+    "en" : "GitHub Toolbox: manage Gists, browse starred repositories, monitor Actions workflows — three tools in one entry. Gist by 001, Star by 瀬戸 明日葉; maintained by IamNewHands."
+  },
+  "runInApp" : true,
+  "permissions" : null,
+  "contributors" : [
     {
-      "name": "001",
-      "email": null,
-      "homepage": "https://github.com/001ProMax"
+      "name" : "001",
+      "email" : null,
+      "homepage" : "https:\/\/github.com\/001ProMax"
     },
     {
-      "name": "瀬戸 明日葉",
-      "email": null,
-      "homepage": "https://github.com/OkadaMei/Scripting"
+      "email" : null,
+      "homepage" : "https:\/\/github.com\/OkadaMei\/Scripting",
+      "name" : "瀬戸 明日葉"
     }
   ],
-  "iconImage": null,
-  "permissions": null,
-  "intentInputTypes": [],
-  "remoteResource": {
-    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/GitHub-Toolbox.zip",
-    "autoUpdateInterval": 86400,
-    "hash": "0b7947237fd981b3a052bdae9ddabf95"
-  }
+  "entry" : "index.tsx",
+  "iconImage" : null
 }

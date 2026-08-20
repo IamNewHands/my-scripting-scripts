@@ -99,13 +99,6 @@ GitHub-Toolbox/
 - Actions triggering only supports the `workflow_dispatch` entry (passes empty `inputs`)
 - The widget depends on a logged-in Actions profile; otherwise it shows "Not logged in"
 
-## Import & Auto Update
-
-- One-click import:  
-  https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FGitHub-Toolbox%22%5D
-- `remoteResource.url` = `https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/GitHub-Toolbox.zip`
-- `remoteResource.hash` = **MD5 of the whole zip**; the zip root contains `index.tsx` / `script.json` / `src` directly.
-
 ## Other Scripts in This Repo
 
 - [Watchlist Valuation](../WatchlistValuation/README.en.md) — intraday fund valuation & multi-market watchlist

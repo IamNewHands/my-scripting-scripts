@@ -690,7 +690,7 @@ function RepoListPage({
         ],
       }}
     >
-      {loading ? <Text>加载中...</Text> : null}
+      {loading && repos.length === 0 ? <Text>加载中...</Text> : null}
       {errorMsg ? <Text style={{ color: 'red' }}>{errorMsg}</Text> : null}
       <Section header={<Text style={{ fontWeight: '600', color: '#3c3c43' }}>小组件</Text>}>
         <Button action={openWidgetSetup}>
@@ -770,7 +770,7 @@ function WidgetRepoList({ api, onPick }: { api: GitHubAPI; onPick: (owner: strin
         topBarTrailing: <Button key="refresh" title="刷新" systemImage="arrow.clockwise" action={() => load(true)} disabled={loading} />,
       }}
     >
-      {loading ? <Text>加载中...</Text> : null}
+      {loading && repos.length === 0 ? <Text>加载中...</Text> : null}
       {errorMsg ? <Text style={{ color: 'red' }}>{errorMsg}</Text> : null}
       {cleared ? <Text style={{ color: '#8e8e93' }}>已清除，桌面小组件显示未指定状态</Text> : null}
       <Section header={<Text style={{ fontWeight: '600', color: '#3c3c43' }}>选择仓库</Text>}>
@@ -853,7 +853,7 @@ function WidgetWorkflowList({ api, owner, repo, onBack }: { api: GitHubAPI; owne
           <Text style={{ fontSize: 16, fontWeight: '600', color: '#0a84ff' }}>返回仓库列表</Text>
         </HStack>
       </Button>
-      {loading ? <Text>加载中...</Text> : null}
+      {loading && workflows.length === 0 ? <Text>加载中...</Text> : null}
       {errorMsg ? <Text style={{ color: 'red' }}>{errorMsg}</Text> : null}
       {saved ? <Text style={{ color: '#34c759' }}>已更新：小组件将显示 {targets.length} 个工作流</Text> : null}
       {cleared ? <Text style={{ color: '#8e8e93' }}>已清除，桌面小组件显示未指定状态</Text> : null}
@@ -908,46 +908,121 @@ function WorkflowListPage({
   const { data: workflows, loading, errorMsg, load } = useLoadList(
     useCallback((force?: boolean) => api.getWorkflows(owner, repo, force), [api, owner, repo])
   )
-  const [togglingId, setTogglingId] = useState<number | null>(null)
+  // 勾选的工作流 id
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  // 批量操作后本地立即修正的状态（GitHub 状态更新有短暂延迟，先用本地值显示，强刷后以服务端为准）
+  const [stateOverrides, setStateOverrides] = useState<Record<number, Workflow['state']>>({})
+  const [applying, setApplying] = useState(false)
 
-  // 启用/禁用工作流，操作后刷新列表
-  const runAction = useCallback(async (wf: Workflow, enable: boolean) => {
-    setTogglingId(wf.id)
+  const visibleState = (wf: Workflow): Workflow['state'] => stateOverrides[wf.id] ?? wf.state
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]))
+  }, [])
+
+  // 可勾选 = 未删除的工作流
+  const allSelectable = workflows.filter(w => visibleState(w) !== 'deleted')
+  const allSelected = allSelectable.length > 0 && allSelectable.every(w => selectedIds.includes(w.id))
+
+  const toggleAll = useCallback(() => {
+    setSelectedIds(prev => {
+      if (allSelectable.length > 0 && allSelectable.every(w => prev.includes(w.id))) return []
+      return allSelectable.map(w => w.id)
+    })
+  }, [allSelectable])
+
+  // 批量启用/禁用：逐个调用，幂等处理「目标状态已满足」的 403；成功后本地修正状态并强刷列表。
+  const runBatch = useCallback(async (enable: boolean) => {
+    const ids = selectedIds
+    if (ids.length === 0) return
+    setApplying(true)
+    let okCount = 0
+    let failMsg = ''
     try {
-      if (enable) {
-        await api.enableWorkflow(owner, repo, wf.id)
-      } else {
-        await api.disableWorkflow(owner, repo, wf.id)
+      for (const id of ids) {
+        try {
+          if (enable) {
+            await api.enableWorkflow(owner, repo, id)
+          } else {
+            await api.disableWorkflow(owner, repo, id)
+          }
+          okCount++
+        } catch (err: any) {
+          const msg = errorMessage(err, '')
+          const stateAlreadyMet =
+            msg.includes('Unable to enable a workflow that is not disabled') ||
+            msg.includes('Unable to disable a workflow that is not active')
+          if (stateAlreadyMet) {
+            okCount++
+          } else {
+            failMsg = failMsg || errorMessage(err, '未知错误')
+          }
+        }
       }
+      // 本地立即修正状态，避免服务端延迟导致显示旧状态
+      const nextOverrides: Record<number, Workflow['state']> = { ...stateOverrides }
+      for (const id of ids) nextOverrides[id] = enable ? 'active' : 'disabled'
+      setStateOverrides(nextOverrides)
+      setSelectedIds([])
+      // 强刷：立即 + 延迟各一次，确保与服务端最终一致
       await load(true)
+      setTimeout(() => void load(true), 1200)
+      if (failMsg) {
+        await Dialog.alert({ title: '部分失败', message: `成功 ${okCount} 个，失败：${failMsg}` })
+      }
     } catch (err: any) {
       await Dialog.alert({ title: '操作失败', message: errorMessage(err, '未知错误') })
     } finally {
-      setTogglingId(null)
+      setApplying(false)
     }
-  }, [api, owner, repo, load])
+  }, [api, selectedIds, stateOverrides, load])
 
   return (
     <List
       navigationTitle="工作流"
       toolbar={{
+        topBarLeading: [
+          <Button key="select-all" title={allSelected ? '取消全选' : '全选'} action={toggleAll} disabled={allSelectable.length === 0 || applying} />,
+        ],
         topBarTrailing: [
+          <Button key="enable" title="启用" systemImage="play.fill" action={() => void runBatch(true)} disabled={selectedIds.length === 0 || applying} />,
+          <Button key="disable" title="禁用" systemImage="pause.fill" action={() => void runBatch(false)} disabled={selectedIds.length === 0 || applying} />,
           <Button key="refresh" title="刷新" systemImage="arrow.clockwise" action={() => load(true)} disabled={loading} />,
         ],
       }}
     >
-      {loading ? <Text>加载中...</Text> : null}
+      {loading && workflows.length === 0 ? <Text>加载中...</Text> : null}
       {errorMsg ? <Text style={{ color: 'red' }}>{errorMsg}</Text> : null}
-      <Section header={<Text style={{ fontWeight: '600', color: '#3c3c43' }}>工作流 ({workflows.length})</Text>}>
+      {applying ? (
+        <HStack spacing={8} padding={{ horizontal: 14, vertical: 10 }}>
+          <ProgressView />
+          <Text style={{ color: '#0a84ff', fontSize: 13 }}>正在处理 {selectedIds.length} 个工作流...</Text>
+        </HStack>
+      ) : null}
+      <Section header={<Text style={{ fontWeight: '600', color: '#3c3c43' }}>工作流 ({workflows.length}){selectedIds.length ? ` · 已选 ${selectedIds.length}` : ''}</Text>}>
         {workflows.map(wf => {
+          const state = visibleState(wf)
+          const isSelected = selectedIds.includes(wf.id)
           const stateMeta =
-            wf.state === 'deleted'
+            state === 'deleted'
               ? { text: '已删除', color: '#b42318', backgroundColor: '#fde3e1' }
-              : wf.state !== 'active'
+              : state !== 'active'
                 ? { text: '已禁用', color: '#6b7280', backgroundColor: '#eef0f3' }
                 : null
           return (
             <HStack key={wf.id} spacing={8} padding={{ horizontal: 14, vertical: 8 }}>
+              <Button
+                action={() => toggleSelect(wf.id)}
+                disabled={state === 'deleted' || applying}
+                accessibilityLabel={isSelected ? '取消选择' : '选择'}
+              >
+                <Image
+                  systemName={isSelected ? 'checkmark.circle.fill' : 'circle'}
+                  width={22}
+                  height={22}
+                  foregroundStyle={isSelected ? '#0a84ff' : '#c7c7cc'}
+                />
+              </Button>
               <NavigationLink
                 destination={
                   <RunListPage
@@ -956,7 +1031,7 @@ function WorkflowListPage({
                     repo={repo}
                     workflowId={wf.id}
                     defaultBranch={defaultBranch}
-                    workflowState={wf.state}
+                    workflowState={state}
                   />
                 }
                 style={{ flex: 1 }}
@@ -972,22 +1047,6 @@ function WorkflowListPage({
                   {stateMeta ? <StatusBadge text={stateMeta.text} color={stateMeta.color} backgroundColor={stateMeta.backgroundColor} /> : null}
                 </HStack>
               </NavigationLink>
-              {togglingId === wf.id ? (
-                <ProgressView />
-              ) : (
-                <HStack spacing={6}>
-                  <Button
-                    title="启用"
-                    action={() => void runAction(wf, true)}
-                    disabled={wf.state === 'active' || wf.state === 'deleted' || togglingId !== null}
-                  />
-                  <Button
-                    title="禁用"
-                    action={() => void runAction(wf, false)}
-                    disabled={wf.state !== 'active' || togglingId !== null}
-                  />
-                </HStack>
-              )}
             </HStack>
           )
         })}
@@ -1067,7 +1126,7 @@ function RunListPage({
           <Text style={{ color: '#0a84ff', fontSize: 13 }}>正在触发工作流...</Text>
         </HStack>
       ) : null}
-      {loading ? <Text>加载中...</Text> : null}
+      {loading && runs.length === 0 ? <Text>加载中...</Text> : null}
       {errorMsg ? <Text style={{ color: 'red' }}>{errorMsg}</Text> : null}
       {disabled ? (
         <HStack spacing={8} padding={{ horizontal: 14, vertical: 10 }}>
@@ -1119,12 +1178,13 @@ function RunDetailPage({
 }) {
   const [run] = useState(initialRun)
   const [jobs, setJobs] = useState<Job[]>([])
-  const [jobsLoading, setJobsLoading] = useState(true)
+  const [jobsLoading, setJobsLoading] = useState(false)
   const [jobsError, setJobsError] = useState('')
 
-  // 任务日志：force=true 绕缓存（轮询/手动刷新），false 用缓存秒开（执行日志已落地）
-  const loadJobs = useCallback(async (force: boolean) => {
-    setJobsLoading(true)
+  // 任务日志：force=true 绕缓存（轮询/手动刷新），false 用缓存秒开（历史数据永久缓存）。
+  // showLoading 控制是否显示加载指示：首次/手动刷新显示，缓存命中与后台轮询静默，避免闪加载。
+  const loadJobs = useCallback(async (force: boolean, showLoading = force) => {
+    if (showLoading) setJobsLoading(true)
     try {
       const data = await api.getRunJobs(owner, repo, run.id, force)
       setJobs(data)
@@ -1137,15 +1197,13 @@ function RunDetailPage({
   }, [api, owner, repo, run.id])
 
   useEffect(() => {
-    let cancelled = false
-    // 首次进入用缓存（秒开）；运行中每 10s 实时拉最新
-    void loadJobs(false)
+    // 首次进入用缓存（秒开，不闪加载）；运行中每 10s 静默拉最新
+    void loadJobs(false, false)
     let timer: ReturnType<typeof setInterval> | null = null
     if (run.status !== 'completed') {
-      timer = setInterval(() => loadJobs(true), 10000)
+      timer = setInterval(() => loadJobs(true, false), 10000)
     }
     return () => {
-      cancelled = true
       if (timer) clearInterval(timer)
     }
   }, [loadJobs, run.status])
@@ -1171,10 +1229,10 @@ function RunDetailPage({
     <ScrollView>
       <VStack padding={14} spacing={10} alignment="leading">
         <HStack spacing={8} alignment="center">
-          <Text style={{ fontSize: 15, fontWeight: '600', color: '#3c3c43' }}>任务日志（执行日志已本地留存，可手动刷新）</Text>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: '#3c3c43' }}>任务日志（历史数据已缓存，可手动刷新）</Text>
           <Spacer />
           {jobsLoading ? <ProgressView /> : null}
-          <Button title="刷新" systemImage="arrow.clockwise" action={() => void loadJobs(true)} disabled={jobsLoading} />
+          <Button title="刷新" systemImage="arrow.clockwise" action={() => void loadJobs(true, true)} disabled={jobsLoading} />
         </HStack>
         <Card>
           <HStack spacing={10} alignment="center">
@@ -1242,7 +1300,7 @@ function RunDetailPage({
             <Image systemName="list.bullet.rectangle" width={14} height={14} foregroundStyle="#8e8e93" />
             <Text style={{ fontSize: 13, fontWeight: '600', color: '#8e8e93' }}>任务 ({jobs.length})</Text>
           </HStack>
-          {jobsLoading ? <Text style={{ fontSize: 13, color: '#8e8e93' }}>加载中...</Text> : null}
+          {jobsLoading && jobs.length === 0 ? <Text style={{ fontSize: 13, color: '#8e8e93' }}>加载中...</Text> : null}
           {jobsError ? <Text style={{ fontSize: 13, color: '#b42318' }}>{jobsError}</Text> : null}
           {!jobsLoading && !jobsError && jobs.length === 0 ? (
             <Text style={{ fontSize: 13, color: '#8e8e93' }}>暂无任务</Text>
