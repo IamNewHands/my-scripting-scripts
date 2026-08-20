@@ -99,6 +99,13 @@ GitHub-Toolbox/
 - Actions 触发仅支持 `workflow_dispatch` 入口（`inputs` 传空对象）
 - 小组件数据依赖 Actions 档案已登录；未登录时显示「未登录」提示
 
+## 导入与自动更新
+
+- 一键导入：  
+  https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FGitHub-Toolbox%22%5D
+- `remoteResource.url` = `https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/GitHub-Toolbox.zip`
+- `remoteResource.hash` = **zip 整包 MD5**；zip 根目录直接放 `index.tsx` / `script.json` / `src`。
+
 ## 仓库中的其他脚本
 
 - [自选估值](../WatchlistValuation/README.md) — 场外基金盘中估值与多市场自选

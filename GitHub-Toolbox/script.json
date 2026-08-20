@@ -34,5 +34,9 @@
   "iconImage": null,
   "permissions": null,
   "intentInputTypes": [],
-  "remoteResource": null
+  "remoteResource": {
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/GitHub-Toolbox.zip",
+    "autoUpdateInterval": 86400,
+    "hash": "0b7947237fd981b3a052bdae9ddabf95"
+  }
 }
