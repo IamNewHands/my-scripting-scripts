@@ -1,34 +1,33 @@
-import { HStack, Image, VStack, ZStack, type Color } from "scripting";
+import { HStack, Image, VStack, ZStack, type Color } from "scripting"
 
-type StarSize = "small" | "medium" | "large" | number;
+type StarSize = "small" | "medium" | "large" | number
 
 interface StarRatingProps {
-  score: number;
-  size?: StarSize;
-  color?: Color;
-  direction?: "x" | "y";
-  spacing?: number;
+  score: number
+  size?: StarSize
+  color?: Color
+  direction?: "x" | "y"
+  spacing?: number
 }
 
-const STAR_COUNT = 5;
+const STAR_COUNT = 5
 
 const getNumericSize = (size: StarSize): number => {
-  if (typeof size === "number") return size;
+  if (typeof size === "number") return size
 
   switch (size) {
     case "small":
-      return 14;
+      return 14
     case "medium":
-      return 17;
+      return 18
     case "large":
-      return 28;
+      return 28
     default:
-      return 24;
+      return 24
   }
-};
+}
 
-const clamp = (value: number, min = 0, max = 1) =>
-  Math.min(max, Math.max(min, value));
+const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value))
 
 const makeStars = ({
   systemName,
@@ -37,13 +36,13 @@ const makeStars = ({
   direction,
   spacing,
 }: {
-  systemName: "star" | "star.fill";
-  size: number;
-  color: Color;
-  direction: "x" | "y";
-  spacing: number;
+  systemName: "star" | "star.fill"
+  size: number
+  color: Color
+  direction: "x" | "y"
+  spacing: number
 }) => {
-  const Direction = direction === "x" ? HStack : VStack;
+  const Direction = direction === "x" ? HStack : VStack
 
   return (
     <Direction spacing={spacing}>
@@ -51,15 +50,14 @@ const makeStars = ({
         <Image
           key={index}
           systemName={systemName}
-          fontWeight="ultraLight"
           foregroundStyle={color}
           font={size}
           frame={{ width: size, height: size }}
         />
       ))}
     </Direction>
-  );
-};
+  )
+}
 
 export const StarRating = ({
   score = 0,
@@ -68,19 +66,17 @@ export const StarRating = ({
   direction = "x",
   spacing = 5,
 }: StarRatingProps) => {
-  const starSize = getNumericSize(size);
-  const totalLength = starSize * STAR_COUNT + spacing * (STAR_COUNT - 1);
-  const filledLength = totalLength * clamp(score / STAR_COUNT);
+  const starSize = getNumericSize(size)
+  const totalLength = starSize * STAR_COUNT + spacing * (STAR_COUNT - 1)
+  const filledLength = totalLength * clamp(score / STAR_COUNT)
 
-  const frame =
-    direction === "x"
-      ? { width: totalLength, height: starSize }
-      : { width: starSize, height: totalLength };
+  const frame = direction === "x"
+    ? { width: totalLength, height: starSize }
+    : { width: starSize, height: totalLength }
 
-  const filledFrame =
-    direction === "x"
-      ? { width: filledLength, height: starSize, alignment: "leading" as const }
-      : { width: starSize, height: filledLength, alignment: "top" as const };
+  const filledFrame = direction === "x"
+    ? { width: filledLength, height: starSize, alignment: "leading" as const }
+    : { width: starSize, height: filledLength, alignment: "top" as const }
 
   return (
     <ZStack alignment={direction === "x" ? "leading" : "top"} frame={frame}>
@@ -92,11 +88,7 @@ export const StarRating = ({
         spacing,
       })}
 
-      <ZStack
-        frame={filledFrame}
-        clipped={true}
-        alignment={direction === "x" ? "leading" : "top"}
-      >
+      <ZStack frame={filledFrame} clipped={true} alignment={direction === "x" ? "leading" : "top"}>
         {makeStars({
           systemName: "star.fill",
           size: starSize,
@@ -106,7 +98,7 @@ export const StarRating = ({
         })}
       </ZStack>
     </ZStack>
-  );
-};
+  )
+}
 
-export default StarRating;
+export default StarRating

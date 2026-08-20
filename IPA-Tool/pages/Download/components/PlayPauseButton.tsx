@@ -15,7 +15,8 @@ import {
   startDownload,
 } from "../../../services/downloadService";
 import { AppConfig, defaultConfig } from "../../../constants/AppConfig";
-import { makeAppIconAccentColor } from "../../../hooks";
+import { makeAppIconColor } from "../../../hooks";
+import type { RGBAColor } from "../../../types/utils";
 import {
   buildItmsServicesUrl,
   buildPlistManifestHttpUrl,
@@ -25,7 +26,7 @@ import {
 } from "../../../utils/installManifest";
 import { onDownloadShowToast } from "../store/toast";
 
-function FetchingIcon({ value, dominantColors }: { value: string, dominantColors?: RGBAColor[] }) {
+function FetchingIcon({ value, dominantColor }: { value: string, dominantColor?: RGBAColor | null }) {
   const deg = useObservable(0);
   const animation = useMemo(
     () => ({
@@ -49,16 +50,15 @@ function FetchingIcon({ value, dominantColors }: { value: string, dominantColors
       renderingMode="template"
       contentTransition="symbolEffect"
       symbolEffect={{ effect: "bounce", value: deg.value }}
-      foregroundStyle={makeAppIconAccentColor(dominantColors, 1, "systemBlue")}
+      foregroundStyle={dominantColor ? makeAppIconColor(dominantColor) : "systemBlue"}
       scaleEffect={1.15}
     />
   );
 }
 
-export default function PlayPauseButton({ item, dominantColors }: { item: MergedItem, dominantColors?: RGBAColor[] }) {
+export default function PlayPauseButton({ item, dominantColor }: { item: MergedItem, dominantColor?: RGBAColor | null }) {
   const isFetching = item.status === "fetching";
   const isQueued = item.status === "queued";
-  const isFailed = item.status === "failed";
   const isIdle = /queued|cancelled|failed/.test(item.status);
   const isCompleted = item.status === "completed";
   const task =
@@ -67,18 +67,17 @@ export default function PlayPauseButton({ item, dominantColors }: { item: Merged
   let systemName: string;
   if (isCompleted) systemName = "square.and.arrow.down.badge.checkmark.fill";
   else if (isQueued) systemName = "clock.fill";
-  else if (isFailed) systemName = "arrow.clockwise";
   else if (isIdle) systemName = "play.fill";
   else systemName = "stop.fill";
 
-  const normalTint = makeAppIconAccentColor(dominantColors, 1, "systemBlue");
-  const normalTintFill = makeAppIconAccentColor(dominantColors, 0.1, "rgba(0,122,255,0.1)");
-  const normalTintStroke = makeAppIconAccentColor(dominantColors, 0.15, "rgba(0,122,255,0.15)");
-  const normalTintSecondary = makeAppIconAccentColor(dominantColors, 0.25, "rgba(0,122,255,0.25)");
-  const completedTint = makeAppIconAccentColor(dominantColors, 1, "systemGreen");
-  const completedTintFill = makeAppIconAccentColor(dominantColors, 0.1, "rgba(52,199,89,0.1)");
-  const completedTintStroke = makeAppIconAccentColor(dominantColors, 0.15, "rgba(52,199,89,0.15)");
-  const completedTintSecondary = makeAppIconAccentColor(dominantColors, 0.25, "rgba(52,199,89,0.25)");
+  const normalTint = dominantColor ? makeAppIconColor(dominantColor) : "systemBlue";
+  const normalTintFill = dominantColor ? makeAppIconColor(dominantColor, 0.1) : "rgba(0,122,255,0.1)";
+  const normalTintStroke = dominantColor ? makeAppIconColor(dominantColor, 0.15) : "rgba(0,122,255,0.15)";
+  const normalTintSecondary = dominantColor ? makeAppIconColor(dominantColor, 0.25) : "rgba(0,122,255,0.25)";
+  const completedTint = dominantColor ? makeAppIconColor(dominantColor) : "systemGreen";
+  const completedTintFill = dominantColor ? makeAppIconColor(dominantColor, 0.1) : "rgba(52,199,89,0.1)";
+  const completedTintStroke = dominantColor ? makeAppIconColor(dominantColor, 0.15) : "rgba(52,199,89,0.15)";
+  const completedTintSecondary = dominantColor ? makeAppIconColor(dominantColor, 0.25) : "rgba(52,199,89,0.25)";
 
   return (
     <Button
@@ -156,7 +155,7 @@ export default function PlayPauseButton({ item, dominantColors }: { item: Merged
           frame={{ width: 40, height: 40 }}
         />
         {isFetching ? (
-          <FetchingIcon value={item.status} dominantColors={dominantColors} />
+          <FetchingIcon value={item.status} dominantColor={dominantColor} />
         ) : (
           <Image
             systemName={systemName}

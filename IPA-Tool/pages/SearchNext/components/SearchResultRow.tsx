@@ -61,10 +61,10 @@ export default function SearchResultRow({ app }: SearchResultRowProps) {
     <VStack
       alignment="leading"
       spacing={8}
-      background={appIconAccent ? appIcon.background : undefined}
+      clipped={true}
+      {...(appIconAccent ? appIcon.rowStyleProps : {})}
     >
       <HStack spacing={8}>
-        {/* 应用名可点击：点名字同样打开版本列表，扩大可点区域 */}
         <Button
           action={handleVersionTap}
           buttonStyle="plain"

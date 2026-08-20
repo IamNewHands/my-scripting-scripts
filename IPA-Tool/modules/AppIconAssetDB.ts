@@ -51,12 +51,10 @@ export const putAppIconAsset = async ({
   iconUrl,
   image,
   dominantColor,
-  dominantColors,
 }: {
   iconUrl: string
   image: Data | null
   dominantColor?: RGBAColor | null
-  dominantColors?: RGBAColor[] | null
 }) => {
   const db = await getAppIconAssetDB()
   await db.execute(
@@ -66,7 +64,7 @@ export const putAppIconAsset = async ({
     [
       iconUrl,
       image,
-      dominantColors ? JSON.stringify(dominantColors) : (dominantColor ? JSON.stringify(dominantColor) : null),
+      dominantColor ? JSON.stringify(dominantColor) : null,
       Date.now(),
     ]
   )

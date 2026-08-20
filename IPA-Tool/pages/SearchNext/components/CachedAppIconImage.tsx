@@ -30,7 +30,7 @@ export default function CachedAppIconImage({
     )
   }
 
-  if (iconUrl) {
+  if (icon.fallbackToUrl && iconUrl) {
     return (
       <Image
         imageUrl={iconUrl}

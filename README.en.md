@@ -27,12 +27,12 @@ Search magnet resources via xcili.net, preview metadata via whatslink.info, and 
 - [📖 English Docs](./Magnet-Resource-Preview/README.en.md) | [📖 中文文档](./Magnet-Resource-Preview/README.md)
 - One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/Magnet-Resource-Preview"]`
 
-### [LAN File Transfer](./LAN-File-Transfer/README.en.md)
+### [GitHub Toolbox](./GitHub-Toolbox/README.en.md)
 
-Transfer files, images and text between your iPhone and any device's browser over LAN or a personal hotspot. Scan the QR code to connect, no app install required, no mobile data consumed.
+Three GitHub tools in one entry: Gist management, starred-repo browsing, and Actions workflow monitoring (with a home-screen widget for one-tap workflow triggers). All tokens stored in iOS Keychain.
 
-- [📖 English Docs](./LAN-File-Transfer/README.en.md) | [📖 中文文档](./LAN-File-Transfer/README.md)
-- One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/LAN-File-Transfer"]`
+- [📖 English Docs](./GitHub-Toolbox/README.en.md) | [📖 中文文档](./GitHub-Toolbox/README.md)
+- One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/GitHub-Toolbox"]`
 
 ## Usage
 
@@ -55,7 +55,7 @@ my-scripting-scripts/
 ├── WatchlistValuation/         Watchlist Valuation
 ├── Gold-Price-Widget/          Gold Price Widget
 ├── Magnet-Resource-Preview/    Magnet Resource Preview
-├── LAN-File-Transfer/          LAN File Transfer
+├── GitHub-Toolbox/             GitHub Toolbox (Gist/Star/Actions)
 ├── README.md                   Chinese docs
 └── README.en.md                This file (English)
 ```

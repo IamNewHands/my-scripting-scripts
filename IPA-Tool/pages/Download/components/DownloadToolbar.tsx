@@ -7,8 +7,7 @@ import type { MergedItem } from "../hooks/useDownloadItems"
 import { toggleDownloadItems } from "../../../services/downloadService"
 import { AppConfig } from "../../../constants/AppConfig"
 import { notifyAppsFilesChanged } from "../../../utils/appsFilesStore"
-import CloseScriptButton from "../../../components/CloseScriptButton"
-import MinimizeButton from "../../../components/MinimizeButton"
+import CloseButton from "../../../components/CloseButton"
 
 type Props = {
   editing: EditableGlassListEditingApi
@@ -61,7 +60,7 @@ export function DownloadToolbar({
   }, [])
 
   return {
-    cancellationAction: !editing.active ? <HStack spacing={15}><MinimizeButton /><CloseScriptButton /></HStack> :
+    cancellationAction: !editing.active ? <CloseButton /> :
       editing.active && selection.ids.length ?
         <HStack spacing={15}>
           {(() => {

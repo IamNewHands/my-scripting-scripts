@@ -13,14 +13,11 @@ import {
   PageBackground,
   useEditableGlassList,
 } from "../../components/EditableGlassListPipeline"
-import CloseScriptButton from "../../components/CloseScriptButton"
-import MinimizeButton from "../../components/MinimizeButton"
-import AddAccountButton from "../../components/AddAccountButton"
+import CloseButton from "../../components/CloseButton"
 import { onSearchShowToast } from "./store/toast"
 import { useLoginToast, useDownload } from "../../hooks"
 import RegionPicker from "./components/RegionPicker"
 import SearchCountPicker from "./components/SearchCountPicker"
-import SearchPlatformPicker from "./components/SearchPlatformPicker"
 import QuickSwitchAccountMenu from "./components/QuickSwitchAccountMenu"
 import SearchResultRow from "./components/SearchResultRow"
 import SearchSkeletonRow from "./components/SearchSkeletonRow"
@@ -147,17 +144,9 @@ export default function SearchNextView() {
         }}
 
         toolbar={{
+          topBarLeading: <CloseButton />,
           topBarTrailing: (
-            <HStack spacing={15}>
-              <AddAccountButton />
-              <QuickSwitchAccountMenu />
-            </HStack>
-          ),
-          topBarLeading: (
-            <HStack spacing={15}>
-              <MinimizeButton />
-              <CloseScriptButton />
-            </HStack>
+            <QuickSwitchAccountMenu />
           ),
         }}
       >
@@ -201,11 +190,6 @@ export default function SearchNextView() {
               value={search.storeRegion}
               label={search.storeRegion}
               onChanged={search.setStoreRegion}
-            />
-
-            <SearchPlatformPicker
-              value={search.searchEntity}
-              onChanged={search.setSearchEntity}
             />
 
             <SearchCountPicker
