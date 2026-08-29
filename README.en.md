@@ -34,6 +34,13 @@ Transfer files, images and text between your iPhone and any device's browser ove
 - [📖 English Docs](./LAN-File-Transfer/README.en.md) | [📖 中文文档](./LAN-File-Transfer/README.md)
 - One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/LAN-File-Transfer"]`
 
+### [PDD Quick Submit](./PDD-Quick-Submit/README.zh-CN.md)
+
+Submit Pinduoduo team codes to multiple helper sites in parallel; returns as soon as any site succeeds (5s per-code deadline). Codes up to 10 digits are sent as one; longer input is auto-split into 8/9-digit chunks.
+
+- [📖 English Docs](./PDD-Quick-Submit/README.zh-CN.md) | [📖 中文文档](./PDD-Quick-Submit/README.md)
+- One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/PDD-Quick-Submit"]`
+
 ## Usage
 
 All scripts require the Scripting app on iOS. Install via:
@@ -56,6 +63,7 @@ my-scripting-scripts/
 ├── Gold-Price-Widget/          Gold Price Widget
 ├── Magnet-Resource-Preview/    Magnet Resource Preview
 ├── LAN-File-Transfer/          LAN File Transfer
+├── PDD-Quick-Submit/           PDD Quick Submit
 ├── README.md                   Chinese docs
 └── README.en.md                This file (English)
 ```

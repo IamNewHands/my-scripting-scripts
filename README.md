@@ -15,7 +15,7 @@
 | **App Store 翻译** | [App-Store-Translate](./App-Store-Translate/README.md) | App Store 应用页面翻译工具，支持多语言互译。 |
 | **Gist** | [Gist](./Gist/README.md) | GitHub Gist 管理工具，支持创建、编辑、查看和管理 Gist 代码片段。 |
 | **IPA-Tool** | [IPA-Tool](./IPA-Tool/README.md) | IPA 文件管理工具，支持安装、签名、查看应用信息等。 |
-| **PDD 快捷提交** | [PDD-Quick-Submit](./PDD-Quick-Submit/README.md) | 多站点并行提交拼多多组队码，首成功立即返回，单码总时限 5s。 |
+| **PDD 快捷提交** | [PDD-Quick-Submit](./PDD-Quick-Submit/README.md) | 多站点并行提交拼多多组队码，首成功立即返回，单码总时限 5s。支持 8/9 位，≤10 位单码直发、超过自动切分。 |
 | **Yoinks** | [Yoinks](./Yoinks/README.md) | 媒体下载工具，支持 yt-dlp 下载视频/音频，含历史记录、设置和平台 Cookie 登录。 |
 | **局域网文件传输** | [LAN-File-Transfer](./LAN-File-Transfer/README.md) | 在局域网或热点下与任意设备的浏览器互传文件、图片和文字，扫码即连，无需安装应用，不消耗移动流量。 |
 
