@@ -1,16 +1,19 @@
-import { Intent, Script } from "scripting"
+import { Intent, Script, Navigation, NavigationStack, List, Button, Text, TextField, useState, useEffect } from "scripting"
 
 declare const fetch: any
 declare const AbortController: any
 declare const Notification: any
 declare const Dialog: any
+declare const Vision: any
+declare const UIImage: any
+declare const Photos: any
 
 /**
  * 拼多多快捷组队三站点提交脚本
  *
  * 使用方式：
  * 1. iOS 快捷指令调用 Scripting，并把文本作为快捷指令参数传入。
- * 2. 输入可为 8 位数字，也可为 16/24/... 位连续数字，脚本会按每 8 位切分。
+ * 2. 输入可为 8/9 位数字，也可为 8N/9N 位连续数字（按站点规则长度整组切分）。
  * 3. 每组码串行处理；单组内并行提交 3 个站点，任一站点成功即立即返回该组结果。
  * 4. 慢站会被取消/忽略，避免拖累反馈；运行结果通过通知和 Script.exit 回传。
  */
@@ -66,6 +69,39 @@ const SITES = [
     },
   },
 ]
+
+// 码校验规则：从站点动态获取，失败时用此默认值兜底
+const DEFAULT_CODE_RULES = { lengths: [8, 9], prefixes: ["1", "2", "3", "4"] }
+let cachedCodeRules: { lengths: number[]; prefixes: string[] } | null = null
+
+async function fetchCodeRules(): Promise<{ lengths: number[]; prefixes: string[] }> {
+  if (cachedCodeRules) return cachedCodeRules
+  // 从第一个 publisher 站点获取码校验规则
+  const site = SITES.find((s) => s.kind === "publisher")
+  if (!site) return DEFAULT_CODE_RULES
+  const origin = site.extraHeaders?.Origin ?? ""
+  const rulesUrl = `${origin}/api/pdd/code-rules`
+  try {
+    const resp = await fetch(rulesUrl, {
+      method: "GET",
+      headers: { "Accept": "application/json", "User-Agent": UA_MOBILE },
+      timeout: 3,
+    })
+    if (!resp.ok) return DEFAULT_CODE_RULES
+    const data = await resp.json()
+    if (data?.ok && Array.isArray(data.lengths) && Array.isArray(data.prefixes)) {
+      cachedCodeRules = { lengths: data.lengths, prefixes: data.prefixes }
+      return cachedCodeRules
+    }
+  } catch {}
+  return DEFAULT_CODE_RULES
+}
+
+function codeMatchesRules(code: string, rules: { lengths: number[]; prefixes: string[] }): boolean {
+  if (!rules.lengths.includes(code.length)) return false
+  const firstDigit = code.charAt(0)
+  return rules.prefixes.includes(firstDigit)
+}
 
 // 调试用：非空时直接使用此值跳过快捷指令读取，正式部署前清空
 const DEBUG_TEAM_CODE = ""
@@ -445,13 +481,34 @@ async function submitBySite(site: any, code: string, ctx?: AbortableContext): Pr
   return makeResult(site.name ?? "未知站点", false, "preflight", "未知站点类型", null)
 }
 
-function parseCodes(input: string): { codes: string[]; ignoredTailLength: number } {
+type InputMode =
+  | { kind: "raw"; code: string }
+  | { kind: "split"; digits: string }
+
+/** 解析输入：数字位数 ≤10 视为单个码直接发送（不切分）；超过 10 位按多码自动切分 */
+function parseInputMode(text: string): InputMode {
+  const digits = String(text ?? "").trim().replace(/\D/g, "")
+  if (digits.length <= 10) {
+    return { kind: "raw", code: digits }
+  }
+  return { kind: "split", digits }
+}
+
+/** 按站点规则的长度切分码串：优先选用能整除总长度的长度，否则回落最小长度 */
+function parseCodes(input: string, lengths: number[]): { codes: string[]; ignoredTailLength: number } {
   const digits = String(input ?? "").trim().replace(/\D/g, "")
-  const completeLength = digits.length - (digits.length % 8)
-  const codes = digits.slice(0, completeLength).match(/.{8}/g) ?? []
+  const sorted = [...new Set(lengths)].filter((len) => len > 0).sort((a, b) => a - b)
+  const minLen = sorted[0] ?? 8
+  // 选择能整除总长度的块长（偏向大长度），使 8/9 位码都能整组切分不丢失数字
+  let blockLen = minLen
+  for (const len of sorted) {
+    if (digits.length % len === 0) blockLen = len
+  }
+  const completeLength = digits.length - (digits.length % blockLen)
+  const codes = digits.slice(0, completeLength).match(new RegExp(`.{${blockLen}}`, "g")) ?? []
   return {
     codes,
-    ignoredTailLength: digits.length % 8,
+    ignoredTailLength: digits.length % blockLen,
   }
 }
 
@@ -573,6 +630,183 @@ function getInputText(): string {
   return ""
 }
 
+/** 从 OCR 文本中提取符合规则的 8 位组队码（独立数字块，兼容数字间夹空格，避免误抓手机号等） */
+async function extractCodesFromOcr(text: string): Promise<string> {
+  if (!text) return ""
+  const rules = await fetchCodeRules()
+  const prefixSet = new Set(rules.prefixes)
+  const lengthSet = new Set(rules.lengths)
+  // 匹配 8~9 位数字块（允许内部夹空格，前后都不是数字/空格），再按规则校验长度与前缀
+  const candidates = text.match(/(?<![\d\s])\d(?:[\s]*\d){7,8}(?![\d\s])/g) ?? []
+  const valid: string[] = []
+  for (const block of candidates) {
+    const code = block.replace(/\s/g, "")
+    if (lengthSet.has(code.length) && prefixSet.has(code.charAt(0))) valid.push(code)
+  }
+  return [...new Set(valid)].join(" ")
+}
+
+/** 单次 OCR 识别（不设 minimumTextHeight，过小会触发系统 OCR 崩溃） */
+async function recognizeImageText(image: any): Promise<string> {
+  try {
+    const result = await Vision.recognizeText(image, {
+      recognitionLevel: "accurate",
+      recognitionLanguages: ["zh-Hans", "en"],
+      usesLanguageCorrection: true,
+    })
+    return result?.text ?? ""
+  } catch {
+    try {
+      const result = await Vision.recognizeText(image, {
+        recognitionLevel: "fast",
+        recognitionLanguages: ["zh-Hans", "en"],
+      })
+      return result?.text ?? ""
+    } catch {
+      return ""
+    }
+  }
+}
+
+/** 本地 OCR 识别单张图片，多角度旋转识别（应对竖排/异形/干扰字体），返回识别出的组队码 + 详细错误说明 */
+async function ocrUIImageToCodes(image: any): Promise<{ codes: string; error: string }> {
+  const texts: string[] = []
+  const variants: Array<{ img: any; label: string }> = [
+    { img: image, label: "原图" },
+    { img: image.rotated(90), label: "旋转90°" },
+    { img: image.rotated(180), label: "旋转180°" },
+    { img: image.rotated(270), label: "旋转270°" },
+  ]
+  for (const variant of variants) {
+    const text = await recognizeImageText(variant.img)
+    if (text && text.trim()) texts.push(text.trim())
+    // 任一角度识别到码即提前返回
+    const codes = await extractCodesFromOcr(text)
+    if (codes.trim()) return { codes: codes.trim(), error: "" }
+  }
+  const allText = texts.join("\n")
+  if (allText.trim()) {
+    return { codes: "", error: `已识别到文字，但未找到符合规则的组队码\n（需 8/9 位数字、首位 1-4；原文：${shortText(allText, 60)}）` }
+  }
+  return { codes: "", error: "图片中未识别到文字，请确认选择的是拼多多分享卡（含 8/9 位组队码）" }
+}
+
+/** 识别页：选图后进入，先显示「正在识别」，完成后显示结果或失败原因，全程有反馈 */
+const RESELECT = "__reselect__"
+const GO_MANUAL = "__manual__"
+
+function OcrPage({ image, onDone }: { image: any; onDone: (code: string) => void }) {
+  const [state, setState] = useState<"loading" | "ready" | "error">("loading")
+  const [code, setCode] = useState("")
+  const [error, setError] = useState("")
+  const dismiss = Navigation.useDismiss()
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const result = await ocrUIImageToCodes(image)
+      if (cancelled) return
+      if (result.codes.trim()) {
+        setCode(result.codes.trim())
+        setState("ready")
+      } else {
+        setError(result.error || "未识别到符合规则的组队码\n（需 8/9 位数字，首位 1-4）")
+        setState("error")
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  return (
+    <NavigationStack>
+      <List
+        navigationTitle="图片识别"
+        navigationBarTitleDisplayMode="inline"
+        toolbar={{
+          cancellationAction: (
+            <Button title="取消" action={() => { onDone(""); dismiss() }} />
+          ),
+        }}
+      >
+        {state === "loading" && <Text>正在识别图片中的组队码…</Text>}
+        {state === "ready" && (
+          <>
+            <Text>识别到组队码：{code}</Text>
+            <Button title="提交" action={() => { onDone(code); dismiss() }} />
+            <Button title="重新选择" action={() => { onDone(RESELECT); dismiss() }} />
+          </>
+        )}
+        {state === "error" && (
+          <>
+            <Text>{error}</Text>
+            <Button title="重新选择" action={() => { onDone(RESELECT); dismiss() }} />
+            <Button title="手动输入" action={() => { onDone(GO_MANUAL); dismiss() }} />
+          </>
+        )}
+      </List>
+    </NavigationStack>
+  )
+}
+
+function presentOcrPage(image: any): Promise<string> {
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (code: string) => {
+      if (settled) return
+      settled = true
+      resolve(code)
+    }
+    Navigation.present(<OcrPage image={image} onDone={finish} />).finally(() => finish(""))
+  })
+}
+
+/** 简单提示页：标题 + 正文 + 完成 */
+function InfoPage({ title, body }: { title: string; body: string }) {
+  const dismiss = Navigation.useDismiss()
+  return (
+    <NavigationStack>
+      <List
+        navigationTitle={title}
+        navigationBarTitleDisplayMode="inline"
+        toolbar={{
+          confirmationAction: <Button title="完成" action={dismiss} />,
+        }}
+      >
+        <Text>{body}</Text>
+      </List>
+    </NavigationStack>
+  )
+}
+
+function presentInfoPage(title: string, body: string): Promise<void> {
+  return new Promise((resolve) => {
+    Navigation.present(<InfoPage title={title} body={body} />).finally(resolve)
+  })
+}
+
+/** 选图 → 识别 完整流程（可反复重新选择），返回识别出的码；空串表示取消，GO_MANUAL 表示回主页手动输入 */
+async function imageFlow(): Promise<string> {
+  while (true) {
+    let results
+    try {
+      results = await Photos.pick({ limit: 1, filter: PHPickerFilter.images() })
+    } catch (error: any) {
+      await presentInfoPage("选图失败", error?.message ?? String(error))
+      return ""
+    }
+    if (!results?.length) return ""
+    const image = await results[0].uiImage()
+    if (!image) {
+      await presentInfoPage("图片加载失败", "无法读取所选图片，请重试")
+      continue
+    }
+    const code = await presentOcrPage(image)
+    if (code === RESELECT) continue
+    return code
+  }
+}
+
+
 async function promptInputIfAvailable(): Promise<string> {
   if (typeof Dialog === "undefined" || typeof Dialog.prompt !== "function") return ""
   try {
@@ -601,22 +835,50 @@ async function notifyResult(title: string, body: string): Promise<void> {
   }
 }
 
-async function run(): Promise<void> {
-  let text = getInputText()
-  if (text.trim() === "") text = await promptInputIfAvailable()
-  if (text.trim() === "") {
-    Script.exit(Intent.text("未输入组队码"))
-    return
+async function processText(text: string): Promise<void> {
+  const rules = await fetchCodeRules()
+  const mode = parseInputMode(text)
+  let codes: string[] = []
+  let ignoredTailLength = 0
+  if (mode.kind === "raw") {
+    // 整串直发：不切分、不忽略余数
+    if (mode.code.length > 0) codes = [mode.code]
+  } else {
+    const parsed = parseCodes(mode.digits, rules.lengths)
+    codes = parsed.codes
+    ignoredTailLength = parsed.ignoredTailLength
   }
-  const { codes, ignoredTailLength } = parseCodes(text)
   if (codes.length === 0) {
     const suffix = ignoredTailLength > 0 ? `（输入有 ${ignoredTailLength} 位非整组数字）` : ""
-    Script.exit(Intent.text(`未识别到 8 位组队码${suffix}`))
+    Script.exit(Intent.text(`未识别到有效组队码${suffix}`))
+    return
+  }
+  const isRaw = mode.kind === "raw"
+  const validCodes: string[] = []
+  const skippedCodes: string[] = []
+  for (const code of codes) {
+    // raw 直发模式不做规则校验，原样提交；否则按规则过滤无效码
+    if (isRaw || codeMatchesRules(code, rules)) {
+      validCodes.push(code)
+    } else {
+      skippedCodes.push(code)
+    }
+  }
+  if (validCodes.length === 0) {
+    const hint = `（允许前缀: ${rules.prefixes.join(",")}，长度: ${rules.lengths.join("/")} 位）`
+    Script.exit(Intent.text(`码格式不符${hint}`))
     return
   }
   const results: CodeResult[] = []
-  for (const code of codes) {
+  for (const code of validCodes) {
     results.push(await submitOneCode(code))
+  }
+  // 被跳过的码生成失败结果
+  for (const code of skippedCodes) {
+    results.push({
+      code,
+      sites: SITES.map((s) => makeResult(s.name, false, "businessFail", "前缀不符", null)),
+    })
   }
   const totalSuccess = results.reduce(
     (sum, result) => sum + result.sites.filter((site) => site.ok).length,
@@ -625,13 +887,118 @@ async function run(): Promise<void> {
   const runResult: RunResult = {
     results,
     totalCodes: codes.length,
-    totalRequests: codes.length * SITES.length,
+    totalRequests: validCodes.length * SITES.length,
     totalSuccess,
     ignoredTailLength,
   }
   const { exitText, notifyTitle, notifyBody } = reportResults(runResult)
   await notifyResult(notifyTitle, notifyBody)
+  // App 内运行：展示结果页，用户确认后退出（避免“输完没反应”的困惑）
+  await presentResultPage(exitText)
   Script.exit(Intent.text(exitText))
+}
+
+/** 结果页：展示每个码的提交结果，点「完成」关闭 */
+function ResultPage({ text, onDone }: { text: string; onDone: () => void }) {
+  const dismiss = Navigation.useDismiss()
+  return (
+    <NavigationStack>
+      <List
+        navigationTitle="提交结果"
+        navigationBarTitleDisplayMode="inline"
+        toolbar={{
+          confirmationAction: (
+            <Button title="完成" action={() => { onDone(); dismiss() }} />
+          ),
+        }}
+      >
+        <Text>{text}</Text>
+      </List>
+    </NavigationStack>
+  )
+}
+
+function presentResultPage(text: string): Promise<void> {
+  return new Promise((resolve) => {
+    Navigation.present(<ResultPage text={text} onDone={resolve} />).finally(resolve)
+  })
+}
+
+/** 主页：直接输入组队码提交，或从相册选图识别 */
+type MainPageResult = { type: "submit"; text: string } | { type: "image" } | { type: "cancel" }
+
+function MainPage({ onResult }: { onResult: (result: MainPageResult) => void }) {
+  const dismiss = Navigation.useDismiss()
+  const [code, setCode] = useState("")
+  return (
+    <NavigationStack>
+      <List
+        navigationTitle="PDD 快捷提交"
+        navigationBarTitleDisplayMode="inline"
+        toolbar={{
+          cancellationAction: (
+            <Button title="关闭" action={() => { onResult({ type: "cancel" }); dismiss() }} />
+          ),
+        }}
+      >
+        <TextField
+          title="组队码"
+          prompt="输入 8/9 位组队码（支持多组连写）"
+          value={code}
+          onChanged={setCode}
+          autofocus
+        />
+        <Button title="提交" action={() => { onResult({ type: "submit", text: code }); dismiss() }} />
+        <Button title="从相册选图识别" action={() => { onResult({ type: "image" }); dismiss() }} />
+      </List>
+    </NavigationStack>
+  )
+}
+
+function presentMainPage(): Promise<MainPageResult> {
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (result: MainPageResult) => {
+      if (settled) return
+      settled = true
+      resolve(result)
+    }
+    Navigation.present(<MainPage onResult={finish} />).finally(() => finish({ type: "cancel" }))
+  })
+}
+
+async function run(): Promise<void> {
+  // 快捷指令/分享传入文本时走原逻辑（不弹主页）
+  const paramText = getInputText()
+  if (paramText.trim() !== "") {
+    await processText(paramText)
+    return
+  }
+  // App 内打开：主页循环（输入提交 / 选图识别）
+  while (true) {
+    const result = await presentMainPage()
+    if (result.type === "cancel") {
+      Script.exit(Intent.text("已取消"))
+      return
+    }
+    if (result.type === "submit") {
+      if (result.text.trim() === "") {
+        Script.exit(Intent.text("未输入组队码"))
+        return
+      }
+      await processText(result.text)
+      return
+    }
+    // 选图识别
+    const code = await imageFlow()
+    if (code === GO_MANUAL) continue
+    if (code.trim() === "") {
+      Script.exit(Intent.text("已取消"))
+      return
+    }
+    await processText(code)
+    return
+  }
 }
 
 run().catch((error) => {

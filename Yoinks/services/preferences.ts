@@ -17,6 +17,13 @@ export type YoinksPreferences = {
   retainOriginalFiles: boolean
   maxManagedBytes: number | null
   maxHistoryRecords: number | null
+  experimentalDiscoveryEnabled: boolean
+  /** 下载页是否显示“最近候选库”区域（默认显示，可在设置中关闭）。 */
+  showRecentCandidates: boolean
+  /** YouTube UMP 优先下载（测试版）：DASH 先走 UMP 官方通道，60s 预算，失败/超时回退 yt-dlp。 */
+  umpFirst: boolean
+  /** 下载完成/失败时若 App 在后台，发送本地通知提示（默认开）。 */
+  notifyDownloadComplete: boolean
 }
 
 export const DEFAULT_PREFERENCES: YoinksPreferences = {
@@ -29,6 +36,10 @@ export const DEFAULT_PREFERENCES: YoinksPreferences = {
   retainOriginalFiles: true,
   maxManagedBytes: 2 * 1024 * 1024 * 1024,
   maxHistoryRecords: 100,
+  experimentalDiscoveryEnabled: false,
+  showRecentCandidates: true,
+  umpFirst: true,
+  notifyDownloadComplete: true,
 }
 
 function isSaveMode(value: unknown): value is SaveMode {
@@ -55,6 +66,10 @@ function isLimit(value: unknown): value is number | null {
   return value === null || (typeof value === "number" && Number.isFinite(value) && value >= 0)
 }
 
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === "boolean"
+}
+
 export function normalizePreferences(value: unknown): YoinksPreferences {
   const source = typeof value === "object" && value != null ? value as Partial<YoinksPreferences> : {}
   return {
@@ -67,6 +82,10 @@ export function normalizePreferences(value: unknown): YoinksPreferences {
     retainOriginalFiles: typeof source.retainOriginalFiles === "boolean" ? source.retainOriginalFiles : DEFAULT_PREFERENCES.retainOriginalFiles,
     maxManagedBytes: isLimit(source.maxManagedBytes) ? source.maxManagedBytes : DEFAULT_PREFERENCES.maxManagedBytes,
     maxHistoryRecords: source.maxHistoryRecords === null ? null : isLimit(source.maxHistoryRecords) ? Math.floor(source.maxHistoryRecords) : DEFAULT_PREFERENCES.maxHistoryRecords,
+    experimentalDiscoveryEnabled: isBoolean(source.experimentalDiscoveryEnabled) ? source.experimentalDiscoveryEnabled : DEFAULT_PREFERENCES.experimentalDiscoveryEnabled,
+    showRecentCandidates: isBoolean(source.showRecentCandidates) ? source.showRecentCandidates : DEFAULT_PREFERENCES.showRecentCandidates,
+    umpFirst: isBoolean(source.umpFirst) ? source.umpFirst : DEFAULT_PREFERENCES.umpFirst,
+    notifyDownloadComplete: isBoolean(source.notifyDownloadComplete) ? source.notifyDownloadComplete : DEFAULT_PREFERENCES.notifyDownloadComplete,
   }
 }
 

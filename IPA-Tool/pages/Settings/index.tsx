@@ -12,6 +12,7 @@ import {
   Image,
   VStack,
   ZStack,
+  HStack,
   useState,
   useEffect,
 } from "scripting";
@@ -19,7 +20,8 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { useLoginToast } from "../../hooks/useLoginToast";
 import { useLoginHandler } from "../../hooks/useLoginHandler";
-import CloseButton from "../../components/CloseButton";
+import CloseScriptButton from "../../components/CloseScriptButton";
+import MinimizeButton from "../../components/MinimizeButton";
 import { PageBackground } from "../../components/EditableGlassListPipeline";
 import ConfigView from "./Config";
 import GlassLoginView, { LoginSuccessView } from "./Login";
@@ -47,7 +49,12 @@ export const SettingsView = () => {
           navigationBarTitleDisplayMode="automatic"
           toast={toastConfig}
           toolbar={{
-            topBarLeading: <CloseButton />,
+            topBarLeading: (
+              <HStack spacing={15}>
+                <MinimizeButton />
+                <CloseScriptButton />
+              </HStack>
+            ),
             topBarTrailing: (
               <NavigationLink
                 destination={<ConfigView dismiss={Navigation.useDismiss()} />}

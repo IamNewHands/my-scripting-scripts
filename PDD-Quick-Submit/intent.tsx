@@ -4,13 +4,15 @@ declare const fetch: any
 declare const AbortController: any
 declare const Notification: any
 declare const Dialog: any
+declare const Vision: any
+declare const UIImage: any
 
 /**
  * 拼多多快捷组队三站点提交脚本
  *
  * 使用方式：
  * 1. iOS 快捷指令调用 Scripting，并把文本作为快捷指令参数传入。
- * 2. 输入可为 8 位数字，也可为 16/24/... 位连续数字，脚本会按每 8 位切分。
+ * 2. 输入可为 8/9 位数字，也可为 8N/9N 位连续数字（按站点规则长度整组切分）。
  * 3. 每组码串行处理；单组内并行提交 3 个站点，任一站点成功即立即返回该组结果。
  * 4. 慢站会被取消/忽略，避免拖累反馈；运行结果通过通知和 Script.exit 回传。
  */
@@ -66,6 +68,39 @@ const SITES = [
     },
   },
 ]
+
+// 码校验规则：从站点动态获取，失败时用此默认值兜底
+const DEFAULT_CODE_RULES = { lengths: [8, 9], prefixes: ["1", "2", "3", "4"] }
+let cachedCodeRules: { lengths: number[]; prefixes: string[] } | null = null
+
+async function fetchCodeRules(): Promise<{ lengths: number[]; prefixes: string[] }> {
+  if (cachedCodeRules) return cachedCodeRules
+  // 从第一个 publisher 站点获取码校验规则
+  const site = SITES.find((s) => s.kind === "publisher")
+  if (!site) return DEFAULT_CODE_RULES
+  const origin = site.extraHeaders?.Origin ?? ""
+  const rulesUrl = `${origin}/api/pdd/code-rules`
+  try {
+    const resp = await fetch(rulesUrl, {
+      method: "GET",
+      headers: { "Accept": "application/json", "User-Agent": UA_MOBILE },
+      timeout: 3,
+    })
+    if (!resp.ok) return DEFAULT_CODE_RULES
+    const data = await resp.json()
+    if (data?.ok && Array.isArray(data.lengths) && Array.isArray(data.prefixes)) {
+      cachedCodeRules = { lengths: data.lengths, prefixes: data.prefixes }
+      return cachedCodeRules
+    }
+  } catch {}
+  return DEFAULT_CODE_RULES
+}
+
+function codeMatchesRules(code: string, rules: { lengths: number[]; prefixes: string[] }): boolean {
+  if (!rules.lengths.includes(code.length)) return false
+  const firstDigit = code.charAt(0)
+  return rules.prefixes.includes(firstDigit)
+}
 
 // 调试用：非空时直接使用此值跳过快捷指令读取，正式部署前清空
 const DEBUG_TEAM_CODE = ""
@@ -445,13 +480,34 @@ async function submitBySite(site: any, code: string, ctx?: AbortableContext): Pr
   return makeResult(site.name ?? "未知站点", false, "preflight", "未知站点类型", null)
 }
 
-function parseCodes(input: string): { codes: string[]; ignoredTailLength: number } {
+type InputMode =
+  | { kind: "raw"; code: string }
+  | { kind: "split"; digits: string }
+
+/** 解析输入：数字位数 ≤10 视为单个码直接发送（不切分）；超过 10 位按多码自动切分 */
+function parseInputMode(text: string): InputMode {
+  const digits = String(text ?? "").trim().replace(/\D/g, "")
+  if (digits.length <= 10) {
+    return { kind: "raw", code: digits }
+  }
+  return { kind: "split", digits }
+}
+
+/** 按站点规则的长度切分码串：优先选用能整除总长度的长度，否则回落最小长度 */
+function parseCodes(input: string, lengths: number[]): { codes: string[]; ignoredTailLength: number } {
   const digits = String(input ?? "").trim().replace(/\D/g, "")
-  const completeLength = digits.length - (digits.length % 8)
-  const codes = digits.slice(0, completeLength).match(/.{8}/g) ?? []
+  const sorted = [...new Set(lengths)].filter((len) => len > 0).sort((a, b) => a - b)
+  const minLen = sorted[0] ?? 8
+  // 选择能整除总长度的块长（偏向大长度），使 8/9 位码都能整组切分不丢失数字
+  let blockLen = minLen
+  for (const len of sorted) {
+    if (digits.length % len === 0) blockLen = len
+  }
+  const completeLength = digits.length - (digits.length % blockLen)
+  const codes = digits.slice(0, completeLength).match(new RegExp(`.{${blockLen}}`, "g")) ?? []
   return {
     codes,
-    ignoredTailLength: digits.length % 8,
+    ignoredTailLength: digits.length % blockLen,
   }
 }
 
@@ -565,11 +621,56 @@ function reportResults(runResult: RunResult): { exitText: string; notifyTitle: s
   return { exitText, notifyTitle, notifyBody }
 }
 
-function getInputText(): string {
+/** 从 OCR 文本中提取符合规则的 8/9 位组队码（独立数字块，兼容数字间夹空格，避免误抓手机号等） */
+async function extractCodesFromOcr(text: string): Promise<string> {
+  if (!text) return ""
+  const rules = await fetchCodeRules()
+  const prefixSet = new Set(rules.prefixes)
+  const lengthSet = new Set(rules.lengths)
+  // 匹配 8~9 位数字块（允许内部夹空格，前后都不是数字/空格），再按规则校验长度与前缀
+  const candidates = text.match(/(?<![\d\s])\d(?:[\s]*\d){7,8}(?![\d\s])/g) ?? []
+  const valid: string[] = []
+  for (const block of candidates) {
+    const code = block.replace(/\s/g, "")
+    if (lengthSet.has(code.length) && prefixSet.has(code.charAt(0))) valid.push(code)
+  }
+  return [...new Set(valid)].join(" ")
+}
+
+/** 本地 OCR 识别单张分享图，返回识别出的组队码（空格分隔） */
+async function ocrImageToCodes(path: string): Promise<string> {
+  try {
+    const image = typeof UIImage !== "undefined" ? UIImage.fromFile(path) : null
+    if (!image) {
+      console.log(`图片加载失败: ${path}`)
+      return ""
+    }
+    const result = await Vision.recognizeText(image, {
+      recognitionLevel: "accurate",
+      recognitionLanguages: ["zh-Hans", "en"],
+      usesLanguageCorrection: true,
+    })
+    return await extractCodesFromOcr(result?.text ?? "")
+  } catch (error: any) {
+    console.log(`OCR 失败: ${error?.message ?? String(error)}`)
+    return ""
+  }
+}
+
+async function getInputText(): Promise<string> {
   if (DEBUG_TEAM_CODE) return DEBUG_TEAM_CODE
   const parameter = Intent.shortcutParameter
   if (parameter?.type === "text") return parameter.value
   if (Intent.textsParameter?.length) return Intent.textsParameter.join("\n")
+  // 图片分享：本地 OCR 识别图片上的组队码
+  if (Intent.imagePathsParameter?.length) {
+    const parts: string[] = []
+    for (const path of Intent.imagePathsParameter) {
+      const codes = await ocrImageToCodes(path)
+      if (codes) parts.push(codes)
+    }
+    if (parts.length) return parts.join("\n")
+  }
   return ""
 }
 
@@ -579,7 +680,7 @@ async function promptInputIfAvailable(): Promise<string> {
     const result = await Dialog.prompt({
       title: "拼多多快捷组队",
       message: "请输入组队码（8 位，支持多组连写）",
-      placeholder: "8 位或 8N 位数字",
+      placeholder: "8/9 位或整组倍数位数字",
     })
     if (typeof result === "string") return result
     if (typeof result?.value === "string") return result.value
@@ -602,21 +703,55 @@ async function notifyResult(title: string, body: string): Promise<void> {
 }
 
 async function run(): Promise<void> {
-  let text = getInputText()
+  let text = await getInputText()
   if (text.trim() === "") text = await promptInputIfAvailable()
   if (text.trim() === "") {
     Script.exit(Intent.text("未输入组队码"))
     return
   }
-  const { codes, ignoredTailLength } = parseCodes(text)
+  const rules = await fetchCodeRules()
+  const mode = parseInputMode(text)
+  let codes: string[] = []
+  let ignoredTailLength = 0
+  if (mode.kind === "raw") {
+    // 整串直发：不切分、不忽略余数
+    if (mode.code.length > 0) codes = [mode.code]
+  } else {
+    const parsed = parseCodes(mode.digits, rules.lengths)
+    codes = parsed.codes
+    ignoredTailLength = parsed.ignoredTailLength
+  }
   if (codes.length === 0) {
     const suffix = ignoredTailLength > 0 ? `（输入有 ${ignoredTailLength} 位非整组数字）` : ""
-    Script.exit(Intent.text(`未识别到 8 位组队码${suffix}`))
+    Script.exit(Intent.text(`未识别到有效组队码${suffix}`))
+    return
+  }
+  const isRaw = mode.kind === "raw"
+  const validCodes: string[] = []
+  const skippedCodes: string[] = []
+  for (const code of codes) {
+    // raw 直发模式不做规则校验，原样提交；否则按规则过滤无效码
+    if (isRaw || codeMatchesRules(code, rules)) {
+      validCodes.push(code)
+    } else {
+      skippedCodes.push(code)
+    }
+  }
+  if (validCodes.length === 0) {
+    const hint = `（允许前缀: ${rules.prefixes.join(",")}，长度: ${rules.lengths.join("/")} 位）`
+    Script.exit(Intent.text(`码格式不符${hint}`))
     return
   }
   const results: CodeResult[] = []
-  for (const code of codes) {
+  for (const code of validCodes) {
     results.push(await submitOneCode(code))
+  }
+  // 被跳过的码生成失败结果
+  for (const code of skippedCodes) {
+    results.push({
+      code,
+      sites: SITES.map((s) => makeResult(s.name, false, "businessFail", "前缀不符", null)),
+    })
   }
   const totalSuccess = results.reduce(
     (sum, result) => sum + result.sites.filter((site) => site.ok).length,
@@ -625,7 +760,7 @@ async function run(): Promise<void> {
   const runResult: RunResult = {
     results,
     totalCodes: codes.length,
-    totalRequests: codes.length * SITES.length,
+    totalRequests: validCodes.length * SITES.length,
     totalSuccess,
     ignoredTailLength,
   }

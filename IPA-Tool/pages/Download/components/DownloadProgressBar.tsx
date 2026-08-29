@@ -1,22 +1,21 @@
 import { EmptyView, HStack, ProgressView, Spacer, useRef } from "scripting"
-import { makeAppIconColor } from "../../../hooks"
+import { makeAppIconAccentColor } from "../../../hooks"
 import { useProgress } from "../../../hooks/useAppsState"
 import { formatSize } from "../../../utils"
 import { AnimText } from "../../../components/AnimText"
-import type { RGBAColor } from "../../../types/utils"
 
-const tintColor = (color?: RGBAColor | null) => color ? makeAppIconColor(color) : undefined
+const tintColor = (colors?: RGBAColor[]) => makeAppIconAccentColor(colors, 1, "systemBlue")
 
 export default function DownloadProgress({
   id,
   status,
   errorMessage,
-  dominantColor,
+  dominantColors,
 }: {
   id: string
   status: string
   errorMessage?: string
-  dominantColor?: RGBAColor | null
+  dominantColors?: RGBAColor[]
 }) {
   const progress = useProgress(id, status)
   const data = useRef({ time: Date.now(), size: 0, speed: "0B/s" })
@@ -45,7 +44,7 @@ export default function DownloadProgress({
         <HStack alignment={"center"}>
           {status === "failed" ? (
             <AnimText
-              foregroundStyle={"systemRed"}
+              foregroundStyle="systemRed"
               lineLimit={1}
               truncationMode="tail"
             >
@@ -63,7 +62,7 @@ export default function DownloadProgress({
         </HStack>
       }
       progressViewStyle="linear"
-      tint={tintColor(dominantColor)}
+      tint={tintColor(dominantColors)}
     />
   )
 }

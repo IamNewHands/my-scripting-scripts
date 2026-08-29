@@ -98,6 +98,8 @@ export const countryCodeToFlag = (code: string): string => {
   let c = code.trim().toUpperCase();
   // 兼容常见别名
   if (c === "UK") c = "GB";
+  // iOS 不渲染台湾地区旗帜（🇹🇼 显示为空白），改用可见的区域码文字标识
+  if (c === "TW") return "TW";
   // 只处理标准的两位字母代码
   if (!/^[A-Z]{2}$/.test(c)) return "";
   const A = 0x41; // 'A'
