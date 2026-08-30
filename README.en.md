@@ -34,32 +34,32 @@ Transfer files, images and text between your iPhone and any device's browser ove
 - [📖 English Docs](./LAN-File-Transfer/README.en.md) | [📖 中文文档](./LAN-File-Transfer/README.md)
 - One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/LAN-File-Transfer"]`
 
-### [PDD Quick Submit](./PDD-Quick-Submit/README.zh-CN.md)
+### [PDD Quick Submit](./PDD-Quick-Submit/README.en.md)
 
 Submit Pinduoduo team codes to multiple helper sites in parallel; returns as soon as any site succeeds (5s per-code deadline). Codes up to 10 digits are sent as one; longer input is auto-split into 8/9-digit chunks.
 
-- [📖 English Docs](./PDD-Quick-Submit/README.zh-CN.md) | [📖 中文文档](./PDD-Quick-Submit/README.md)
+- [📖 English Docs](./PDD-Quick-Submit/README.en.md) | [📖 中文文档](./PDD-Quick-Submit/README.md)
 - One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/PDD-Quick-Submit"]`
 
-### [App Region Price](./App-Region-Price/README.zh-CN.md)
+### [App Region Price](./App-Region-Price/README.en.md)
 
 Query App Store prices across regions with CNY conversion, name-matching search ranking, and version / release notes / overview display.
 
-- [📖 English Docs](./App-Region-Price/README.zh-CN.md) | [📖 中文文档](./App-Region-Price/README.md)
+- [📖 English Docs](./App-Region-Price/README.en.md) | [📖 中文文档](./App-Region-Price/README.md)
 - One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/App-Region-Price"]`
 
-### [App Store Translate](./App-Store-Translate/README.zh-CN.md)
+### [App Store Translate](./App-Store-Translate/README.en.md)
 
 Translate App Store app pages into multiple languages.
 
-- [📖 English Docs](./App-Store-Translate/README.zh-CN.md) | [📖 中文文档](./App-Store-Translate/README.md)
+- [📖 English Docs](./App-Store-Translate/README.en.md) | [📖 中文文档](./App-Store-Translate/README.md)
 - One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/App-Store-Translate"]`
 
-### [Gist](./Gist/README.zh-CN.md)
+### [Gist](./Gist/README.en.md)
 
 Manage GitHub Gists: create, edit, view and organize code snippets.
 
-- [📖 English Docs](./Gist/README.zh-CN.md) | [📖 中文文档](./Gist/README.md)
+- [📖 English Docs](./Gist/README.en.md) | [📖 中文文档](./Gist/README.md)
 - One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/Gist"]`
 
 ### [IPA-Tool](./IPA-Tool/README.en.md)
@@ -69,11 +69,18 @@ IPA file management: install, sign and inspect app information.
 - [📖 English Docs](./IPA-Tool/README.en.md) | [📖 中文文档](./IPA-Tool/README.md)
 - One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/IPA-Tool"]`
 
-### [Yoinks](./Yoinks/README.md)
+### [GitHub Toolbox](./GitHub-Toolbox/README.en.md)
+
+GitHub toolbox: Gist management, Star browsing, Actions monitoring and more.
+
+- [📖 English Docs](./GitHub-Toolbox/README.en.md) | [📖 中文文档](./GitHub-Toolbox/README.md)
+- One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/GitHub-Toolbox"]`
+
+### [Yoinks](./Yoinks/README.en.md)
 
 Media downloader using yt-dlp for video/audio, with history, settings and platform cookie login.
 
-- [📖 中文文档](./Yoinks/README.md)
+- [📖 English Docs](./Yoinks/README.en.md) | [📖 中文文档](./Yoinks/README.md)
 - One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/Yoinks"]`
 
 ## Usage
@@ -97,6 +104,7 @@ my-scripting-scripts/
 ├── App-Region-Price/           App Region Price
 ├── App-Store-Translate/        App Store Translate
 ├── Gist/                       Gist
+├── GitHub-Toolbox/             GitHub Toolbox
 ├── Gold-Price-Widget/          Gold Price Widget
 ├── IPA-Tool/                   IPA Tool
 ├── LAN-File-Transfer/          LAN File Transfer

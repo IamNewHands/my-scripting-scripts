@@ -2,8 +2,8 @@
 
 在 [Scripting App](https://apps.apple.com/app/scripting/id6479691128) 中把拼多多组队码快速提交到多个互助站点。
 
-> **English**：[README.zh-CN.md](./README.zh-CN.md)  
-> 仓库索引：[../README.md](../README.md) · [../README.zh-CN.md](../README.zh-CN.md)
+> **English**：[README.en.md](./README.en.md)  
+> 仓库索引：[../README.md](../README.md) · [../README.en.md](../README.en.md)
 
 **一键导入**  
 https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FPDD-Quick-Submit%22%5D
@@ -57,7 +57,7 @@ PDD-Quick-Submit/
 ├── intent.tsx      # Intent / 快捷指令入口（与 index 同步）
 ├── script.json     # 元数据 + remoteResource
 ├── README.md
-└── README.zh-CN.md
+└── README.en.md
 ```
 
 ## 外部域名 / 隐私

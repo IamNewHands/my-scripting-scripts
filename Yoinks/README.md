@@ -7,6 +7,9 @@
 作者：**vcncv**
 
 > 本项目受 [Pablo Stanley / Yoinks](https://github.com/pablostanley/yoinks) 启发，在 Scripting 运行时中重新实现核心下载体验，并针对 iOS 与 Scripting 宿主能力做了适配。
+>
+> **English**：[README.en.md](./README.en.md)  
+> 仓库索引：[../README.md](../README.md) · [../README.en.md](../README.en.md)
 
 ---
 

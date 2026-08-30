@@ -2,8 +2,8 @@
 
 在 [Scripting App](https://apps.apple.com/app/scripting/id6479691128) 内管理你的 GitHub Gist。
 
-> **English**：[README.zh-CN.md](./README.zh-CN.md)  
-> 仓库目录：[../README.zh-CN.md](../README.zh-CN.md) · [../README.md](../README.md)
+> **English**：[README.en.md](./README.en.md)  
+> 仓库目录：[../README.en.md](../README.en.md) · [../README.md](../README.md)
 
 **一键导入**  
 https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNewHands%2Fmy-scripting-scripts%2Ftree%2Fmain%2FGist%22%5D
