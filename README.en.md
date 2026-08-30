@@ -41,6 +41,41 @@ Submit Pinduoduo team codes to multiple helper sites in parallel; returns as soo
 - [📖 English Docs](./PDD-Quick-Submit/README.zh-CN.md) | [📖 中文文档](./PDD-Quick-Submit/README.md)
 - One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/PDD-Quick-Submit"]`
 
+### [App Region Price](./App-Region-Price/README.zh-CN.md)
+
+Query App Store prices across regions with CNY conversion, name-matching search ranking, and version / release notes / overview display.
+
+- [📖 English Docs](./App-Region-Price/README.zh-CN.md) | [📖 中文文档](./App-Region-Price/README.md)
+- One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/App-Region-Price"]`
+
+### [App Store Translate](./App-Store-Translate/README.zh-CN.md)
+
+Translate App Store app pages into multiple languages.
+
+- [📖 English Docs](./App-Store-Translate/README.zh-CN.md) | [📖 中文文档](./App-Store-Translate/README.md)
+- One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/App-Store-Translate"]`
+
+### [Gist](./Gist/README.zh-CN.md)
+
+Manage GitHub Gists: create, edit, view and organize code snippets.
+
+- [📖 English Docs](./Gist/README.zh-CN.md) | [📖 中文文档](./Gist/README.md)
+- One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/Gist"]`
+
+### [IPA-Tool](./IPA-Tool/README.en.md)
+
+IPA file management: install, sign and inspect app information.
+
+- [📖 English Docs](./IPA-Tool/README.en.md) | [📖 中文文档](./IPA-Tool/README.md)
+- One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/IPA-Tool"]`
+
+### [Yoinks](./Yoinks/README.md)
+
+Media downloader using yt-dlp for video/audio, with history, settings and platform cookie login.
+
+- [📖 中文文档](./Yoinks/README.md)
+- One-click import: `https://scripting.fun/import_scripts?urls=` + URL-encoded `["https://github.com/IamNewHands/my-scripting-scripts/tree/main/Yoinks"]`
+
 ## Usage
 
 All scripts require the Scripting app on iOS. Install via:
@@ -59,11 +94,16 @@ Scripts support automatic updates via `remoteResource`:
 
 ```
 my-scripting-scripts/
-├── WatchlistValuation/         Watchlist Valuation
+├── App-Region-Price/           App Region Price
+├── App-Store-Translate/        App Store Translate
+├── Gist/                       Gist
 ├── Gold-Price-Widget/          Gold Price Widget
-├── Magnet-Resource-Preview/    Magnet Resource Preview
+├── IPA-Tool/                   IPA Tool
 ├── LAN-File-Transfer/          LAN File Transfer
+├── Magnet-Resource-Preview/    Magnet Resource Preview
 ├── PDD-Quick-Submit/           PDD Quick Submit
+├── WatchlistValuation/         Watchlist Valuation
+├── Yoinks/                     Media Downloader
 ├── README.md                   Chinese docs
 └── README.en.md                This file (English)
 ```
