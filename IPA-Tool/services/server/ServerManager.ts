@@ -5,6 +5,7 @@ import { AppConfig } from "../../constants/AppConfig";
 import { BackgroundManager } from "../../modules/BackgroundManager";
 import { AppEvents, Path } from "scripting";
 import { sendNotification } from "../../utils";
+import { registerSAPProxy } from "./SAPProxy";
 
 let serverStarted = false;
 
@@ -22,6 +23,10 @@ export const initServerManager = () => {
 
   // 创建 HTTP 服务器实例
   const server = new HttpServer();
+  server.listenAddressIPv4 = AppConfig.server.host;
+
+  // SAP 代理：为登录所需的 web-sap-signer 跨域转发 Apple SAP 端点
+  registerSAPProxy(server);
 
   /**
    * 注册文件服务路由
@@ -34,7 +39,7 @@ export const initServerManager = () => {
    * 启动服务器
    * 端口：8000
    */
-  const error = server.start({ port: 8000 });
+  const error = server.start({ port: AppConfig.server.port, forceIPv4: true });
   if (error) {
     // 重复启动/端口占用不反复弹通知
     if (isServerAlreadyStartedError(error)) return;

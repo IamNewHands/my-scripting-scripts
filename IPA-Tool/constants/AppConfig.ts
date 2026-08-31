@@ -21,6 +21,12 @@ export const defaultConfig = Object.freeze({
     folder: "app-temp",
   }),
 
+  // 本地 HTTP 服务配置
+  server: Object.freeze({
+    host: "127.0.0.1",
+    port: 8000,
+  }),
+
   // 通知配置
   notification: Object.freeze({
     downloadSuccess: true, // 下载成功通知开关

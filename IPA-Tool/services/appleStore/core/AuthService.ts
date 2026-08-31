@@ -2,6 +2,7 @@ import { $cache, $http, plist } from "../runtime"
 import { appleStoreConfig, configureAppleHttp, CustomError, getMac } from "./shared"
 import { formatAccountName } from "../../../utils"
 import { getPassword, deletePassword as deleteLoginPassword } from "../../../utils/loginHistoryStorage"
+import signSap from "../../../web-sap-signer"
 
 type LoginParams = {
   appleId: string
@@ -80,21 +81,31 @@ export class AuthService {
   static async #login({ appleId, password, code }: LoginParams): Promise<AppleLoginResponse> {
     configureAppleHttp()
     const dataJson = {
-      attempt: code ? 2 : 4,
-      createSession: "true",
+      appleId,
+      attempt: 1,
       guid: getMac(),
+      password: `${password}${code ?? ""}`,
       rmp: 0,
       why: "signIn",
-      appleId,
-      password: `${password}${code ?? ""}`,
     }
+    // 与源头一致：无 createSession，integer 全部转 string 并 trim，确保签名与提交体一致
     const body = String(plist.build(dataJson))
-    // 源头协议：buy authenticate + 手动 302；密码仍不入会话缓存
-    const url = `https://buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/authenticate?guid=${dataJson.guid}`
+      .replaceAll("integer", "string")
+      .trim()
+
+    // SAP 签名：登录必需的 x-apple-actionsignature（会弹出签名页）
+    const loginSapSignature = await signSap(body)
+    const sapHeaders = {
+      "x-apple-actionsignature": loginSapSignature,
+    }
+
+    // 源头协议：p37-buy MZFinance authenticate + 手动 302；密码仍不入会话缓存
+    const url = `https://p37-buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/authenticate`
     let resp = await $http.post({
       url,
       body,
-      timeout: 6,
+      headers: sapHeaders,
+      timeout: 10,
       handleRedirect: async () => null,
     })
 
@@ -106,7 +117,8 @@ export class AuthService {
       resp = await $http.post({
         url: nextUrl,
         body,
-        timeout: 6,
+        headers: sapHeaders,
+        timeout: 10,
       })
     }
 
@@ -116,10 +128,15 @@ export class AuthService {
 
     const Cookie = resp.headers["set-cookie"]
     const storeFront = resp.headers["x-set-apple-store-front"]?.split("-")?.[0]
+    const session: AppleLoginResponse = {
+      ...parsedResp,
+      dsPersonId: parsedResp.dsPersonId === undefined ? undefined : String(parsedResp.dsPersonId),
+      Cookie,
+      storeFront,
+    }
     // 密码不入 Storage；Keychain 由 useAuth.login() 侧写入
-    const loginResp = { ...parsedResp, Cookie, storeFront } as AppleLoginResponse
-    upsertActiveLogin(loginResp)
-    return loginResp
+    upsertActiveLogin(session)
+    return session
   }
 
   static async login(op?: LoginParams): Promise<AppleLoginResponse> {

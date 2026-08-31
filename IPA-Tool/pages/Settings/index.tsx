@@ -15,11 +15,13 @@ import {
   HStack,
   useState,
   useEffect,
+  useRef,
 } from "scripting";
 
 import { useAuth } from "../../hooks/useAuth";
 import { useLoginToast } from "../../hooks/useLoginToast";
 import { useLoginHandler } from "../../hooks/useLoginHandler";
+import { switchTab, Tab } from "../../hooks/useTabs";
 import CloseScriptButton from "../../components/CloseScriptButton";
 import MinimizeButton from "../../components/MinimizeButton";
 import { PageBackground } from "../../components/EditableGlassListPipeline";
@@ -35,6 +37,15 @@ export const SettingsView = () => {
   const { toastConfig, showToast } = useLoginToast();
   const { handleLogin } = useLoginHandler(login, showToast);
   const [scroll, setScroll] = useState(isLoggedIn);
+  // 记录初始登录态，只在「从未登录 → 登录成功」时自动切回搜索页
+  const wasLoggedInRef = useRef(isLoggedIn);
+
+  useEffect(() => {
+    if (isLoggedIn && !wasLoggedInRef.current) {
+      switchTab(Tab.Search);
+    }
+    wasLoggedInRef.current = isLoggedIn;
+  }, [isLoggedIn]);
 
   useEffect(() => {
     withAnimation(() => setScroll(isLoggedIn));
