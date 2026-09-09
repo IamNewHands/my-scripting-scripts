@@ -1,7 +1,17 @@
 import { AppConfig } from "../constants/AppConfig"
 import { startSignerServer } from "./server"
+import sapSignCache from "./sapSignCache"
 
-const signSap = async (xml: string) => {
+/**
+ * 对 XML 进行 SAP 签名。
+ * @param useCache 是否启用签名缓存（默认 true），命中时跳过 WebView 签名流程。
+ */
+const signSap = async (xml: string, useCache = true) => {
+  if (useCache) {
+    const cachedSignature = sapSignCache.get(xml)
+    if (cachedSignature !== null) return cachedSignature
+  }
+
   const server = startSignerServer()
   const web = new WebViewController()
   let presentation: Promise<void> | undefined
@@ -29,6 +39,7 @@ const signSap = async (xml: string) => {
 
       web.dismiss()
       if (presentation) await presentation
+      if (useCache) sapSignCache.set(xml, result)
       return result
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)

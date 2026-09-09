@@ -1,54 +1,54 @@
 {
-  "remoteResource" : {
-    "hash" : "9fb5a7aafd1dec50a5c64211940e0ede",
-    "autoUpdateInterval" : 86400,
-    "url" : "https:\/\/github.com\/IamNewHands\/my-scripting-scripts\/releases\/download\/IPA-Tool-v1.7.0\/IPA-Tool.zip"
+  "author": {
+    "homepage": "https://github.com/IamNewHands",
+    "name": "IamNewHands",
+    "email": null
   },
-  "intentInputTypes" : [
-    "FileURLs",
-    "URLs"
-  ],
-  "icon" : "iphone",
-  "contributors" : [
+  "name": "IPA-Tool",
+  "version": "1.7.1",
+  "localizedDescriptions": {
+    "ru": "Этот скрипт主要用于 скачивания IPA-пакетов и понижения версии приложений; для его запуска требуется дополнительная поддержка в виде модуля Surge или плагина Loon — достаточно выбрать один из них.",
+    "it": "Questo script è principalmente utilizzato per scaricare pacchetti IPA e eseguire il downgrade delle app; per eseguirlo è necessario un supporto aggiuntivo come un modulo di Surge o un plugin di Loon, di cui basta sceglierne uno.",
+    "pt": "Este script é principalmente usado para baixar pacotes IPA e realizar downgrade de aplicativos; para executá-lo, é necessário suporte adicional, como um módulo do Surge ou um plugin do Loon — basta escolher um dos dois.",
+    "zh": "下载旧版IPA并安装。支持自定义plist（自建/代理/Scripting）、Keychain存密码、搜索带国家、iPhone/iPad平台切换、图标多主色主题、下载并发限制、源头协议（含SAP签名登录修复）、登录后自动回搜索页、免更新开关、调试日志。原作社区脚本：https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ；维护：IamNewHands。",
+    "en": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, iPhone/iPad platform picker, multi-accent app icon theming, download concurrency limit, upstream Apple auth with SAP signing fix, auto-jump to search after login, disable update check, debug logging toggle. Original community script: https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ; maintained by IamNewHands.",
+    "fr": "Ce script est principalement utilisé pour télécharger des fichiers IPA et effectuer une régression d'application ; pour l'exécuter, vous avez besoin d'un support complémentaire, comme un module de Surge ou un plugin de Loon — il suffit d'en choisir un seul.",
+    "de": "Dieses Skript dient hauptsächlich dem Herunterladen von IPA-Paketen und dem Downgraden von Apps. Für die Ausführung ist eine zusätzliche Unterstützung erforderlich, wie ein Modul von Surge oder ein Plugin von Loon — es genügt, eines davon auszuwählen.",
+    "ja": "このスクリプトは主にIPAパッケージのダウンロードとアプリのバージョンダウンに使用されます。実行にはSurgeのモジュールまたはLoonのプラグインのいずれかを補助ツールとして必要とします。",
+    "es": "Este script se utiliza principalmente para descargar paquetes IPA y realizar el downgrade de aplicaciones; para ejecutarlo se requiere soporte adicional, como un módulo de Surge o un complemento de Loon, basta con elegir uno de los dos."
+  },
+  "permissions": null,
+  "runInApp": false,
+  "color": "rgba(243, 159, 68,1)",
+  "icon": "iphone",
+  "description": "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, iPhone/iPad platform picker, multi-accent app icon theming, download concurrency limit, upstream Apple auth with SAP signing fix, auto-jump to search after login, disable update check, debug logging toggle. Original community script: https://github.com/ScriptingApp/Community-Scripts/raw/refs/heads/main/IPA-Tool.scripting ; maintained by IamNewHands.",
+  "entry": "index.tsx",
+  "contributors": [
     {
-      "homepage" : null,
-      "name" : "小白脸",
-      "email" : null
+      "name": "小白脸",
+      "homepage": null,
+      "email": null
     }
   ],
-  "runInApp" : false,
-  "author" : {
-    "name" : "IamNewHands",
-    "homepage" : "https:\/\/github.com\/IamNewHands",
-    "email" : null
+  "remoteResource": {
+    "hash": "70bdab0f6fefef3b6d3da9cfc9b045e4",
+    "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/download/IPA-Tool-v1.7.1/IPA-Tool.zip",
+    "autoUpdateInterval": 86400
   },
-  "description" : "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, iPhone\/iPad platform picker, multi-accent app icon theming, download concurrency limit, upstream Apple auth with SAP signing fix, auto-jump to search after login, disable update check, debug logging toggle. Original community script: https:\/\/github.com\/ScriptingApp\/Community-Scripts\/raw\/refs\/heads\/main\/IPA-Tool.scripting ; maintained by IamNewHands.",
-  "localizedDescriptions" : {
-    "it" : "Questo script è principalmente utilizzato per scaricare pacchetti IPA e eseguire il downgrade delle app; per eseguirlo è necessario un supporto aggiuntivo come un modulo di Surge o un plugin di Loon, di cui basta sceglierne uno.",
-    "zh" : "下载旧版IPA并安装。支持自定义plist（自建\/代理\/Scripting）、Keychain存密码、搜索带国家、iPhone\/iPad平台切换、图标多主色主题、下载并发限制、源头协议（含SAP签名登录修复）、登录后自动回搜索页、免更新开关、调试日志。原作社区脚本：https:\/\/github.com\/ScriptingApp\/Community-Scripts\/raw\/refs\/heads\/main\/IPA-Tool.scripting ；维护：IamNewHands。",
-    "de" : "Dieses Skript dient hauptsächlich dem Herunterladen von IPA-Paketen und dem Downgraden von Apps. Für die Ausführung ist eine zusätzliche Unterstützung erforderlich, wie ein Modul von Surge oder ein Plugin von Loon — es genügt, eines davon auszuwählen.",
-    "ja" : "このスクリプトは主にIPAパッケージのダウンロードとアプリのバージョンダウンに使用されます。実行にはSurgeのモジュールまたはLoonのプラグインのいずれかを補助ツールとして必要とします。",
-    "fr" : "Ce script est principalement utilisé pour télécharger des fichiers IPA et effectuer une régression d'application ; pour l'exécuter, vous avez besoin d'un support complémentaire, comme un module de Surge ou un plugin de Loon — il suffit d'en choisir un seul.",
-    "ru" : "Этот скрипт主要用于 скачивания IPA-пакетов и понижения версии приложений; для его запуска требуется дополнительная поддержка в виде модуля Surge или плагина Loon — достаточно выбрать один из них.",
-    "es" : "Este script se utiliza principalmente para descargar paquetes IPA y realizar el downgrade de aplicaciones; para ejecutarlo se requiere soporte adicional, como un módulo de Surge o un complemento de Loon, basta con elegir uno de los dos.",
-    "en" : "Download old IPA builds and install them. Custom plist, Keychain passwords, country-aware search, iPhone\/iPad platform picker, multi-accent app icon theming, download concurrency limit, upstream Apple auth with SAP signing fix, auto-jump to search after login, disable update check, debug logging toggle. Original community script: https:\/\/github.com\/ScriptingApp\/Community-Scripts\/raw\/refs\/heads\/main\/IPA-Tool.scripting ; maintained by IamNewHands.",
-    "pt" : "Este script é principalmente usado para baixar pacotes IPA e realizar downgrade de aplicativos; para executá-lo, é necessário suporte adicional, como um módulo do Surge ou um plugin do Loon — basta escolher um dos dois."
+  "iconImage": null,
+  "localizedNames": {
+    "ru": "Инструмент IPA",
+    "fr": "Outil IPA",
+    "it": "Strumento IPA",
+    "pt": "Ferramenta IPA",
+    "en": "IPA-Tool",
+    "es": "Herramienta IPA",
+    "zh": "IPA工具箱",
+    "de": "IPA-Tool",
+    "ja": "IPAツール"
   },
-  "localizedNames" : {
-    "en" : "IPA-Tool",
-    "es" : "Herramienta IPA",
-    "zh" : "IPA工具箱",
-    "ja" : "IPAツール",
-    "it" : "Strumento IPA",
-    "fr" : "Outil IPA",
-    "ru" : "Инструмент IPA",
-    "de" : "IPA-Tool",
-    "pt" : "Ferramenta IPA"
-  },
-  "name" : "IPA-Tool",
-  "iconImage" : null,
-  "color" : "rgba(243, 159, 68,1)",
-  "entry" : "index.tsx",
-  "permissions" : null,
-  "version" : "1.7.0"
+  "intentInputTypes": [
+    "FileURLs",
+    "URLs"
+  ]
 }
