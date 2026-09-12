@@ -2,6 +2,7 @@ import { NavigationStack, ZStack, useMemo, useState, HStack } from "scripting"
 import AppVersionList from "../../components/AppVersionList"
 import MinimizeButton from "../../components/MinimizeButton"
 import CloseScriptButton from "../../components/CloseScriptButton"
+import AddAccountButton from "../../components/AddAccountButton"
 import { PageBackground } from "../../components/EditableGlassListPipeline"
 import { PLATFORM, type Store } from "../../constants/Platform"
 import { useAuth } from "../../hooks"
@@ -73,7 +74,12 @@ export default function PurchasedAppsView({ isActive }: PurchasedAppsViewProps) 
           principal: (
             <PurchasedDateMenu options={dateOptions} />
           ),
-          topBarTrailing: <QuickSwitchAccountMenu />,
+          topBarTrailing: (
+            <HStack spacing={15}>
+              <AddAccountButton />
+              <QuickSwitchAccountMenu />
+            </HStack>
+          ),
         }}
       >
         <PageBackground />

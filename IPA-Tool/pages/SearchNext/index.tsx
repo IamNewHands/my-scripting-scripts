@@ -15,6 +15,7 @@ import {
 } from "../../components/EditableGlassListPipeline"
 import MinimizeButton from "../../components/MinimizeButton"
 import CloseScriptButton from "../../components/CloseScriptButton"
+import AddAccountButton from "../../components/AddAccountButton"
 import { onSearchShowToast } from "./store/toast"
 import { useLoginToast, useDownload } from "../../hooks"
 import RegionPicker from "./components/RegionPicker"
@@ -159,7 +160,10 @@ export default function SearchNextView() {
             </HStack>
           ),
           topBarTrailing: (
-            <QuickSwitchAccountMenu />
+            <HStack spacing={15}>
+              <AddAccountButton />
+              <QuickSwitchAccountMenu />
+            </HStack>
           ),
         }}
       >
