@@ -8,6 +8,7 @@ type SuccessActionsProps = {
   onContinue: () => void;
   onLogout: () => void;
   onSwitchAccount: () => void;
+  onAddAccount: () => void;
 };
 
 export function SuccessActions({
@@ -16,6 +17,7 @@ export function SuccessActions({
   onContinue,
   onLogout,
   onSwitchAccount,
+  onAddAccount,
 }: SuccessActionsProps) {
   return (
     <VStack  frame={{ maxWidth: "infinity" }}>
@@ -107,6 +109,33 @@ export function SuccessActions({
           </HStack>
         </Button>
       </HStack>
+
+      <Button buttonStyle="plain" action={onAddAccount}>
+        <HStack
+          spacing={8}
+          frame={{ maxWidth: "infinity", minHeight: 56 }}
+          glassEffect={{ glass: cardGlass, shape: buttonShape }}
+          overlay={
+            <RoundedRectangle
+              padding={-0.5}
+              cornerRadius={buttonRadius}
+              stroke={{
+                shapeStyle: {
+                  light: "rgba(255,255,255,0.50)",
+                  dark: "rgba(255,255,255,0.24)",
+                },
+                strokeStyle: { lineWidth: 0.5 },
+              }}
+            />
+          }
+          clipShape={{ type: "rect", cornerRadius: buttonRadius, style: "continuous" }}
+        >
+          <Image systemName="person.badge.plus" font={19} foregroundStyle="systemBlue" />
+          <AnimText font="body" fontWeight="semibold" foregroundStyle="systemBlue">
+            登录其他账号
+          </AnimText>
+        </HStack>
+      </Button>
     </VStack>
   );
 }

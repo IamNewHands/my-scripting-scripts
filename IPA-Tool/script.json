@@ -2,8 +2,8 @@
   "runInApp" : false,
   "remoteResource" : {
     "autoUpdateInterval" : 86400,
-    "url" : "https:\/\/github.com\/IamNewHands\/my-scripting-scripts\/releases\/download\/IPA-Tool-v2.0.1\/IPA-Tool.zip",
-    "hash" : "50baccff35291f8072e2c2534ca7b412"
+    "url" : "https:\/\/github.com\/IamNewHands\/my-scripting-scripts\/releases\/download\/IPA-Tool-v2.0.2\/IPA-Tool.zip",
+    "hash" : "a575a90a4a6a42bbd1dcd02467b18e44"
   },
   "permissions" : null,
   "name" : "IPA-Tool",
@@ -39,7 +39,7 @@
     "it" : "Strumento IPA",
     "fr" : "Outil IPA"
   },
-  "version" : "2.0.1",
+  "version" : "2.0.2",
   "localizedDescriptions" : {
     "ja" : "このスクリプトは主にIPAパッケージのダウンロードとアプリのバージョンダウンに使用されます。実行にはSurgeのモジュールまたはLoonのプラグインのいずれかを補助ツールとして必要とします。",
     "ru" : "Этот скрипт主要用于 скачивания IPA-пакетов и понижения версии приложений; для его запуска требуется дополнительная поддержка в виде модуля Surge или плагина Loon — достаточно выбрать один из них.",

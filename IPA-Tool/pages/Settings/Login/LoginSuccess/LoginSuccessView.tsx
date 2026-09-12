@@ -3,6 +3,7 @@ import { useIconAnimation, useQuickSwitchAccount } from "../../../../hooks";
 import { useAuth } from "../../../../hooks/useAuth";
 import { switchTab, Tab } from "../../../../hooks/useTabs";
 import { AccountSelectionSheet } from "../components/AccountSelectionSheet";
+import AddAccountSheet from "../../../../components/AddAccountSheet";
 import { LoginSuccessAccountSection } from "./LoginSuccessAccountSection";
 import { SuccessActions } from "./SuccessActions";
 import { SuccessBadge } from "./SuccessBadge";
@@ -17,6 +18,7 @@ export const LoginSuccessView = () => {
   } = useQuickSwitchAccount();
   const { deleteAccount } = useAuth();
   const [accountSheetPresented, setAccountSheetPresented] = useState(false);
+  const [addAccountPresented, setAddAccountPresented] = useState(false);
   const iconAnimation = useIconAnimation(5, 1, 0);
 
   const handleQuickSwitch = () => {
@@ -73,13 +75,26 @@ export const LoginSuccessView = () => {
       <Spacer minLength={30} />
       <SuccessBadge {...iconAnimation} />
       <LoginSuccessAccountSection />
-      <VStack spacing={10} frame={{ maxWidth: "infinity" }}>
+      <VStack
+        spacing={10}
+        frame={{ maxWidth: "infinity" }}
+        sheet={addAccountPresented ? {
+          isPresented: true,
+          onChanged: presented => {
+            if (!presented) setAddAccountPresented(false);
+          },
+          content: (
+            <AddAccountSheet onDismiss={() => setAddAccountPresented(false)} />
+          ),
+        } : undefined}
+      >
         <SuccessActions
           canSwitch={canQuickSwitch}
           isSwitching={isSwitching}
           onContinue={() => switchTab(Tab.Search)}
           onLogout={logout}
           onSwitchAccount={handleQuickSwitch}
+          onAddAccount={() => setAddAccountPresented(true)}
         />
       </VStack>
       <Spacer minLength={8} />
