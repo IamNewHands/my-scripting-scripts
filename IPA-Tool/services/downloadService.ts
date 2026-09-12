@@ -12,9 +12,10 @@ import {
   type DownloadStatus,
 } from "../modules/download";
 import { removeAppFile } from "../utils/appsFilesStore";
-import { authorizeApp, sendNotification } from "../utils";
+import { authorizeApp } from "./tool"
+import { sendNotification } from "../utils";
 import { AppConfig, onConfigChange } from "../constants/AppConfig";
-import { Logger } from "../utils/logger";
+import { Logger } from "./tool/logger";
 
 export const downloadManager = new DownloadManager(AppConfig.download);
 
@@ -43,6 +44,7 @@ export const startDownload = (
     if (status !== "completed") return;
     try {
       await authorizeApp(down);
+      Logger.debug("download completed", id, task.name)
       sendNotification(
         "downloadSuccess",
         `${task.name.replace("zip", "ipa")} 下载完成 ✅`
@@ -114,7 +116,6 @@ export const removeDownloadItems = async (
   const appIds = uniqueItemsBy(taskItems, item => item.appId).map(
     item => item.appId
   );
-  // 仅本地文件源触发派生清理，避免 task 删除误清关联态（源头语义）
   const fileAppKeys = uniqueItemsBy(
     mergedItems.filter(item => item.source === "file"),
     item => item.appKey
@@ -136,7 +137,11 @@ export const removeDownloadItems = async (
 
       if (item.source === "task")
         removeDownloadTask(item.appId, { emitRemove: false });
-      await removeAppFile(item.appKey, item.path, snapshotZipPath);
+      await removeAppFile(
+        item.appKey,
+        item.path,
+        snapshotZipPath
+      );
     } catch (e) {
       Logger.error(
         `删除 ${item.appKey} 失败：${String(e)} ❌`

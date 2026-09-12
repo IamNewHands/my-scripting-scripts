@@ -1,10 +1,14 @@
 import { useEffect, useObservable, type Color, type CommonViewProps } from "scripting";
-import { getAppIconAsset, putAppIconAsset } from "../modules/AppIconAssetDB";
+import {
+  getAppIconAsset,
+  putAppIconAsset,
+  updateAppIconAssetDominantColors,
+} from "../modules/AppIconAssetDB";
 import {
   AppIconAccentBackground,
   isUsableDominantColor,
   makeAppIconAccentColor,
-} from "./appIconStyle";
+} from "../components/AppIconStyle";
 
 export type CachedAppIconState = {
   iconUrl: string | null;
@@ -25,19 +29,7 @@ const emptyState = (iconUrl: string | null = null): CachedAppIconState => ({
 });
 
 const memoryCache = new Map<string, CachedAppIconState>();
-const pendingTasks = new Map<string, Promise<CachedAppIconState>>();
-// 内存里缓存 UIImage，限制条目避免列表滑动时无限涨
-const MAX_MEMORY_ICON_CACHE = 40;
-
-const putMemoryCache = (iconUrl: string, state: CachedAppIconState) => {
-  if (memoryCache.has(iconUrl)) memoryCache.delete(iconUrl);
-  memoryCache.set(iconUrl, state);
-  while (memoryCache.size > MAX_MEMORY_ICON_CACHE) {
-    const oldest = memoryCache.keys().next().value;
-    if (oldest == null) break;
-    memoryCache.delete(oldest);
-  }
-};
+const pendingCache = new Map<string, Promise<CachedAppIconState>>();
 
 const parseCachedColors = (raw?: string | null) => {
   if (!raw) return [] as RGBAColor[];
@@ -92,7 +84,16 @@ const readCachedState = async (iconUrl: string) => {
   const image = UIImage.fromData(cached.image);
   if (!image) return null;
 
-  return buildState(iconUrl, image, parseCachedColors(cached.dominant_color));
+  let dominantColors = parseCachedColors(cached.dominant_color);
+  if (!dominantColors.length) {
+    dominantColors = extractDominantColors(image);
+    if (dominantColors.length) {
+      await updateAppIconAssetDominantColors(iconUrl, dominantColors)
+        .catch(() => {});
+    }
+  }
+
+  return buildState(iconUrl, image, dominantColors);
 };
 
 const loadCachedAppIcon = async (
@@ -118,27 +119,37 @@ const loadCachedAppIcon = async (
   }
 };
 
-const resolveCachedAppIcon = (iconUrl: string): Promise<CachedAppIconState> => {
+const resolveCachedAppIcon = (iconUrl: string) => {
   const cached = memoryCache.get(iconUrl);
   if (cached) return Promise.resolve(cached);
 
-  const pending = pendingTasks.get(iconUrl);
+  const pending = pendingCache.get(iconUrl);
   if (pending) return pending;
 
-  const task = loadCachedAppIcon(iconUrl)
-    .then(state => {
-      if (state.image && state.dominantColors.length) {
-        putMemoryCache(iconUrl, state);
-      }
-      return state;
-    })
-    .finally(() => {
-      pendingTasks.delete(iconUrl);
-    });
-
-  pendingTasks.set(iconUrl, task);
-  return task;
+  const request = loadCachedAppIcon(iconUrl).then(state => {
+    if (state.image && state.dominantColors.length) memoryCache.set(iconUrl, state);
+    return state;
+  }).finally(() => {
+    if (pendingCache.get(iconUrl) === request) pendingCache.delete(iconUrl);
+  });
+  pendingCache.set(iconUrl, request);
+  return request;
 };
+
+/** 清理已交给组件持有的图标内存；不影响 SQLite 缓存。 */
+export const clearCachedAppIconMemory = (iconUrl?: string) => {
+  if (iconUrl) {
+    memoryCache.delete(iconUrl);
+  } else {
+    memoryCache.clear();
+  }
+};
+
+/** 预先完成图标缓存和主色解析，供需要一次性展示完整卡片的页面使用。 */
+export const preloadCachedAppIcon = (iconUrl: string) =>
+  resolveCachedAppIcon(iconUrl).then(() => {
+    clearCachedAppIconMemory(iconUrl);
+  });
 
 const initialState = (iconUrl?: string | null) => {
   const nextIconUrl = iconUrl ?? null;
@@ -151,23 +162,27 @@ export const useCachedAppIcon = (iconUrl?: string | null): CachedAppIcon => {
   const state = useObservable<CachedAppIconState>(initialState(iconUrl));
 
   useEffect(() => {
-    const nextIconUrl = iconUrl ?? null;
-    if (!nextIconUrl) {
-      state.setValue(emptyState(null));
-      return;
+    if (!iconUrl) return;
+
+    let active = true;
+    const cached = memoryCache.get(iconUrl);
+    if (cached) {
+      if (state.value !== cached) state.setValue(cached);
+      clearCachedAppIconMemory(iconUrl);
+      return () => {
+        active = false;
+        clearCachedAppIconMemory(iconUrl);
+      };
     }
 
-    if (state.value.iconUrl === nextIconUrl && state.value.image) return;
-
-    let cancelled = false;
-    state.setValue(emptyState(nextIconUrl));
-
-    resolveCachedAppIcon(nextIconUrl).then(nextState => {
-      if (!cancelled) state.setValue(nextState);
+    resolveCachedAppIcon(iconUrl).then(nextState => {
+      if (active) state.setValue(nextState);
+      clearCachedAppIconMemory(iconUrl);
     });
 
     return () => {
-      cancelled = true;
+      active = false;
+      clearCachedAppIconMemory(iconUrl);
     };
   }, [iconUrl]);
 

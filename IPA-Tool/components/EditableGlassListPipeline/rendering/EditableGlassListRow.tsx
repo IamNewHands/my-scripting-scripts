@@ -1,8 +1,4 @@
-import {
-  Group,
-  type CommonViewProps,
-  type VirtualNode,
-} from "scripting";
+import { Group, type CommonViewProps, type VirtualNode } from "scripting";
 import type {
   EditableGlassListChildren,
   EditableGlassListRowPropsPatch,
@@ -15,7 +11,6 @@ export type EditableGlassListRowProps = EditableGlassListRowPropsPatch & {
 const rowGlass = UIGlass.clear().interactive(true);
 
 export const editableGlassRowStyleProps = {
-  padding: true,
   frame: {
     maxHeight: "infinity" as const,
     maxWidth: "infinity" as const,

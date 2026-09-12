@@ -13,23 +13,23 @@ import {
   PageBackground,
   useEditableGlassList,
 } from "../../components/EditableGlassListPipeline"
-import CloseScriptButton from "../../components/CloseScriptButton"
 import MinimizeButton from "../../components/MinimizeButton"
-import AddAccountButton from "../../components/AddAccountButton"
+import CloseScriptButton from "../../components/CloseScriptButton"
 import { onSearchShowToast } from "./store/toast"
 import { useLoginToast, useDownload } from "../../hooks"
 import RegionPicker from "./components/RegionPicker"
 import SearchCountPicker from "./components/SearchCountPicker"
 import SearchPlatformPicker from "./components/SearchPlatformPicker"
 import QuickSwitchAccountMenu from "./components/QuickSwitchAccountMenu"
-import SearchResultRow from "./components/SearchResultRow"
-import SearchSkeletonRow from "./components/SearchSkeletonRow"
+import SearchResultRow from "../../components/SearchResultRow"
+import SearchSkeletonRow from "../../components/SearchSkeletonRow"
 import SearchHistorySection from "./components/SearchHistorySection"
 import SearchHistoryBarChart from "./components/SearchHistoryBarChart"
 import AppVersionList from "../../components/AppVersionList"
 import { useAppVersionSelection } from "./store/useAppVersionSelection"
 import { openVersionSheet } from "./store/useVersionSheet"
-import { useSearchApps } from "./hooks/useSearchApps"
+import { useSearchApps, store } from "./hooks/useSearchApps"
+import { PLATFORM } from "../../constants/Platform"
 import { useSearchHistory } from "./hooks/useSearchHistory"
 import { useSearchSubmit } from "./hooks/useSearchSubmit"
 import { useChartData } from "./hooks/useChartData"
@@ -57,6 +57,7 @@ export default function SearchNextView() {
   openVersionSheet.current = setVersionApp
   const [, AppVersionDispatch] = useAppVersionSelection()
   const search = useSearchApps()
+
   const history = useSearchHistory(search.submittedQuery)
   const resultList = useEditableGlassList(search.resultItems, {
     trailingSwipeActions: {
@@ -120,10 +121,14 @@ export default function SearchNextView() {
               },
               content: (
                 <AppVersionList
+                  presentationDragIndicator={"visible"}
+                  presentationDetents={[700]}
                   id={versionApp.id}
                   name={versionApp.name}
+                  store={store}
+                  startVersionId={store.platform === PLATFORM.TV ? versionApp.externalVersionId : undefined}
                   callback={(id, item) => {
-                    AppVersionDispatch([id, item])
+                    AppVersionDispatch([id, store.platform, item])
                   }}
                 />
               ),
@@ -147,17 +152,14 @@ export default function SearchNextView() {
         }}
 
         toolbar={{
-          topBarTrailing: (
-            <HStack spacing={15}>
-              <AddAccountButton />
-              <QuickSwitchAccountMenu />
-            </HStack>
-          ),
           topBarLeading: (
             <HStack spacing={15}>
               <MinimizeButton />
               <CloseScriptButton />
             </HStack>
+          ),
+          topBarTrailing: (
+            <QuickSwitchAccountMenu />
           ),
         }}
       >
@@ -175,10 +177,8 @@ export default function SearchNextView() {
                 />
               )
             })
-            : resultList.render(SEARCH_RESULT_TYPE, item => (
-         
-              SearchResultRow({app: item.app})
-            ))}
+            : resultList.render(SEARCH_RESULT_TYPE, item => <SearchResultRow app={item.app} />
+            )}
         </Section>
 
         {!search.isSearchPresented ? (

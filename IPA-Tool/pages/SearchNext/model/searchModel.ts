@@ -16,13 +16,42 @@ export type SearchResultEntry = EditableListEntry & (
 )
 
 export const DEFAULT_SEARCH_COUNT = 10
-export type SearchEntity = "software" | "iPadSoftware"
+export type SearchEntity =
+  | "software"
+  | "iPadSoftware"
+  | "desktopSoftware"
+  | "software,tvSoftware"
 export const DEFAULT_SEARCH_ENTITY: SearchEntity = "software"
+export const TV_SEARCH_ENTITY: SearchEntity = "software,tvSoftware"
+export const isTvSearchEntity = (entity: SearchEntity) => entity === TV_SEARCH_ENTITY
+export const DEFAULT_IS_TV = isTvSearchEntity(DEFAULT_SEARCH_ENTITY)
 export const MAX_ANIMATED_SKELETONS = 9
 export const MAX_SKELETON_COUNT = 30
 export const SKELETON_INTERVAL_MS = 100
 
-export const isAppIdQuery = (query: string) => /^\d{8,}$/.test(query.trim())
+export type SearchQuery =
+  | { type: "keyword"; term: string }
+  | { type: "appId"; appId: string }
+  | { type: "appId + versionId"; appId: string; versionId: string }
+
+export const parseSearchQuery = (query: string): SearchQuery => {
+  const value = query.trim()
+  const parts = value.split("/").map(item => item.trim())
+
+  if (parts.length === 1 && /^\d{8,}$/.test(parts[0])) {
+    return { type: "appId", appId: parts[0] }
+  }
+
+  if (
+    parts.length === 2 &&
+    /^\d{8,}$/.test(parts[0]) &&
+    /^\d+$/.test(parts[1])
+  ) {
+    return { type: "appId + versionId", appId: parts[0], versionId: parts[1] }
+  }
+
+  return { type: "keyword", term: value }
+}
 
 export const createErrorResult = (description: string): AppSearchResponse[] => [
   {

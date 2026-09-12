@@ -1,8 +1,9 @@
 /**
- * 安装用 itms-services / plist URL 拼装。
+ * 安装用 itms-services / plist URL 拼装（维护版新增）。
  * 正确做法：先拼好 https plist 地址（查询参数分别编码），
  * 再把整段 manifest URL 做 encodeURIComponent 后塞进 itms-services 的 url=。
  */
+import { fetch, type RequestInit } from "scripting"
 
 export type InstallManifestItem = {
   name: string
@@ -77,7 +78,7 @@ export const probePlistManifest = async (manifestHttpUrl: string, timeoutSec = 1
   const resp = await fetch(manifestHttpUrl, {
     method: "GET",
     timeout: timeoutSec,
-  } as any)
+  } as RequestInit)
   if (!resp.ok) {
     throw new Error(`Plist 服务返回 HTTP ${resp.status}`)
   }

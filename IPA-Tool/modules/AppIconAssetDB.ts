@@ -1,11 +1,10 @@
-import { ipaToolAppGroupPath } from "../utils/paths/appGroupPaths"
-import type { RGBAColor } from "../types/utils"
+import { AppDatabaseFiles, AppResources } from "../constants/AppResources"
+import { migrateAppGroupFile } from "../utils/paths/appGroupPaths"
 
-const DB_PATH = ipaToolAppGroupPath("app_icon_assets.db")
+const DB_PATH = migrateAppGroupFile(AppDatabaseFiles.icons)
+const TABLE_NAME = AppResources.appIconAssets
 
-const MAX_APP_ICON_ASSET_COUNT = 100
-
-let _dbPromise: Promise<SQLite.Database> | null = null
+let initPromise: Promise<SQLite.Database> | null = null
 
 export type AppIconAssetRecord = {
   icon_url: string
@@ -15,8 +14,8 @@ export type AppIconAssetRecord = {
 }
 
 export const getAppIconAssetDB = (): Promise<SQLite.Database> => {
-  if (!_dbPromise) {
-    _dbPromise = Promise.try(async () => {
+  if (!initPromise) {
+    initPromise = Promise.try(async () => {
       const db = SQLite.open(DB_PATH, {
         foreignKeysEnabled: false,
         readonly: false,
@@ -25,8 +24,7 @@ export const getAppIconAssetDB = (): Promise<SQLite.Database> => {
         journalMode: "default",
         maximumReaderCount: 3,
       })
-
-      await db.execute(`CREATE TABLE IF NOT EXISTS app_icon_assets (
+      await db.execute(`CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (
         icon_url TEXT PRIMARY KEY,
         image BLOB,
         dominant_color TEXT,
@@ -36,13 +34,13 @@ export const getAppIconAssetDB = (): Promise<SQLite.Database> => {
       return db
     })
   }
-  return _dbPromise
+  return initPromise
 }
 
 export const getAppIconAsset = async (iconUrl: string): Promise<AppIconAssetRecord | null> => {
   const db = await getAppIconAssetDB()
   return db.fetchOne<AppIconAssetRecord>(
-    "SELECT icon_url, image, dominant_color, updated_at FROM app_icon_assets WHERE icon_url = ?",
+    `SELECT icon_url, image, dominant_color, updated_at FROM ${TABLE_NAME} WHERE icon_url = ?`,
     [iconUrl]
   )
 }
@@ -60,7 +58,7 @@ export const putAppIconAsset = async ({
 }) => {
   const db = await getAppIconAssetDB()
   await db.execute(
-    `INSERT OR REPLACE INTO app_icon_assets
+    `INSERT OR IGNORE INTO ${TABLE_NAME}
       (icon_url, image, dominant_color, updated_at)
       VALUES (?, ?, ?, ?)`,
     [
@@ -70,21 +68,20 @@ export const putAppIconAsset = async ({
       Date.now(),
     ]
   )
-
-  await db.execute(
-    `DELETE FROM app_icon_assets
-      WHERE icon_url NOT IN (
-        SELECT icon_url
-        FROM app_icon_assets
-        ORDER BY updated_at DESC
-        LIMIT ?
-      )`,
-    [MAX_APP_ICON_ASSET_COUNT]
-  )
 }
 
-/** 清空图标资产缓存（重置应用时调用） */
-export const clearAppIconAssets = async () => {
+/** 只为已有图标补充主色，不重复写入图片二进制。 */
+export const updateAppIconAssetDominantColors = async (
+  iconUrl: string,
+  dominantColors: RGBAColor[],
+) => {
+  if (!dominantColors.length) return
   const db = await getAppIconAssetDB()
-  await db.execute("DELETE FROM app_icon_assets")
+  await db.execute(
+    `UPDATE ${TABLE_NAME}
+      SET dominant_color = ?
+      WHERE icon_url = ?
+        AND (dominant_color IS NULL OR dominant_color = '')`,
+    [JSON.stringify(dominantColors), iconUrl]
+  )
 }

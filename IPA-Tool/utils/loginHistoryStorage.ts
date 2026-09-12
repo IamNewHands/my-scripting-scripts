@@ -3,15 +3,15 @@
  * 说明：历史登录账号信息存储工具
  */
 
-import { AppConfig } from "../constants/AppConfig";
+import { AppResources } from "../constants/AppResources";
 
 /**
- * 账户历史记录接口。
- * 密码不存 Storage，改用 Keychain（keychain:loginPassword:<account>）。
+ * 账户历史记录接口
  */
 interface AccountHistory {
   account: string;
   username: string;
+  password: string;
   lastLogin: string;
   storeFront: string;
   isActive?: boolean;
@@ -26,14 +26,14 @@ type LoginHistory = AccountHistory[];
  * 获取所有历史登录账号
  */
 export const getAll = (): LoginHistory => {
-  return Storage.get<LoginHistory>(AppConfig.storageKeys.loginHistory) ?? [];
+  return Storage.get<LoginHistory>(AppResources.loginHistory) ?? [];
 };
 
 /**
  * 保存历史登录账号列表
  */
 const save = (history: LoginHistory) => {
-  Storage.set<LoginHistory>(AppConfig.storageKeys.loginHistory, history);
+  Storage.set<LoginHistory>(AppResources.loginHistory, history);
   return history;
 };
 
@@ -121,26 +121,5 @@ export const remove = (account: string) => {
     });
   }
 
-  // 同时清理 Keychain 中的密码
-  deletePassword(account);
   return save(nextHistory);
 };
-
-// ─── Keychain 读写密码（不落 Storage） ───
-
-const passwordKey = (account: string) => `loginPassword:${account}`
-
-/** 将密码写入 Keychain（加密存储，Storage 管理器不可见）。 */
-export const savePassword = (account: string, password: string) => {
-  Keychain.set(passwordKey(account), password)
-}
-
-/** 从 Keychain 读取密码。若不存在返回 null。 */
-export const getPassword = (account: string): string | null => {
-  return Keychain.get(passwordKey(account))
-}
-
-/** 从 Keychain 删除密码。 */
-export const deletePassword = (account: string) => {
-  Keychain.remove(passwordKey(account))
-}

@@ -6,6 +6,7 @@ export const Tab = {
   Search: 0,   // 搜索
   Download: 1, // 下载
   Settings: 2, // 设置
+  Purchased: 3, // 已购
 } as const
 
 export type TabValue = (typeof Tab)[keyof typeof Tab]
@@ -28,8 +29,9 @@ let _selection: ReturnType<typeof useObservable<number>> | null = null
 const getDefaultTab = () => getAuthStateSnapshot().isLoggedIn ? Tab.Search : Tab.Settings
 
 export function useTabs(initialTab: TabValue = getDefaultTab()) {
-  // 每次渲染都必须调用 useObservable，缓存返回值会在重渲染时跳过 hook 导致崩溃
-  const selection = useObservable<number>(_selection?.value ?? initialTab)
+  if (_selection) return _selection
+
+  const selection = useObservable<number>(initialTab)
   _selection = selection
   return selection
 }
@@ -41,7 +43,7 @@ export function useTabs(initialTab: TabValue = getDefaultTab()) {
  *
  * @example
  * switchTab(Tab.Settings) // 跳到设置页
- * switchTab(Tab.Files)    // 跳到文件页
+ * switchTab(Tab.Purchased) // 跳到已购页
  */
 export function switchTab(value: TabValue) {
   withAnimation(() => _selection?.setValue(value))

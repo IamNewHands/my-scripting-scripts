@@ -172,6 +172,7 @@ export const useDownloadItems = () => {
   }
 
   useEffect(() => {
+    // Download Tab 常驻，当前业务不卸载该 hook；这里不做 unsubscribe。
     onAppsFilesChanged(rescanAppsFiles)
     rescanAppsFiles()
   }, [])

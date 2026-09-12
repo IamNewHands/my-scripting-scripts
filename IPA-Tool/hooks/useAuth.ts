@@ -11,8 +11,6 @@ import {
   getActive,
   getAll,
   remove as removeHistory,
-  savePassword,
-  getPassword,
   setActive,
   update,
 } from "../utils/loginHistoryStorage";
@@ -23,6 +21,7 @@ const emptyAuthState = {
   isLoggedIn: false,
   account: "",
   username: "",
+  password: "",
   storeFront: "",
   lastLogin: "",
 };
@@ -59,8 +58,6 @@ const getAuthStateFromHistory = (history: ReturnType<typeof getAll>): Init => {
     : { ...emptyAuthState };
 };
 
-const getActiveAuthState = (): Init => getAuthStateFromHistory(getAll());
-
 export const getAccountHistory = () => getAll();
 export const getAuthStateSnapshot = () => useHook.getState() ?? emptyAuthState;
 export const getAuthSessionsSnapshot = () => sessionsHook.getState() ?? [];
@@ -94,15 +91,13 @@ export const useAuth = () => {
    * 登录账号。
    *
    * 后端负责判断是否复用 CK / 是否真实登录；
-   * 成功后：密码写入 Keychain（加密），其他信息写入 login_history。
+   * 成功后前端写入 login_history，并标记为 active。
    */
   const login = async (appleId: string, password: string, code: string) => {
     const data = await apiLogin({ appleId, password, code });
-    savePassword(data.account, password);
-    const history = add({ ...data, isActive: true });
+    const history = add({ ...data, password, isActive: true });
     syncAuthStateFromHistory(history);
-    // refreshAuthSessions 失败不影响登录核心流程
-    await refreshAuthSessions().catch(() => {});
+    await refreshAuthSessions();
   };
 
   /**

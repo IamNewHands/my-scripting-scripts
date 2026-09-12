@@ -77,7 +77,7 @@ export class DownloadManager {
             this.maxDownloadingCount - this.downloadingCount;
           pendingTasks.slice(0, availableSlots).forEach(task => task.start());
         }
-        if (!this.getTasksByStatus("downloading").length) {
+        if (!this.downloadingCount) {
           // BackgroundKeeper.stopKeepAlive();
           this.backgroundManager.setActive(false);
         }
@@ -188,7 +188,7 @@ export class DownloadManager {
    * 取消所有正在下载的任务
    */
   cancelAllTasks(): void {
-    this.getTasksByStatus("downloading").forEach(task => task.cancel());
+this.getTasksByStatus("downloading").forEach(task => task.cancel());
   }
 
   /**

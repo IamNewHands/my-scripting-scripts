@@ -1,5 +1,5 @@
 import { EmptyView, HStack, ProgressView, Spacer, useRef } from "scripting"
-import { makeAppIconAccentColor } from "../../../hooks"
+import { makeAppIconAccentColor } from "../../../components/AppIconStyle"
 import { useProgress } from "../../../hooks/useAppsState"
 import { formatSize } from "../../../utils"
 import { AnimText } from "../../../components/AnimText"

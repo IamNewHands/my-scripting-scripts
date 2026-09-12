@@ -19,6 +19,15 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 - No re-sign, no dump, no `Info.plist` rewrite. Installed apps behave like App Store installs and **do not expire in 7 days**.
 - Requirement: your Apple ID has previously obtained the app (free apps count).
 
+## Four tabs
+
+| Tab | Purpose |
+|---|---|
+| **Search** | Search apps by name / ID, pick a historical version and download |
+| **Downloads** | Queue, progress, pause/resume, local IPA management, install |
+| **Purchased** | Read the current account's purchase history; search / filter by date; install any version |
+| **Account** | Apple ID login, multi-account switch / delete, settings |
+
 ## Account & password flow (source-level)
 
 - Login follows the **upstream community protocol**:  
@@ -27,8 +36,7 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 - Cookies / `dsPersonId` / `storeFront` are stored **only on-device** (`Storage` key `AppleLogin`). Nothing is uploaded to third-party backends for login.
 - Passwords are stored in **iOS Keychain** (`loginPassword:<account>`), not plain `Storage`. History pick does **not** auto-fill the password field.
 - Download host: `p37-buy…/volumeStoreDownloadProduct` with Store-Front. App ID lookup includes **`country`**.
-- `localApi(...)` is an **in-process router**, not a network call.  
-  `services/appleStore/api/localApi.ts` dispatches paths like `/auth/login` to `AuthService.login()`.
+- SAP signing runs a WASM signer in `web-sap-signer/` behind a local HTTP proxy; see `web-sap-signer/README.md`.
 
 ## External domains (transparency)
 
@@ -36,7 +44,7 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 |---|---|---|
 | `buy.itunes.apple.com` | Apple login / purchase | Apple ID / password / 2FA, dsPersonId, Cookie |
 | `p*-buy.itunes.apple.com` | Download metadata | dsPersonId, Cookie, App ID, Store-Front |
-| `itunes.apple.com` | Search / lookup | Keywords, App ID, **country** |
+| `itunes.apple.com` | Search / lookup / purchase history | Keywords, App ID, **country**, dsPersonId, Cookie |
 | `api.timbrd.com` / `apis.bilin.eu.org` | Historical version IDs | Numeric App ID only |
 | `api.scripting.fun/ipa-plist` | Install manifest (cloud) | File name, Bundle ID, version |
 | `xiaobai.app/install` | Install manifest (local proxy; needs Loon/Surge) | Same fields, **stays on device** |
@@ -86,7 +94,7 @@ export default {
 
 ## Install steps
 
-1. **Download IPA**: log in with an Apple ID that owns the app → search → pick version → download.
+1. **Download IPA**: log in with an Apple ID that owns the app → search (or Purchased tab) → pick version → download.
 2. **Tap install**: local `http://localhost:8000` serves the IPA; iOS loads an **https** manifest via `itms-services://`.
 3. **Plist service** (Settings → Install)
    - **Scripting / proxy module**: opens the system install sheet directly (proxy still needs MitM).
@@ -112,6 +120,7 @@ export default {
 - Only apps your Apple ID has obtained.
 - Switching Apple ID can make older IPAs crash (sinf mismatch).
 - Real device install depends on proxy MitM; Scripting alone is not enough for the install path.
+- The **Purchased** tab needs a signed-in account; the history comes from Apple and may be empty depending on region / privacy settings.
 
 ## Import & auto-update
 
@@ -122,7 +131,7 @@ export default {
 
 ```json
 "remoteResource": {
-  "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/latest/download/IPA-Tool.zip",
+  "url": "https://github.com/IamNewHands/my-scripting-scripts/releases/download/IPA-Tool-v2.0.0/IPA-Tool.zip",
   "autoUpdateInterval": 86400,
   "hash": "<md5-of-zip>"
 }
@@ -136,6 +145,11 @@ export default {
 2. Create a GitHub Release (tag like `IPA-Tool-vX.Y.Z`) and upload `IPA-Tool.zip`.
 3. Set `script.json` `remoteResource.hash` to the zip MD5; bump `version`.
 4. Commit + push `main`.
+
+## Upstream & this fork
+
+- Based on the community original **IPA-Tool 3.2.0 by 小白脸** (Purchased tab, service-layer refactor, SAP signing, multi-accent icons).
+- This maintained fork keeps: minimize / real-exit buttons, disable-update-check toggle, debug logging toggle, custom plist service, Chinese docs and attribution.
 
 ## License
 

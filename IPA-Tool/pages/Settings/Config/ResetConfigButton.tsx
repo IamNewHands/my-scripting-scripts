@@ -4,11 +4,10 @@
  * 重置配置按钮组件
  */
 
-import { Section, Button, Path, Navigation } from "scripting";
+import { Section, Button, Path } from "scripting";
 import type { ToastType } from "../../../components/Toast";
-import { resetConfig, AppConfig, getAllStorageKeys } from "../../../constants/AppConfig";
-import { clearAppIconAssets } from "../../../modules/AppIconAssetDB";
-import { VersionCacheRepository } from "../../../services/appleStore/core/VersionCacheRepository";
+import { resetConfig, AppConfig } from "../../../constants/AppConfig";
+import { clearResettableResources } from "../../../utils";
 import { EditableGlassListRow } from "../../../components/EditableGlassListPipeline";
 import { AnimText } from "../../../components/AnimText"
 
@@ -37,7 +36,7 @@ const handleResetConfig = async (
     const selectedIndex = await Dialog.actionSheet({
       title: "是否重置应用",
       message:
-        "重置应用将重启app 并清除所有配置数据，包括下载任务、通知设置、版本缓存、图标缓存等。",
+        "重置应用将重启app 并清除所有配置数据，包括下载任务、通知设置、图标缓存 已下载的app 等。 版本历史记录会保留。",
       actions: [
         {
           label: "是",
@@ -56,14 +55,8 @@ const handleResetConfig = async (
     const dir = Path.join(FileManager.documentsDirectory, folder);
     FileManager.existsSync(dir) && FileManager.removeSync(dir);
 
-    // 清空版本缓存与图标库（源头行为）；登录 Keychain 由业务重置/登出路径另行清理
-    await Promise.all([
-      VersionCacheRepository.clear(),
-      clearAppIconAssets(),
-    ]);
-
-    // 清空所有本地业务 key
-    getAllStorageKeys().forEach(key => Storage.remove(key));
+    // 按资源登记清理可重置数据，并重建默认配置
+    await clearResettableResources();
     resetConfig();
 
     showToast("success", "重置成功");
@@ -80,8 +73,8 @@ const handleResetConfig = async (
  */
 export const ResetConfigButton = ({ showToast, dismiss }: Props) => {
   return (
-    <EditableGlassListRow>
-      <Section>
+    <EditableGlassListRow >
+      <Section padding={true}>
         <Button
           {...styles.button}
           action={() => handleResetConfig(showToast, dismiss)}

@@ -1,49 +1,53 @@
-import {
-  type AppSearchSuccess,
-  type AppinfoResponse,
-  type SearchAppParams,
-} from "../../types/appStore";
-import { debounce, currencyCodeToSymbol } from "../../utils";
-import { fetch, AbortController } from "scripting";
-import { apiGetAppInfo } from "./appInfo";
+import { AbortController } from "scripting"
+import type { AppSearchSuccess, ITunesSearchResultItem, SearchAppParams } from "../../types/appStore"
+import { debounce, currencyCodeToSymbol, raceWithAbort } from "../tool"
+import { PLATFORM, type Store } from "../../constants/Platform"
+import { getAppCardCache, putAppCardCache } from "../../modules/AppCardCacheDB"
+import { StoreService } from "../appleStore"
+import { formatAppIconUrl } from "../appleStore/runtime/artwork"
+import { apiGetAppInfo, apiGetPlatformApp } from "./appInfo"
 
-/**
- * 搜索 App Store 应用
- * @param params 搜索参数
- * @returns 搜索结果数组
- */
-export const searchAppIdAbort = { current: () => {} };
+export type SearchQuery =
+  | { type: "keyword"; term: string }
+  | { type: "appId"; appId: string }
+  | { type: "appId + versionId"; appId: string; versionId: string }
 
-interface ITunesSearchResultItem {
-  trackId: number;
-  trackName: string;
-  trackCensoredName?: string;
-  artworkUrl60: string;
-  artworkUrl100?: string;
-  artworkUrl512?: string;
-  genres?: string[];
-  primaryGenreName?: string;
-  version: string;
-  fileSizeBytes: number | string;
-  averageUserRating?: number;
-  userRatingCount?: number;
-  minimumOsVersion?: string;
-  price: number;
-  formattedPrice?: string;
-  description?: string;
-  currency: string;
+export const searchAbort = { current: () => {} }
+
+type LocalAppInfo = Awaited<ReturnType<typeof apiGetAppInfo>>["appInfo"]
+type SearchOptions = {
+  store: Store
+  country: string
+  entity: SearchAppParams["entity"]
+  limit: number
 }
 
-interface ITunesSearchResponse {
-  resultCount?: number;
-  results: ITunesSearchResultItem[];
+/** 后台逐条保存当前 iOS 卡片结果，不阻塞搜索结果展示。 */
+const cacheSearchResults = (results: AppSearchSuccess[], store: Store) => {
+  if (store.platform !== PLATFORM.IOS) return results
+
+  Promise.try(async () => {
+    for (const result of results) {
+      await putAppCardCache(result, store.country)
+    }
+  }).catch(() => {})
+
+  return results
 }
 
+/** 普通 iOS App ID 搜索优先读取卡片缓存。 */
+const getCachedAppIdResult = async (query: SearchQuery, store: Store) => {
+  if (query.type !== "appId" || store.platform !== PLATFORM.IOS) return null
+  return getAppCardCache(query.appId, store.country).catch(() => null)
+}
+
+/** 返回 iTunes 结果中可用的最大尺寸图标。 */
 const getITunesArtwork = (app: ITunesSearchResultItem) => {
-  const artwork = app.artworkUrl512 ?? app.artworkUrl100 ?? app.artworkUrl60;
-  return artwork.replace(/\d+x\d+bb/, "240x240bb");
+  const artwork = app.artworkUrl512 ?? app.artworkUrl100 ?? app.artworkUrl60
+  return formatAppIconUrl(artwork)
 }
 
+/** 将 iTunes 协议结果映射为公开搜索结果。 */
 const mapITunesSearchResult = (app: ITunesSearchResultItem): AppSearchSuccess => ({
   id: String(app.trackId),
   name: app.trackName ?? app.trackCensoredName ?? "",
@@ -61,62 +65,33 @@ const mapITunesSearchResult = (app: ITunesSearchResultItem): AppSearchSuccess =>
   description: app.description ?? "",
 })
 
-export const apiSearchApp = debounce(
-  async ({ term, country, entity, limit }: SearchAppParams) => {
-    const controller = new AbortController();
-    searchAppIdAbort.current = () => {
-      controller.abort();
-    };
-    const response = await fetch(
-      `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&country=${encodeURIComponent(country)}&entity=${encodeURIComponent(entity)}&explicit=no&limit=${limit}`,
-      { signal: controller.signal }
-    );
-    const { results } = await response.json() as ITunesSearchResponse;
-    return results.map(mapITunesSearchResult) satisfies AppSearchSuccess[] | [];
-  },
-  300,
-  { requestAbort: () => searchAppIdAbort.current() }
-);
-
-/**
- * 通过 APPID 搜索应用
- * @param appId 应用 ID
- * @param country 国家/地区代码
- * @returns 应用信息
- */
-
-export const appIdSearchAbort = { current: () => {} };
-
+/** 创建业务可识别并静默处理的主动取消错误。 */
 const createAbortError = () => {
-  const error = new Error("请求已取消");
-  error.name = "AbortError";
-  return error;
+  const error = new Error("请求已取消")
+  error.name = "AbortError"
+  return error
 }
 
-type LocalAppInfo = AppinfoResponse["data"]["appInfo"];
-
-type AppIdSearchSource = (appId: string, country: string, signal: AbortController["signal"]) => Promise<AppSearchSuccess[]>;
-
-const ensureAppIdResults = async (
-  sourceName: string,
-  promise: Promise<AppSearchSuccess[]>
-) => {
-  const results = await promise;
-  if (!results.length) throw new Error(`${sourceName} 未找到应用`);
-  return results;
+/** 确保 App ID 搜索来源返回非空结果。 */
+const ensureAppIdResults = async (sourceName: string, promise: Promise<AppSearchSuccess[]>) => {
+  const results = await promise
+  if (!results.length) throw new Error(`${sourceName} 未找到应用`)
+  return results
 }
 
+/** 汇总 App ID 双来源全部失败后的错误信息。 */
 const getAppIdSearchErrorMessage = (error: unknown) => {
   if (error instanceof AggregateError) {
     return error.errors
       .map((item: unknown) => item instanceof Error ? item.message : String(item))
       .filter(Boolean)
-      .join("; ") || "请检查搜索内容是否正确";
+      .join("; ") || "请检查搜索内容是否正确"
   }
-  if (error instanceof Error) return error.message;
-  return "请检查搜索内容是否正确";
+  if (error instanceof Error) return error.message
+  return "请检查搜索内容是否正确"
 }
 
+/** 将官方下载信息映射为 App ID 搜索结果。 */
 const mapLocalAppInfo = (appInfo: LocalAppInfo): AppSearchSuccess => ({
   id: String(appInfo.appId),
   name: appInfo.name,
@@ -130,56 +105,102 @@ const mapLocalAppInfo = (appInfo: LocalAppInfo): AppSearchSuccess => ({
   userRatingCount: 0,
   minimumOsVersion: appInfo.minimumOsVersion,
   currency: appInfo.currency,
+  externalVersionId: appInfo.externalVersionId,
 })
 
-const searchAppIdFromLocalApi: AppIdSearchSource = async (appId, _country, signal) => {
-  const { appInfo } = await apiGetAppInfo(appId, undefined, { signal });
-  if (signal.aborted) throw createAbortError();
-  return [mapLocalAppInfo(appInfo)];
+/** 执行关键字搜索。 */
+const searchKeyword = async (
+  query: Extract<SearchQuery, { type: "keyword" }>,
+  options: SearchOptions,
+  signal: AbortController["signal"],
+) => {
+  const results = await StoreService.searchApps({
+    term: query.term,
+    country: options.country,
+    entity: options.entity,
+    limit: options.limit,
+  }, signal)
+  return results.map(mapITunesSearchResult)
 }
 
-const searchAppIdFromITunesLookup: AppIdSearchSource = async (appId, country, signal) => {
-  // lookup 带 country，避免跨区同 ID 元数据错位
-  const response = await fetch(
-    `https://itunes.apple.com/lookup?id=${encodeURIComponent(appId)}&country=${encodeURIComponent(country)}`,
-    { signal }
-  );
-  const { results } = await response.json() as ITunesSearchResponse;
-  if (signal.aborted) throw createAbortError();
-  return (results ?? []).map(mapITunesSearchResult);
+/** 执行 App ID 的官方下载信息搜索。 */
+const searchAppInfo = async (
+  appId: string,
+  versionId: string | undefined,
+  store: Store,
+  signal: AbortController["signal"],
+) => {
+  const { appInfo } = await apiGetAppInfo(appId, versionId, { signal }, store)
+  if (signal.aborted) throw createAbortError()
+  return [mapLocalAppInfo(appInfo)]
 }
 
-export const apiSearchAppById = debounce(
-  async (appId: string, country: string) => {
-    const localController = new AbortController();
-    const lookupController = new AbortController();
-    appIdSearchAbort.current = () => {
-      localController.abort();
-      lookupController.abort();
-    };
+/** 将平台完整数据直接转换为搜索结果。 */
+const searchPlatformApp = async (
+  appId: string,
+  store: Store,
+  signal: AbortController["signal"],
+) => {
+  const data = await apiGetPlatformApp({ appId, store, signal })
+  if (signal.aborted) throw createAbortError()
+  return data ? [data] : []
+}
+
+/** 按关键字、App ID 或 App ID 加版本 ID 执行搜索。 */
+export const apiSearch = debounce(
+  async (query: SearchQuery, options: SearchOptions) => {
+    const officialController = new AbortController()
+    const platformController = new AbortController()
+    searchAbort.current = () => {
+      officialController.abort()
+      platformController.abort()
+    }
 
     try {
-      const results = await Promise.any([
-        ensureAppIdResults(
-          "官方下载接口",
-          searchAppIdFromLocalApi(appId, country, localController.signal)
-        ),
-        ensureAppIdResults(
-          "Apple Lookup 接口",
-          searchAppIdFromITunesLookup(appId, country, lookupController.signal)
-        ),
-      ]);
+      const cached = await getCachedAppIdResult(query, options.store)
+      if (cached) return [cached]
 
-      localController.abort();
-      lookupController.abort();
-      return results;
-    } catch (error) {
-      if (localController.signal.aborted || lookupController.signal.aborted) {
-        throw createAbortError();
+      switch (query.type) {
+        case "keyword":
+          // 关键字搜索只请求搜索接口。
+          return cacheSearchResults(
+            await searchKeyword(query, options, officialController.signal),
+            options.store,
+          )
+
+        case "appId + versionId":
+          // App ID 加版本 ID 搜索直接请求 AppInfo，内部经过版本 ID 守卫。
+          return await ensureAppIdResults(
+            "官方下载接口",
+            searchAppInfo(query.appId, query.versionId, options.store, officialController.signal),
+          )
+
+        case "appId":
+          // App ID 搜索由平台数据和 AppInfo 竞速；tvOS 无版本 ID 时由版本守卫获取平台版本 ID。
+          return cacheSearchResults(await raceWithAbort([
+            {
+              promise: ensureAppIdResults(
+                "官方下载接口",
+                searchAppInfo(query.appId, undefined, options.store, officialController.signal),
+              ),
+              controller: officialController,
+            },
+            {
+              promise: ensureAppIdResults(
+                "Apple 平台接口",
+                searchPlatformApp(query.appId, options.store, platformController.signal),
+              ),
+              controller: platformController,
+            },
+          ]), options.store)
       }
-      throw new Error(getAppIdSearchErrorMessage(error));
+    } catch (error) {
+      if (officialController.signal.aborted || platformController.signal.aborted) {
+        throw createAbortError()
+      }
+      throw new Error(getAppIdSearchErrorMessage(error))
     }
   },
   300,
-  { requestAbort: () => appIdSearchAbort.current() }
-);
+  { requestAbort: () => searchAbort.current() },
+)

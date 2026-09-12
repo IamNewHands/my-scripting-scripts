@@ -17,6 +17,15 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 - 不重签、不脱壳、不改 Info.plist；**不会 7 天失效**。
 - 前提：该 Apple ID 曾经获取过这个 App（免费也算）。
 
+## 四个页面
+
+| 页面 | 作用 |
+|---|---|
+| **搜索** | 按名称/ID 搜索 App，选历史版本下载 |
+| **下载** | 下载队列、进度、暂停/继续、本地 IPA 文件管理、安装 |
+| **已购** | 读取当前账号的购买历史，搜索/按日期筛选，任意版本安装 |
+| **账号** | Apple ID 登录、多账号切换/删除、配置 |
+
 ## 账号密码走向（源码级）
 
 - 登录对齐社区原作协议：`POST https://buy.itunes.apple.com/WebObjects/MZFinance.woa/wa/authenticate`（可手动跟随 302）。
@@ -24,7 +33,7 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 - Cookie / dsPersonId / storeFront **只写本机** `Storage(AppleLogin)`。
 - 密码走 **iOS Keychain**（`loginPassword:<account>`），不落明文 Storage；历史账号点选**不自动填密码**。
 - 下载节点：`p37-buy…/volumeStoreDownloadProduct`，带 Store-Front；App ID 搜索 lookup **带 country**。
-- `localApi(...)` 是**进程内路由**，不是 HTTP；见 `services/appleStore/api/localApi.ts`。
+- SAP 签名：`web-sap-signer/` 内 WASM 签名，走本地 HttpServer 代理；见 `web-sap-signer/README.md`。
 
 ## 外部域名（透明清单）
 
@@ -32,7 +41,7 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 |---|---|---|
 | `buy.itunes.apple.com` | 苹果登录 / 购买 | Apple ID / 密码 / 2FA、dsPersonId、Cookie |
 | `p*-buy.itunes.apple.com` | 下载元数据 | dsPersonId、Cookie、App ID、Store-Front |
-| `itunes.apple.com` | 搜索 / lookup | 关键词、App ID、**country** |
+| `itunes.apple.com` | 搜索 / lookup / 购买历史 | 关键词、App ID、**country**、dsPersonId、Cookie |
 | `api.timbrd.com` / `apis.bilin.eu.org` | 历史版本 ID | 仅 App 数字 ID |
 | `api.scripting.fun/ipa-plist` | 安装 manifest（云端） | 文件名、BundleId、版本 |
 | `xiaobai.app/install` | 安装 manifest（本地代理） | 同上，**不出手机** |
@@ -74,7 +83,7 @@ export default {
 
 ## 安装步骤
 
-1. 用已获取过目标 App 的 Apple ID 登录 → 搜索 → 选版本 → 下载。
+1. 用已获取过目标 App 的 Apple ID 登录 → 搜索（或已购页）→ 选版本 → 下载。
 2. 点安装：本地 `http://localhost:8000` 提供 IPA；系统通过 `itms-services://` 拉 **https** 的 manifest.plist。
 3. **Plist 服务**（设置 → 安装配置）  
    - **Scripting / 代理模块**：点安装会直接唤起系统（代理仍依赖 MitM）。  
@@ -99,6 +108,7 @@ export default {
 - 只能下本账号获取过的 App。
 - 换账号后旧 IPA 可能因 sinf 不匹配闪退。
 - 安装链路依赖代理 MitM。
+- 「已购」页需要账号已登录，且购买历史由苹果接口返回，可能因账号地区/隐私设置为空。
 
 ## 导入与自动更新
 
@@ -107,6 +117,11 @@ export default {
 - `remoteResource.hash` = **zip 整包 MD5**；zip 根目录直接放 `index.tsx` / `script.json`。
 
 发版：打扁平 zip → Release 上传 → 写 hash → 推 main。
+
+## 版本来源
+
+- 基于社区原作 **「小白脸」的 IPA-Tool 3.2.0**（已购页、服务层重构、SAP 签名、多主色图标等）。
+- 本仓维护版在原作基础上保留：最小化/真退出按钮、免更新开关、调试日志开关、自定义 plist 服务、中文文档与署名。
 
 ## 协议
 

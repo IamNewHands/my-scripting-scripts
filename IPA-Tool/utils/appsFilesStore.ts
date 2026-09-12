@@ -3,6 +3,7 @@ import { AppConfig } from "../constants/AppConfig"
 import { getAllAppsByIds, putMeta, remove as removeApp } from "../modules/AppDB"
 import { EventBus } from "../modules/EventBus"
 import { extractAndParsePlist } from "./extractPlist"
+import { Logger } from "../services/tool/logger"
 
 export interface AppFileInfo {
   name: string
@@ -128,8 +129,6 @@ export const scanAppsFiles = async () => {
     appsMap = null
   }
 }
-
-import { Logger } from "../utils/logger"
 
 const removeFileIfExists = async (path?: string) => {
   if (path && FileManager.existsSync(path)) await FileManager.remove(path)

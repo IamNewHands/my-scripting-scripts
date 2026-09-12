@@ -9,6 +9,9 @@ export { useIconAnimation } from "./useIconAnimation"
 export { useQuickSwitchAccount } from "./useQuickSwitchAccount"
 export { useAccountManager } from "./useAccountManager"
 export { useScenePhase } from "./useScenePhase"
-export { useCachedAppIcon } from "./useCachedAppIcon"
+export {
+  clearCachedAppIconMemory,
+  preloadCachedAppIcon,
+  useCachedAppIcon,
+} from "./useCachedAppIcon"
 export type { CachedAppIcon } from "./useCachedAppIcon"
-export { AppIconAccentBackground, makeAppIconColor, makeAppIconAccentColor, makeAppIconBackgroundTintColor, makeAppIconBackgroundGradient } from "./appIconStyle"

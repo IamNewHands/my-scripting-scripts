@@ -8,6 +8,7 @@ import { useStartAppDownload } from "./useStartAppDownload"
 import { switchTab } from "./useTabs"
 import { importFiles } from "../utils/importFiles"
 import { onDownloadShowToast } from "../pages/Download/store/toast"
+import type { Store } from "../constants/Platform"
 
 type ScenePhaseType = "fileURLs" | "urls" | undefined
 
@@ -15,6 +16,7 @@ interface Pages {
   id: string
   name: string
   internalVersion: string
+  store: Store
 }
 
 const handleFileURLs = async () => {

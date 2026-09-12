@@ -9,22 +9,22 @@ import {
   useRef,
   useEffect,
   AppEvents,
-} from "scripting"
+} from "scripting";
 import {
   EditableGlassList,
   useEditableGlassList,
   PageBackground,
-} from "../../components/EditableGlassListPipeline"
-import DownloadRow from "./components/DownloadRow"
-import { DownloadToolbar } from "./components/DownloadToolbar"
-import { removeDownloadItems } from "../../services/downloadService"
-import { DownloadStatsHeader } from "./components/DownloadStatsHeader"
-import { useDownloadItems } from "./hooks/useDownloadItems"
-import { AppConfig } from "../../constants/AppConfig"
-import { getAppState, setDownloadOrder } from "../../hooks/useAppsState"
-import { useLoginToast } from "../../hooks/useLoginToast"
-import { onDownloadShowToast } from "./store/toast"
-import { AnimText } from "../../components/AnimText"
+} from "../../components/EditableGlassListPipeline";
+import DownloadRow from "./components/DownloadRow";
+import { DownloadToolbar } from "./components/DownloadToolbar";
+import { removeDownloadItems } from "../../services/downloadService";
+import { DownloadStatsHeader } from "./components/DownloadStatsHeader";
+import { useDownloadItems } from "./hooks/useDownloadItems";
+import { AppConfig } from "../../constants/AppConfig";
+import { getAppState, setDownloadOrder } from "../../hooks/useAppsState";
+import { useLoginToast } from "../../hooks/useLoginToast";
+import { onDownloadShowToast } from "./store/toast";
+import { AnimText } from "../../components/AnimText";
 
 /**
  * 下载页数据流警告：不要在删除逻辑里直接修改列表 items。
@@ -43,12 +43,12 @@ import { AnimText } from "../../components/AnimText"
  * 下载页入口只负责确认用户意图并调用共享删除能力，避免这里变成屎山。
  */
 export default function DownloadV2View() {
-  const { toastConfig, showToast, hideToast, hideLoadingToast } = useLoginToast()
-  const { items, isEmpty } = useDownloadItems()
-  const deleteStateSnapshotsRef = useRef({})
+  const { toastConfig, showToast, hideToast, hideLoadingToast } = useLoginToast();
+  const { items, isEmpty, removeDerivedAppFiles } = useDownloadItems();
+  const deleteStateSnapshotsRef = useRef({});
 
   const api = useEditableGlassList(items, {
-    async onDelete(itemsToDelete, context) {
+    async onDelete(itemsToDelete) {
       const index = await Dialog.actionSheet({
         title: itemsToDelete.length > 1 ? "批量删除" : "确认删除",
         message:
@@ -56,28 +56,30 @@ export default function DownloadV2View() {
             ? `确定删除 ${itemsToDelete.length} 项吗？删除后无法恢复。`
             : "删除后无法恢复，是否继续？",
         actions: [{ label: "删除", destructive: true }],
-      })
-      if (index !== 0) return
+      });
+      if (index !== 0) return;
 
       deleteStateSnapshotsRef.current = Object.fromEntries(
         itemsToDelete
           .filter(item => item.source === "task" && item.appId)
           .map(item => [item.appId, getAppState(item.appId)])
-      )
+      );
 
       return async () => {
-        await removeDownloadItems(itemsToDelete, undefined, deleteStateSnapshotsRef.current)
-        const removedIds = new Set(itemsToDelete.map(item => item.id))
-        await context.data.update(items => items.filter(item => !removedIds.has(item.id)))()
-        deleteStateSnapshotsRef.current = {}
-      }
+        await removeDownloadItems(
+          itemsToDelete,
+          removeDerivedAppFiles,
+          deleteStateSnapshotsRef.current
+        );
+        deleteStateSnapshotsRef.current = {};
+      };
     },
     onMove(context) {
       setDownloadOrder(
         context.items
           .filter(item => item.source === "task" && item.appId)
           .map(item => item.appId)
-      )
+      );
     },
     trailingSwipeActions: {
       actions: () => (
@@ -85,23 +87,27 @@ export default function DownloadV2View() {
           title=""
           tint={{ light: "rgba(0,0,0,0.04)", dark: "rgba(255,255,255,0.18)" }}
           systemImage="folder"
-          action={() => Safari.openURL(`shareddocuments://${FileManager.documentsDirectory}/${AppConfig.file.folder}`)}
+          action={() =>
+            Safari.openURL(
+              `shareddocuments://${FileManager.documentsDirectory}/${AppConfig.file.folder}`
+            )
+          }
         />
       ),
     },
-  })
-  const { render, editing, selection } = api
-  const toolbar = DownloadToolbar(api)
-  onDownloadShowToast.run = showToast
-  onDownloadShowToast.hide = hideToast
-  onDownloadShowToast.hideLoading = hideLoadingToast
+  });
+  const { render, editing, selection } = api;
+  const toolbar = DownloadToolbar(api);
+  onDownloadShowToast.run = showToast;
+  onDownloadShowToast.hide = hideToast;
+  onDownloadShowToast.hideLoading = hideLoadingToast;
 
   // 回前台只清 loading，避免误清「已唤起系统安装」/错误短提示
   useEffect(() => {
     AppEvents.scenePhase.addListener(phase => {
-      if (phase === "active") hideLoadingToast()
-    })
-  }, [hideLoadingToast])
+      if (phase === "active") hideLoadingToast();
+    });
+  }, [hideLoadingToast]);
 
   return useMemo(
     () => (
@@ -117,13 +123,23 @@ export default function DownloadV2View() {
           overlay={
             <ContentUnavailableView
               hidden={!isEmpty}
-              label={(
+              label={
                 <VStack spacing={12}>
-                  <Image systemName="arrow.down.circle" font={56} foregroundStyle="secondaryLabel" />
-                  <AnimText font="title" fontWeight="semibold">暂无下载</AnimText>
+                  <Image
+                    systemName="arrow.down.circle"
+                    font={56}
+                    foregroundStyle="secondaryLabel"
+                  />
+                  <AnimText font="title" fontWeight="semibold">
+                    暂无下载
+                  </AnimText>
                 </VStack>
-              )}
-              description={<AnimText font="body" foregroundStyle="secondaryLabel">下载应用后将自动显示在这里</AnimText>}
+              }
+              description={
+                <AnimText font="body" foregroundStyle="secondaryLabel">
+                  下载应用后将自动显示在这里
+                </AnimText>
+              }
             />
           }
           toolbar={toolbar}
@@ -133,11 +149,13 @@ export default function DownloadV2View() {
             hidden={isEmpty}
             header={<DownloadStatsHeader items={items} />}
           >
-            {render(item => DownloadRow({item}))}
+            {render(item => (
+              <DownloadRow key={item.id} item={item} />
+            ))}
           </Section>
         </EditableGlassList>
       </NavigationStack>
     ),
     [isEmpty, editing.active, selection.ids.length, toastConfig, items.value]
-  )
+  );
 }

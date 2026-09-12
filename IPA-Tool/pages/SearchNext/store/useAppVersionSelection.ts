@@ -1,32 +1,32 @@
 import { createGlobalState } from "../../../modules/createGlobalStateUtils";
+import { PLATFORM, type Platform } from "../../../constants/Platform";
 
-const init: {
-  [appId: string]: {
-    bestChoice: string;
-    internalVersion: string;
-    displayVersion: string;
-  };
-} = {};
+export type VersionSelection = {
+  bestChoice: string;
+  internalVersion: string;
+  displayVersion: string;
+};
 
-type Action = [string, [string, string]];
-/**
- * 应用版本选择状态管理
- * 创建 appId → 选择的历史版本 的映射表
- * 将选择的历史版本同步到展示组件
- */
+type PlatformSelection = Partial<Record<Platform, VersionSelection>>;
+
+type VersionSelectionState = Record<string, PlatformSelection>;
+
+const init: VersionSelectionState = {};
+
+type Action = [string, keyof PlatformSelection, [string, string]];
+
+/** 应用版本选择状态：以 appId 为 key，分别保存 iOS 与 tvOS 选择。 */
 export const useAppVersionSelection = createGlobalState(
-  (state, action: Action) => {
-    const [appId, versionInfo] = action;
+  (state: VersionSelectionState, action: Action) => {
+    const [appId, platform, versionInfo] = action;
     const [internalVersion, displayVersion] = versionInfo;
-    const bestChoice =
-      displayVersion === "????" ? internalVersion : displayVersion;
+    const bestChoice = displayVersion === "????" ? internalVersion : displayVersion;
     if (bestChoice === "暂无历史版本记录") return state;
     return {
       ...state,
       [appId]: {
-        bestChoice,
-        internalVersion,
-        displayVersion,
+        ...state[appId],
+        [platform]: { bestChoice, internalVersion, displayVersion },
       },
     };
   },

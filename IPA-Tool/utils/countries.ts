@@ -98,8 +98,6 @@ export const countryCodeToFlag = (code: string): string => {
   let c = code.trim().toUpperCase();
   // 兼容常见别名
   if (c === "UK") c = "GB";
-  // iOS 不渲染台湾地区旗帜（🇹🇼 显示为空白），改用可见的区域码文字标识
-  if (c === "TW") return "TW";
   // 只处理标准的两位字母代码
   if (!/^[A-Z]{2}$/.test(c)) return "";
   const A = 0x41; // 'A'
@@ -107,76 +105,6 @@ export const countryCodeToFlag = (code: string): string => {
   const cp1 = REGIONAL_INDICATOR_BASE + (c.charCodeAt(0) - A);
   const cp2 = REGIONAL_INDICATOR_BASE + (c.charCodeAt(1) - A);
   return String.fromCodePoint(cp1) + String.fromCodePoint(cp2);
-};
-
-// 货币代码到货币符号的映射对象
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  // 主要货币
-  USD: "$", // 美元
-  EUR: "€", // 欧元
-  GBP: "£", // 英镑
-  JPY: "¥", // 日元
-  CNY: "¥", // 人民币
-  KRW: "₩", // 韩元
-  CAD: "C$", // 加拿大元
-  AUD: "A$", // 澳大利亚元
-  CHF: "CHF", // 瑞士法郎
-  SEK: "kr", // 瑞典克朗
-  NOK: "kr", // 挪威克朗
-  DKK: "kr", // 丹麦克朗
-  PLN: "zł", // 波兰兹罗提
-  CZK: "Kč", // 捷克克朗
-  HUF: "Ft", // 匈牙利福林
-  RUB: "₽", // 俄罗斯卢布
-  TRY: "₺", // 土耳其里拉
-  ILS: "₪", // 以色列新谢克尔
-  AED: "د.إ", // 阿联酋迪拉姆
-  SAR: "﷼", // 沙特里亚尔
-  QAR: "﷼", // 卡塔尔里亚尔
-  KWD: "د.ك", // 科威特第纳尔
-  OMR: "﷼", // 阿曼里亚尔
-  BHD: ".د.ب", // 巴林第纳尔
-  EGP: "£", // 埃及镑
-  MAD: "د.م.", // 摩洛哥迪拉姆
-  TND: "د.ت", // 突尼斯第纳尔
-  ZAR: "R", // 南非兰特
-  NGN: "₦", // 尼日利亚奈拉
-  MXN: "$", // 墨西哥比索
-  BRL: "R$", // 巴西雷亚尔
-  ARS: "$", // 阿根廷比索
-  CLP: "$", // 智利比索
-  COP: "$", // 哥伦比亚比索
-  PEN: "S/", // 秘鲁新索尔
-  UYU: "$U", // 乌拉圭比索
-  PAB: "B/.", // 巴拿马巴波亚
-  CRC: "₡", // 哥斯达黎加科朗
-  DOP: "RD$", // 多米尼加比索
-  PYG: "₲", // 巴拉圭瓜拉尼
-  BOB: "Bs.", // 玻利维亚玻利维亚诺
-  VES: "Bs.S", // 委内瑞拉玻利瓦尔
-  ISK: "kr", // 冰岛克朗
-  INR: "₹", // 印度卢比
-  IDR: "Rp", // 印尼盾
-  THB: "฿", // 泰铢
-  MYR: "RM", // 马来西亚林吉特
-  SGD: "S$", // 新加坡元
-  VND: "₫", // 越南盾
-  PHP: "₱", // 菲律宾比索
-  HKD: "HK$", // 港币
-  TWD: "NT$", // 新台币
-  MOP: "MOP$", // 澳门币
-  NZD: "NZ$", // 新西兰元
-};
-
-/**
- * 将货币代码转换为货币符号
- * @param currencyCode 货币代码（如 "CNY", "USD", "EUR" 等）
- * @returns 对应的货币符号，如果找不到则返回原货币代码
- */
-export const currencyCodeToSymbol = (currencyCode: string): string => {
-  if (!currencyCode) return "";
-  const code = currencyCode.trim().toUpperCase();
-  return CURRENCY_SYMBOLS[code] || code;
 };
 
 const countryCodes = {

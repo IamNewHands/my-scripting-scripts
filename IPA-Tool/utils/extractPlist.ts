@@ -1,7 +1,6 @@
-import { parseXML, parseBinary, PlistValue } from "./plist-parser";
+import { plist, type PlistValue } from "./plist"
 import { Path } from "scripting";
 import { AppConfig } from "../constants/AppConfig";
-
 /**
  * 从 Archive 中提取并解析 Plist 文件
  * 自动识别 XML 和二进制格式
@@ -35,7 +34,7 @@ export const extractAndParsePlist = async <T extends PlistValue = PlistValue>(
   await Promise.try(async () => {
     // 确认文件头是 xml 格式（可以直接从内存解析）
     if (rawString && rawString.startsWith("<?xml")) {
-      callback(parseXML<T>(rawString));
+      callback(plist.parse(rawString) as T);
       return;
     }
 
@@ -69,11 +68,11 @@ export const extractAndParsePlist = async <T extends PlistValue = PlistValue>(
     }
 
     // 解析二进制文件 并调用回调函数
-    callback(parseBinary<T>(fileData));
+    callback(plist.parse(fileData) as T);
 
     // 清理临时文件
     await FileManager.remove(tempDir);
   }).catch(err => {
     throw new Error(`提取并解析 Plist 文件失败: ${err.message}`);
   });
-};
+}

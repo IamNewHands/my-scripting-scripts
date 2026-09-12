@@ -75,12 +75,11 @@ export const useLoginToast = (): UseLoginToastReturn => {
 
   const toastConfig = useMemo(() => {
     return {
-      // loading 兜底；成功/失败短显
-      duration: toast.type === "loading" ? 12 : 1.4,
+      duration: toast.type === "loading" ? 60 : 0.7,
       position: "center" as const,
       backgroundColor: "clear" as const,
-      cornerRadius: 12,
-      shadowRadius: 0,
+      cornerRadius: 16,
+      shadowRadius: 8,
       isPresented: toast.show,
       onChanged: (show: boolean) => {
         if (!show) {

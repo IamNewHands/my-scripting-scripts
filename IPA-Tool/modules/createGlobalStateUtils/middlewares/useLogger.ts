@@ -1,5 +1,5 @@
 import { type Dispatch } from "../types";
-import { Logger } from "../../../utils/logger";
+import { Logger } from "../../../services/tool/logger";
 
 /**
  * 日志中间件 - 记录 action 派发和状态变化
@@ -21,7 +21,7 @@ export const useLogger =
     // 执行 action
     const result = next(action);
 
-    // 获取执行后状态
+    // // 获取执行后状态
     const nextState = result;
     // 抽取打印日志的公共函数
     const logStateAndTime = (state: unknown) => {

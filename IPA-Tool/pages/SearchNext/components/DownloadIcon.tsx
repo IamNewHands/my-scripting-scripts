@@ -17,9 +17,7 @@ interface DownloadIconProps {
   id: string
 }
 
-/**
- * ���度循环环动画组件
- */
+/** 进度循环动画组件 */
 const ProgressRingAnimation = () => {
   const deg = useObservable(0)
   const animation = useMemo(() => {

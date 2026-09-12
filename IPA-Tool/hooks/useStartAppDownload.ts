@@ -1,39 +1,43 @@
-/**
- * useStartAppDownload Hook
- * 封装应用下载启动逻辑，可在多处复用
- */
 
-import { AbortController, useRef } from "scripting";
-import { apiGetAppInfo } from "../services/api";
-import { AppConfig } from "../constants/AppConfig";
-import { sendNotification } from "../utils";
-import { getAuthStateSnapshot } from "./useAuth";
-import { switchTab, Tab } from "./useTabs";
-import { getAppState, setAppState, setAppStatus } from "./useAppsState";
-import { onSearchShowToast } from "../pages/SearchNext/store/toast";
-import { startDownload } from "../services/downloadService";
-import { add as addApp } from "../modules/AppDB";
-import { notifyAppsFilesChanged } from "../utils/appsFilesStore";
-import type { DownloadStatus } from "../modules/download";
+/**
+* useStartAppDownload Hook
+* 封装应用下载启动逻辑，可在多处复用
+*/
+
+import { AbortController, useRef } from "scripting"
+import { apiGetAppInfo } from "../services/api"
+import { AppConfig } from "../constants/AppConfig"
+import type { Store } from "../constants/Platform"
+import { sendNotification } from "../utils"
+import { getAuthStateSnapshot } from "./useAuth"
+import { switchTab, Tab } from "./useTabs"
+import { getAppState, setAppState, setAppStatus } from "./useAppsState"
+import { onSearchShowToast } from "../pages/SearchNext/store/toast"
+import { startDownload } from "../services/downloadService"
+import { add as addApp } from "../modules/AppDB"
+import { notifyAppsFilesChanged } from "../utils/appsFilesStore"
+import type { DownloadStatus } from "../modules/download"
 
 export interface StartDownloadParams {
   /** 应用 ID */
-  id: string;
+  id: string
   /** 应用名称 */
-  name: string;
+  name: string
   /** 内部版本号(可选,不传则下载最新版本) */
-  internalVersion?: string;
+  internalVersion?: string
+  /** 当前 App Store 上下文 */
+  store: Store
   /** 应用图标(可选,不传则从 API 获取) */
-  icon?: string;
+  icon?: string
 }
 
 export interface StartDownloadOptions {
   /** 下载前的回调 */
-  onBeforeDownload?: () => void;
+  onBeforeDownload?: () => void
   /** 下载成功后的回调 */
-  onSuccess?: () => void;
+  onSuccess?: () => void
   /** 下载失败后的回调 */
-  onError?: (error: Error) => void;
+  onError?: (error: Error) => void
 }
 
 /**
@@ -42,7 +46,7 @@ export interface StartDownloadOptions {
  * @returns startAppDownload - 启动下载的函数
  */
 export const useStartAppDownload = () => {
-  const fetchingController = useRef<AbortController | null>(null);
+  const fetchingController = useRef<AbortController | null>(null)
 
   /**
    * 启动应用下载
@@ -54,62 +58,62 @@ export const useStartAppDownload = () => {
     params: StartDownloadParams,
     options?: StartDownloadOptions
   ) => {
-    const { id, internalVersion, icon } = params;
-    const appId = id;
-    const { onBeforeDownload, onSuccess, onError } = options ?? {};
+    const { id, internalVersion, icon, store } = params
+    const appId = id
+    const { onBeforeDownload, onSuccess, onError } = options ?? {}
 
-    let requestController: AbortController | null = null;
+    let requestController: AbortController | null = null
 
     Promise.try(async () => {
-      let { down, status } = getAppState(appId);
+      let { down, status } = getAppState(appId)
       // 1. 检查登录状态
       if (!getAuthStateSnapshot().isLoggedIn) {
-        onSearchShowToast.run("error", "请先登录");
-        setTimeout(() => switchTab(Tab.Settings), 1000);
-        throw new Error("未登录");
+        onSearchShowToast.run("error", "请先登录")
+        setTimeout(() => switchTab(Tab.Settings), 1000)
+        throw new Error("未登录")
       }
 
       // 2. 执行下载前回调
       if (status !== "downloading") {
-        onBeforeDownload?.();
+        onBeforeDownload?.()
       }
 
       // 3. 缺少 down，或下载已完成时，需要重新获取 appInfo/sinf，避免复用旧下载数据。
       if (!down || status === "completed") {
         if (status === "fetching") {
-          // 再次点击：取消当前前置请求并回到 pending
-          const controller = fetchingController.current;
-          controller?.abort(new Error("已取消前置下载"));
+          const controller = fetchingController.current
+          controller?.abort(new Error("已取消前置下载"))
           if (controller && fetchingController.current === controller) {
-            fetchingController.current = null;
+            fetchingController.current = null
           }
-          setAppStatus(appId, "pending");
-          return;
+          setAppStatus(appId, "pending")
+          return
         }
 
-        const controller = new AbortController();
-        requestController = controller;
-        fetchingController.current = controller;
+        const controller = new AbortController()
+        requestController = controller
+        fetchingController.current = controller
 
         // 3. 设置前置请求等待ui
-        setAppStatus(appId, "fetching");
+        setAppStatus(appId, "fetching")
 
         const { appInfo } = await apiGetAppInfo(id, internalVersion, {
           signal: controller.signal,
-        });
+        }, store)
+
 
         // 如果再次下载历史版本相同，直接退出
         if (
           status === "completed" &&
           down?.displayVersion === appInfo.displayVersion
         ) {
-          setAppStatus(appId, "completed");
-          return;
+          setAppStatus(appId, "completed")
+          return
         } else if (status === "completed") {
-          notifyAppsFilesChanged();
+          notifyAppsFilesChanged()
         }
 
-        const accountEmail = getAuthStateSnapshot().account || undefined;
+        const accountEmail = getAuthStateSnapshot().account || undefined
         down = {
           url: appInfo.url,
           id: appId,
@@ -121,9 +125,9 @@ export const useStartAppDownload = () => {
           bundleId: appInfo.bundleId,
           icon: icon ?? appInfo.icon,
           accountEmail,
-        };
+        }
 
-        // 写入 sinf 到 SQLite（原始字符串，存在则跳过）
+        // 写入 sinf 到 SQLite
         if (appInfo.sinf) {
           await addApp(
             `${appInfo.name}_${appInfo.displayVersion}`,
@@ -134,63 +138,57 @@ export const useStartAppDownload = () => {
             id,
             appInfo.metadata ?? "",
             icon ?? appInfo.icon
-          );
-        } else {
-          // sinf 为空，跳过 SQLite 写入
+          )
         }
 
       }
 
       // 4. 更新状态并启动下载
-      setAppState(appId, { down });
+      setAppState(appId, { down })
 
-      startDownload(appId, down);
+
+      startDownload(appId, down)
 
       // 5. 执行成功的回调
-      onSuccess?.();
+      onSuccess?.()
     }).catch((error: unknown) => {
-      // 6. 错误处理（对齐源头取消语义，去掉 debug 日志）
-      const isCurrentRequest =
-        !!requestController && fetchingController.current === requestController;
+      // 6. 错误处理
+      const isCurrentRequest = !!requestController && fetchingController.current === requestController
       const err = (
         error instanceof Error ? error : new Error(String(error))
-      ) as Error & { status?: DownloadStatus };
+      ) as Error & { status?: DownloadStatus }
 
-      if (
-        err.message.includes("已取消前置下载") ||
-        (err.name === "AbortError" && String(err.message).includes("已取消"))
-      ) {
+      if (err.message.includes("已取消前置下载")) {
         if (isCurrentRequest) {
-          fetchingController.current = null;
-          setAppStatus(appId, "pending");
+          fetchingController.current = null
+          setAppStatus(appId, "pending")
         }
-        onError?.(err);
-        return;
+        onError?.(err)
+        return
       }
 
-      // 过期请求的失败不覆盖新任务状态
-      if (requestController && !isCurrentRequest) return;
-      fetchingController.current = null;
-      const status = err.status ?? "failed";
+      if (requestController && !isCurrentRequest) return
+      fetchingController.current = null
+      const status = err.status ?? "failed"
 
       if (status === "failed") {
-        sendNotification("downloadFailed", `${err.toString()}`);
+        sendNotification("downloadFailed", `${err.toString()}`)
       }
 
       setAppStatus(
         appId,
         status,
         status === "failed" ? err.message || String(err) : undefined
-      );
+      )
       // 7. 执行错误回调
-      onError?.(err);
-    });
-  };
+      onError?.(err)
+    })
+  }
 
   return {
     startAppDownload,
     get isLoggedIn() {
-      return getAuthStateSnapshot().isLoggedIn;
+      return getAuthStateSnapshot().isLoggedIn
     },
-  };
-};
+  }
+}

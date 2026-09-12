@@ -1,7 +1,7 @@
-import "./polyfill"
 import { Navigation, Script, useEffect } from "scripting"
 import TabViewApp from "./pages"
 import { initServerManager } from "./services/server"
+import "./polyfill"
 
 const App = () => {
   useEffect(() => {
@@ -11,14 +11,7 @@ const App = () => {
   return <TabViewApp />
 }
 
-async function main() {
-  await Navigation.present({
-    element: <App />,
-    modalPresentationStyle: "fullScreen",
-  })
-  Script.exit()
-}
-
-main().catch(() => {
-  Script.exit()
-})
+Navigation.present({
+  element: <App />,
+  modalPresentationStyle: "overFullScreen"
+}).then(() => Script.exit())

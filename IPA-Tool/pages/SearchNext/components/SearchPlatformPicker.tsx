@@ -16,6 +16,8 @@ export default function SearchPlatformPicker({ value, onChanged }: Props) {
     >
       <Image tag="software" systemName="iphone" accessibilityLabel="iPhone" />
       <Image tag="iPadSoftware" systemName="ipad" accessibilityLabel="iPad" />
+      <Image tag="desktopSoftware" systemName="macbook" accessibilityLabel="Mac" />
+      <Image tag="software,tvSoftware" systemName="appletv" accessibilityLabel="iPhone + Apple TV" />
     </Picker>
   )
 }

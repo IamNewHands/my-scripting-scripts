@@ -7,8 +7,8 @@ import type { MergedItem } from "../hooks/useDownloadItems"
 import { toggleDownloadItems } from "../../../services/downloadService"
 import { AppConfig } from "../../../constants/AppConfig"
 import { notifyAppsFilesChanged } from "../../../utils/appsFilesStore"
-import CloseScriptButton from "../../../components/CloseScriptButton"
 import MinimizeButton from "../../../components/MinimizeButton"
+import CloseScriptButton from "../../../components/CloseScriptButton"
 
 type Props = {
   editing: EditableGlassListEditingApi

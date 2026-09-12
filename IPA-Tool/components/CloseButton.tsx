@@ -1,4 +1,4 @@
-import { Button, Navigation } from "scripting";
+import { Button, Script, Navigation } from "scripting";
 
 export default function CloseButton() {
   return (

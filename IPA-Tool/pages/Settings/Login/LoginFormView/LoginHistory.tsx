@@ -1,6 +1,5 @@
 import { Button, HStack, Image, Spacer, Text, VStack, useState } from "scripting"
 import { useAccountManager, useAuth } from "../../../../hooks"
-import CountryFlag from "../../../../components/CountryFlag"
 import { countryCodeToFlag, storeIdToCode } from "../../../../utils/countries"
 import { pillGlass, pillGlassProps } from "./styles"
 import { AccountSelectionSheet } from "../components/AccountSelectionSheet"
@@ -34,7 +33,7 @@ export function LoginHistory({ setFormData }: LoginHistoryProps) {
     setSelectedAccount(account)
     setFormData({
       username: account.account,
-      password: "",
+      password: account.password,
       captcha: "",
     })
   }
@@ -136,7 +135,12 @@ export function LoginHistory({ setFormData }: LoginHistoryProps) {
                 >
                   {primaryName}
                 </Text>
-                <CountryFlag value={primaryFlag} />
+                <Text
+                  font="body"
+                  lineLimit={1}
+                >
+                  {primaryFlag}
+                </Text>
               </HStack>
               <Text
                 font="footnote"

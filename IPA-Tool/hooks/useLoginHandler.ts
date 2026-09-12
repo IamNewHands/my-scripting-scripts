@@ -6,6 +6,7 @@ export const useLoginHandler = (
   showToast: (type: ToastType, message: string) => void
 ) => {
   const isLoggingInRef = useRef(false);
+  const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleLogin = async (
     account: string,
@@ -20,13 +21,20 @@ export const useLoginHandler = (
       }
 
       isLoggingInRef.current = true;
-      showToast("loading", "正在登录...");
+      loadingTimerRef.current = setTimeout(() => {
+        showToast("loading", "正在登录...")
+      }, 300)
       await login(account, password, captcha);
 
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current)
+        loadingTimerRef.current = null
+      }
       showToast("success", "登录成功！");
       setTimeout(() => setCaptchaPagePresented(false), 800);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
+      console.log(message)
       const isCaptcha = message.includes(
         "MZFinance.BadLogin.Configurator_message"
       );
@@ -38,6 +46,10 @@ export const useLoginHandler = (
         setTimeout(() => setCaptchaPagePresented(false), 800);
       }
     } finally {
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current)
+        loadingTimerRef.current = null
+      }
       isLoggingInRef.current = false;
     }
   };

@@ -1,14 +1,16 @@
 import { useEffect, useObservable, useRef, useState } from "scripting";
-import { useAuth } from "../../../hooks";
-import { apiSearchApp, apiSearchAppById, appIdSearchAbort, searchAppIdAbort } from "../../../services/api";
+import { apiSearch, searchAbort } from "../../../services/api";
+import { useAuth } from "../../../hooks/useAuth";
+import { PLATFORM, DEFAULT_STORE_REGION, type Store } from "../../../constants/Platform";
 import { storeIdToCode } from "../../../utils/countries";
 import {
   createErrorResult,
   DEFAULT_SEARCH_COUNT,
   DEFAULT_SEARCH_ENTITY,
+  isTvSearchEntity,
   type SearchEntity,
+  parseSearchQuery,
   getErrorMessage,
-  isAppIdQuery,
   toResultEntries,
   type SearchResultEntry,
 } from "../model/searchModel";
@@ -17,11 +19,17 @@ const isAbortError = (error: unknown) => {
   return error instanceof Error && error.name === "AbortError";
 };
 
+/** 当前 SearchNext 页面使用的 App Store 上下文。 */
+export const store: Store = {
+  platform: PLATFORM.IOS,
+  country: DEFAULT_STORE_REGION,
+}
+
 export const useSearchApps = () => {
-  const { storeFront } = useAuth()?.authState ?? {};
+  const { authState } = useAuth();
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
-  const [storeRegion, setStoreRegion] = useState("CN");
+  const [storeRegion, setStoreRegion] = useState(DEFAULT_STORE_REGION);
   const [searchCount, setSearchCount] = useState(DEFAULT_SEARCH_COUNT);
   const [searchEntity, setSearchEntity] = useState<SearchEntity>(DEFAULT_SEARCH_ENTITY);
   const [loading, setLoading] = useState<string | null>(null);
@@ -30,8 +38,7 @@ export const useSearchApps = () => {
   const searchTokenRef = useRef(0);
 
   const cancelSearch = () => {
-    searchAppIdAbort.current();
-    appIdSearchAbort.current();
+    searchAbort.current();
     searchTokenRef.current += 1;
     return searchTokenRef.current;
   };
@@ -68,22 +75,22 @@ export const useSearchApps = () => {
       return [];
     }
 
-    const isAppIdSearch = isAppIdQuery(nextQuery);
-
+    const parsedQuery = parseSearchQuery(nextQuery);
     const searchToken = cancelSearch();
     setSubmittedQuery(nextQuery);
     setLoading(`搜索中-${searchToken}`);
     resultItems.setValue([]);
 
     try {
-      const nextResults = isAppIdSearch
-        ? await apiSearchAppById(nextQuery, storeRegion)
-        : await apiSearchApp({
-            term: nextQuery,
-            country: storeRegion,
-            entity: searchEntity,
-            limit: searchCount,
-          });
+      const nextResults = await apiSearch(
+        parsedQuery,
+        {
+          store,
+          country: store.country,
+          entity: searchEntity,
+          limit: searchCount,
+        },
+      )
 
       if (searchToken !== searchTokenRef.current) return [];
 
@@ -100,12 +107,7 @@ export const useSearchApps = () => {
         resultItems.setValue(entries);
       });
     } catch (error) {
-      if (isAbortError(error)) {
-        await withAnimation(() => {
-          resultItems.setValue([]);
-        });
-        return [];
-      }
+      if (isAbortError(error)) return [];
       if (searchToken !== searchTokenRef.current) return [];
 
       const entries = toResultEntries(createErrorResult(getErrorMessage(error)));
@@ -124,8 +126,14 @@ export const useSearchApps = () => {
   };
 
   useEffect(() => {
-    if (storeFront) setStoreRegion(storeIdToCode(storeFront) ?? "CN");
-  }, [storeFront]);
+    const country = storeIdToCode(authState.storeFront);
+    if (country) setStoreRegion(country);
+  }, [authState.storeFront]);
+
+  useEffect(() => {
+    store.platform = isTvSearchEntity(searchEntity) ? PLATFORM.TV : PLATFORM.IOS;
+    store.country = storeRegion;
+  }, [searchEntity, storeRegion]);
 
   return {
     query,

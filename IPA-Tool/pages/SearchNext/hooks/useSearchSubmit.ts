@@ -1,4 +1,4 @@
-import { createLoadingEntries, isAppIdQuery, MAX_ANIMATED_SKELETONS, MAX_SKELETON_COUNT, SKELETON_INTERVAL_MS, type SearchResultEntry } from "../model/searchModel"
+import { createLoadingEntries, parseSearchQuery, MAX_ANIMATED_SKELETONS, MAX_SKELETON_COUNT, SKELETON_INTERVAL_MS, type SearchResultEntry } from "../model/searchModel"
 import type { useSearchApps } from "./useSearchApps"
 
 interface ResultList {
@@ -13,9 +13,15 @@ interface Props {
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
 
+const getSkeletonCount = (query: string, searchCount: number) => {
+  if (!query) return 0
+  if (parseSearchQuery(query).type !== "keyword") return 1
+  return searchCount
+}
+
 export const useSearchSubmit = ({ search, resultList, skeletonAddPromiseRef }: Props) => {
   const startSkeletonLoading = async (query: string, requestToken: number): Promise<void> => {
-    let count = !query ? 0 : isAppIdQuery(query) ? 1 : search.searchCount
+    let count = getSkeletonCount(query, search.searchCount)
     if (count === 0) return
     if (count > MAX_SKELETON_COUNT) count = MAX_SKELETON_COUNT
 

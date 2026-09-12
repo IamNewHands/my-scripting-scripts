@@ -1,31 +1,31 @@
-// SAP 签名缓存：以 XML 的 MD5 为 key 存储签名结果，命中则跳过 WebView 签名流程
+import { AppResources } from "../constants/AppResources"
 
 const MAX_CACHE_SIZE = 50
 
 type SapSignCacheData = Record<string, string>
 
-const STORAGE_KEY = "storage_sap_sign_cache"
+/** guid 是签名上下文的一部分，bodyBase64 保留原始 body 字节。 */
+const getCacheKey = (guid: string, bodyBase64: string) =>
+  Crypto.md5(Data.fromRawString(`${guid}\0${bodyBase64}`)!).toHexString()
 
-const getCacheKey = (xml: string) =>
-  Crypto.md5(Data.fromRawString(xml)!).toHexString()
+export class SapSignCache {
+  get(guid: string, bodyBase64: string): string | null {
+    const cache = Storage.get<SapSignCacheData>(AppResources.sapSignCache) ?? {}
+    return cache[getCacheKey(guid, bodyBase64)] ?? null
+  }
 
-const sapSignCache = {
-  get(xml: string): string | null {
-    const cache = Storage.get<SapSignCacheData>(STORAGE_KEY) ?? {}
-    return cache[getCacheKey(xml)] ?? null
-  },
+  set(guid: string, bodyBase64: string, signature: string): void {
+    const cache = Storage.get<SapSignCacheData>(AppResources.sapSignCache) ?? {}
+    cache[getCacheKey(guid, bodyBase64)] = signature
 
-  set(xml: string, signature: string): void {
-    const cache = Storage.get<SapSignCacheData>(STORAGE_KEY) ?? {}
-    cache[getCacheKey(xml)] = signature
-
-    // 超出上限时删除最早写入的条目
     while (Object.keys(cache).length > MAX_CACHE_SIZE) {
       delete cache[Object.keys(cache)[0]]
     }
 
-    Storage.set(STORAGE_KEY, cache)
-  },
+    Storage.set(AppResources.sapSignCache, cache)
+  }
 }
+
+const sapSignCache = new SapSignCache()
 
 export default sapSignCache

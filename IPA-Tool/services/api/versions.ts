@@ -1,43 +1,29 @@
-import {
-  type AppVersions3rdData,
-  type AppVersionListData,
-} from "../../types/appStore";
-import { debounce } from "../../utils";
-import { localApi } from "../appleStore";
+import { debounce } from "../tool"
+import type { Store } from "../../constants/Platform"
+import { StoreService, VersionService } from "../appleStore"
+import { apiGetAppInfo } from "./appInfo"
 
-/**
- * 获取应用版本列表
- * 合并官方和三放数据源的应用版本列表，
- * 返回一个包含所有版本的数组
- * @param appId 应用 ID
- * @returns 应用版本列表数据 格式为 [版本ID, 版本号][]
- */
-export const apiGetAppVersionList = debounce(async (appId: string) => {
-  const { success, data, error } = await localApi<AppVersionListData>(`/apps/${appId}/versions`);
+type VersionSource = "Timbrd" | "Bilin"
 
-  if (!success || !data || error) {
-    throw new Error(error || "获取应用版本列表失败");
-  }
+export const apiGetAppVersionList = debounce((
+  appId: string,
+  store: Store,
+  startVersionId?: string,
+) => StoreService.getVersions({
+  salableAdamId: appId,
+  getAppInfo: () => apiGetAppInfo.withoutDebounce(appId, startVersionId, undefined, store)
+    .then(result => result.appInfo),
+  store,
+}), 300)
 
-  return data.data;
-}, 300);
 
-/**
- * 获取应用版本列表
- * 三方数据源
- * @param appId 应用 ID
- * @param selset 要查询的接口名称 Timbrd'|'Bilin' 默认竞速接口
- * @returns 应用版本列表数据 格式为 [版本ID, 版本号][]
- */
 export const apiGetAppVersions3rd = debounce(
-  async (appId: string, selset?: "Timbrd" | "Bilin") => {
-    const { success, data, error } = await localApi<AppVersions3rdData>(`/apps/${appId}/versions/legacy`, {
-      query: { selset },
-    });
-    if (!success || !data || error) {
-      throw new Error(error || "获取应用版本列表失败, 三方数据源");
-    }
-    return data.data;
+  async (appId: string, select?: VersionSource) => {
+    return select
+      ? await VersionService.getAppVersionList(appId, select)
+      : await VersionService.concurrentGetVersionList(appId).catch(({ errors = [], error }) => {
+          throw errors.length ? new Error(errors.map((item: Error) => item.message).join("\n")) : error
+        })
   },
   300
-);
+)

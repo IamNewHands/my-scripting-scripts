@@ -1,11 +1,10 @@
 // 文件：scripts/ipaTool/services/server/ServerManager.ts
-// 说明：HTTP 文件服务器管理，用于提供 IPA 文件下载服务
+// 说明：HTTP 文件服务器管理
 
 import { AppConfig } from "../../constants/AppConfig";
 import { BackgroundManager } from "../../modules/BackgroundManager";
 import { AppEvents, Path } from "scripting";
 import { sendNotification } from "../../utils";
-import { registerSAPProxy } from "./SAPProxy";
 
 let serverStarted = false;
 
@@ -15,45 +14,24 @@ const isServerAlreadyStartedError = (error: unknown) =>
 export const initServerManager = () => {
   if (serverStarted) return;
 
-  // 创建后台管理器实例，用于控制后台保活
   const backgroundManager = new BackgroundManager();
-
-  // 获取 IPA 文件存储根目录
   const root = Path.join(FileManager.documentsDirectory, AppConfig.file.folder);
-
-  // 创建 HTTP 服务器实例
   const server = new HttpServer();
   server.listenAddressIPv4 = AppConfig.server.host;
 
-  // SAP 代理：为登录所需的 web-sap-signer 跨域转发 Apple SAP 端点
-  registerSAPProxy(server);
-
-  /**
-   * 注册文件服务路由
-   * 路由格式：http://localhost:8000/:file
-   * 例如：http://localhost:8000/app.ipa
-   */
   server.registerFilesFromDirectory("/:file", root);
 
-  /**
-   * 启动服务器
-   * 端口：8000
-   */
+
   const error = server.start({ port: AppConfig.server.port, forceIPv4: true });
+  
   if (error) {
-    // 重复启动/端口占用不反复弹通知
     if (isServerAlreadyStartedError(error)) return;
+
     sendNotification("serverNotification", error);
     return;
   }
 
   serverStarted = true;
-
-  /**
-   * 监听应用生命周期变化
-   * - active: 应用进入前台，停用后台保活
-   * - background: 应用进入后台，启用后台保活（保持服务器运行）
-   */
 
   AppEvents.scenePhase.addListener(phase => {
     backgroundManager.setActive(phase === "background");

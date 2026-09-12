@@ -1,6 +1,7 @@
 import { Path, useEffect, useRef, useState } from "scripting"
 import { createGlobalState } from "../modules/createGlobalStateUtils"
 import { AppConfig } from "../constants/AppConfig"
+import { AppResources } from "../constants/AppResources"
 import { DownloadTask } from "../modules/download/DownloadTask"
 import { cleanupOrphanRows } from "../modules/AppDB"
 
@@ -22,7 +23,6 @@ export type DownloadTaskDown = Omit<DownloadTaskOptions, "id"> & {
 export type DownloadTaskState = {
   down?: DownloadTaskDown
   status: DownloadStatus
-  // 失败原因，供下载列表展示（不写敏感凭证）
   errorMessage?: string
   localPath?: string
   localSize?: number
@@ -39,7 +39,7 @@ export const useAppsHook = createGlobalState(
     return { ...state, ...action(state) }
   },
   initState,
-  { storageKey: AppConfig.storageKeys.downloadTasks }
+  { storageKey: AppResources.downloadTasks }
 )
 
 const getZipPath = (down: DownloadTaskDown) =>
@@ -102,7 +102,7 @@ cleanupOrphanRows(AppConfig.file.folder, protectedSqlIds).catch(() => { })
 /** 读单项快照（非响应式），不触发组件订阅 */
 export const getAppState = (id: string): Partial<DownloadTaskState> => useAppsHook.getState()?.[id] ?? {}
 
-/** 更新状态；failed 时可附带 errorMessage */
+/** 更新状态 */
 export const setAppStatus = (id: string, status: DownloadStatus, errorMessage?: string) => {
   useAppsHook.dispatchState(prev => ({
     [id]: {
@@ -142,15 +142,6 @@ export const removeAppStates = (ids: string[]) => {
   )
 }
 
-/** 清理活跃下载状态，不删除文件/SQL，不写 deleted tombstone。 */
-export const clearAppState = (id: string) => {
-  useAppsHook.dispatchState(prev => {
-    const next = { ...prev }
-    delete next[id]
-    return next
-  })
-}
-
 // ── 进度（独立 createGlobalState，不持久化）──
 
 const _progress: Record<string, Progress> = (() => {
@@ -180,24 +171,17 @@ export const getProgress = (id: string): Progress =>
 /** 组件自轮询进度 hook */
 export const useProgress = (id: string, status?: DownloadStatus | string, interval = 100) => {
   const [local, setLocal] = useState<Progress>(() => getProgress(id))
-  const lastRef = useRef(local.downloaded)
   const isRunning = status === undefined || status === "fetching" || status === "downloading"
 
   useEffect(() => {
-    const current = getProgress(id)
-    lastRef.current = current.downloaded
-    setLocal(current)
+    setLocal(getProgress(id))
 
     if (!isRunning) return
 
     let active = true
     const poll = () => {
       if (!active) return
-      const next = getProgress(id)
-      if (next.downloaded !== lastRef.current) {
-        lastRef.current = next.downloaded
-        setLocal(next)
-      }
+      setLocal(getProgress(id))
       setTimeout(poll, interval)
     }
     poll()

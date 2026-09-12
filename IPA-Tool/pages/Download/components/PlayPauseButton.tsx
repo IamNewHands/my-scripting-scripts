@@ -15,7 +15,7 @@ import {
   startDownload,
 } from "../../../services/downloadService";
 import { AppConfig, defaultConfig } from "../../../constants/AppConfig";
-import { makeAppIconAccentColor } from "../../../hooks";
+import { makeAppIconAccentColor } from "../../../components/AppIconStyle";
 import {
   buildItmsServicesUrl,
   buildPlistManifestHttpUrl,

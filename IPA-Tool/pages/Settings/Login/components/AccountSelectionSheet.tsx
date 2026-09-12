@@ -16,7 +16,6 @@ import {
   type EditableListEntry,
 } from "../../../../components/EditableGlassListPipeline"
 import { AnimText } from "../../../../components/AnimText"
-import CountryFlag from "../../../../components/CountryFlag"
 import { useAccountManager, useAuth } from "../../../../hooks"
 
 type AccountItem = ReturnType<typeof useAuth>["accountHistory"][number]
@@ -151,7 +150,9 @@ export function AccountSelectionSheet({
                 padding={{ vertical: 8 }}
                 contentShape="rect"
               >
-                <CountryFlag value={info.flag} size={48} fallbackFont={40} />
+                <AnimText font={40} lineLimit={1}>
+                  {info.flag}
+                </AnimText>
                 <VStack spacing={15} alignment="leading">
                   <AnimText
                     font="body"

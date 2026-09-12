@@ -1,12 +1,8 @@
-import type { ApiResponse } from "../../types/appStore"
-import { formatAccountName } from "../../utils"
-import { localApi } from "../appleStore"
+import { formatAccountName } from "../tool"
+import type { AuthSessionSummary, LoginParams } from "../appleStore"
+import { AuthService } from "../appleStore"
 
-interface LoginParams {
-  appleId: string
-  password: string
-  code: string
-}
+export type { AuthSessionSummary } from "../appleStore"
 
 export interface LoginResult {
   account: string
@@ -15,44 +11,16 @@ export interface LoginResult {
   lastLogin: string
 }
 
-export interface AuthSessionSummary {
-  account: string
-  username: string
-  storeFront: string
-}
-
-type LoginApiData = Partial<LoginResult> | {
-  loginData?: {
-    storeFront?: string
-    accountInfo?: {
-      appleId?: string
-      address?: {
-        firstName?: string
-        lastName?: string
-      }
-    }
-  }
-}
-
-const normalizeLoginData = (data: LoginApiData | undefined): LoginResult | undefined => {
-  if (!data) return
-  if ("account" in data && data.account && data.storeFront) {
-    return {
-      account: data.account,
-      username: data.username || data.account,
-      storeFront: data.storeFront,
-      lastLogin: data.lastLogin || new Date().toLocaleString("zh-CN"),
-    }
-  }
-
-  const loginData = "loginData" in data ? data.loginData : undefined
-  const account = loginData?.accountInfo?.appleId
+/** Apple ID 登录并返回页面使用的账号信息。 */
+export const apiLogin = async ({ appleId, password, code = "" }: LoginParams): Promise<LoginResult> => {
+  const loginData = await AuthService.login({ appleId, password, code })
+  const account = loginData.accountInfo?.appleId
   const username = formatAccountName(
-    loginData?.accountInfo?.address?.firstName,
-    loginData?.accountInfo?.address?.lastName,
+    loginData.accountInfo?.address?.firstName,
+    loginData.accountInfo?.address?.lastName
   ) || account
+  if (!account || !loginData.storeFront) throw new Error("登录失败，请检查账号、密码或验证码")
 
-  if (!account || !loginData?.storeFront) return
   return {
     account,
     username: username || account,
@@ -61,56 +29,17 @@ const normalizeLoginData = (data: LoginApiData | undefined): LoginResult | undef
   }
 }
 
-/**
- * Apple ID 登录
- */
-export const apiLogin = async ({
-  appleId,
-  password,
-  code,
-}: LoginParams): Promise<LoginResult> => {
-  const { success, data, error } = await localApi<ApiResponse<LoginApiData>>("/auth/login", {
-    method: "POST",
-    body: { appleId, password, code },
-  })
-  const loginResult = normalizeLoginData(data)
-
-  if (!success || error || !loginResult) {
-    throw new Error(error || "登录失败，请检查账号、密码或验证码")
-  }
-
-  return loginResult
-}
-
+/** 返回全部缓存 Apple 账号摘要。 */
 export const apiGetAuthSessions = async (): Promise<AuthSessionSummary[]> => {
-  const { success, data, error } = await localApi<ApiResponse<{ sessions?: AuthSessionSummary[] }>>("/auth/sessions", {
-    method: "GET",
-  })
-
-  if (!success || error) throw new Error(error || "获取缓存账号失败")
-  return data?.sessions ?? []
+  return AuthService.getSessions()
 }
 
+/** 切换活动 Apple 账号并返回账号列表。 */
 export const apiSwitchAuthSession = async (account: string): Promise<AuthSessionSummary[]> => {
-  const { success, data, error } = await localApi<ApiResponse<{ sessions?: AuthSessionSummary[] }>>("/auth/switch", {
-    method: "POST",
-    body: { account },
-  })
-
-  if (!success || error) throw new Error(error || "切换账号失败")
-  return data?.sessions ?? []
+  return AuthService.switchSession(account)
 }
 
+/** 删除缓存 Apple 账号并返回账号列表。 */
 export const apiDeleteAuthSession = async (account: string): Promise<AuthSessionSummary[]> => {
-  const { success, data, error } = await localApi<ApiResponse<{ sessions?: AuthSessionSummary[] }>>("/auth/sessions/delete", {
-    method: "POST",
-    body: { account },
-  })
-
-  if (!success || error) throw new Error(error || "删除账号失败")
-  return data?.sessions ?? []
-}
-
-export const apiReset = async () => {
-  await localApi("/auth/reset", { method: "POST" })
+  return AuthService.removeSession(account)
 }
