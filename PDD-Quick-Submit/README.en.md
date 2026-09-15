@@ -13,19 +13,19 @@ https://scripting.fun/import_scripts?urls=%5B%22https%3A%2F%2Fgithub.com%2FIamNe
 ## Features
 
 - Codes up to **10 digits** are sent as one; longer input is auto-split into 8/9-digit chunks (multiple codes).
-- Submit **in parallel** to multiple third-party helper sites (publisher / token).
+- Submit **in parallel** to multiple third-party helper sites (publisher / simple).
 - **First success wins**: return as soon as any site succeeds (no waiting on the slowest).
 - Per-code **5s deadline**; **3s** request timeout + native `timeout` dual guard.
-- Result as **success/total**, e.g. `123456789 1/3`.
+- Result as **success/total**, e.g. `123456789 1/2`.
 - **Shortcuts / Share text** via Intent.
 
 ## How to read results
 
 | Example | Meaning |
 |---|---|
-| `123456789 1/3` | At least one site succeeded (others aborted) |
-| `123456789 2/3` | Two sites succeeded |
-| `123456789 0/3 timeout` | All failed; one failure reason appended |
+| `123456789 1/2` | At least one site succeeded (others aborted) |
+| `123456789 2/2` | Two sites succeeded |
+| `123456789 0/2 already exists` | All failed; one failure reason appended |
 
 ## Author
 
@@ -64,15 +64,16 @@ PDD-Quick-Submit/
 
 Default `SITES` (see source):
 
-- `pdd.xxs666.cn`
-- `pqpdd.t6k.cn`
-- `pdd.dcvx.cn`
+- `pdd.xxs666.cn` (`POST /api/codes`, local `publisher_token`)
+- `pdd.dcvx.cn` (`POST /api/codes`, body `{ code }`)
+
+> `pqpdd.t6k.cn` started requiring WeChat authorization in 2026-09 and cannot be driven by the script; removed in 1.3.1.
 
 Payload is the team code plus site tokens/cookies. No Apple ID passwords.
 
 ## Limits
 
-- If one site is up, you may still get `1/3` while others fail.
+- If one site is up, you may still get `1/2` while others fail.
 - Random digits may be accepted/rejected by helpers; trust the Pinduoduo app for invite status.
 - Site list is hardcoded in source.
 
@@ -81,5 +82,11 @@ Payload is the team code plus site tokens/cookies. No Apple ID passwords.
 - ASCII dir: `PDD-Quick-Submit`
 - Zip: `…/releases/latest/download/PDD-Quick-Submit.zip`
 - `remoteResource.hash` = full zip MD5
-- Version: **1.2.0**
+- Version: **1.3.1**
+
+### Changelog
+
+- **1.3.1**: Removed `pqpdd.t6k.cn` (now requires WeChat authorization); `pdd.dcvx.cn` switched to the new `POST /api/codes`; dropped the home-page preflight and the redundant code-rules request in single-code mode (end-to-end ~3.5s → ~0.2s); `403` business errors now surface the JSON message (e.g. "already exists"); default prefixes updated to `1/8/9`.
+- **1.3.0**: Codes up to 10 digits sent as one; 9-digit support.
+- **1.2.0**: First-success return + per-code deadline + numeric result.
 

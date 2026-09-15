@@ -8,12 +8,12 @@ declare const Vision: any
 declare const UIImage: any
 
 /**
- * 拼多多快捷组队三站点提交脚本
+ * 拼多多快捷组队多站点提交脚本
  *
  * 使用方式：
  * 1. iOS 快捷指令调用 Scripting，并把文本作为快捷指令参数传入。
  * 2. 输入可为 8/9 位数字，也可为 8N/9N 位连续数字（按站点规则长度整组切分）。
- * 3. 每组码串行处理；单组内并行提交 3 个站点，任一站点成功即立即返回该组结果。
+ * 3. 每组码串行处理；单组内并行提交全部站点，任一站点成功即立即返回该组结果。
  * 4. 慢站会被取消/忽略，避免拖累反馈；运行结果通过通知和 Script.exit 回传。
  */
 
@@ -27,13 +27,13 @@ const BACKOFF_JITTER_MS = 100
 const UA_MOBILE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 const ACCEPT_LANG = "zh-CN,zh;q=0.9,en;q=0.8"
 
-// 新增同架构站点：复制 kind 为 "publisher" 的配置，改 name/homeUrl/submitUrl/Origin/Referer 即可自动生效。
-// publisher：前端本地 publisher_token + POST /api/codes；token：先取服务端 token 再提交。
+// 新增站点：复制对应 kind 的配置块，改 name/submitUrl/Origin/Referer 即可自动生效。
+// publisher：前端本地 publisher_token + POST /api/codes，body { platform, code, publisher_token }。
+// simple：无需 token，直接 POST /api/codes，body { code }。
 const SITES = [
   {
     name: "站点1",
     kind: "publisher",
-    homeUrl: "https://pdd.xxs666.cn/pdd.html",
     submitUrl: "https://pdd.xxs666.cn/api/codes",
     extraHeaders: {
       "Origin": "https://pdd.xxs666.cn",
@@ -43,23 +43,10 @@ const SITES = [
   },
   {
     name: "站点2",
-    kind: "publisher",
-    homeUrl: "https://pqpdd.t6k.cn/pdd.html",
-    submitUrl: "https://pqpdd.t6k.cn/api/codes",
-    extraHeaders: {
-      "Origin": "https://pqpdd.t6k.cn",
-      "Referer": "https://pqpdd.t6k.cn/pdd.html",
-      "Accept": "application/json, text/plain, */*",
-    },
-  },
-  {
-    name: "站点3",
-    kind: "token",
-    tokenUrl: "https://pdd.dcvx.cn/api.php?action=get_token",
-    submitUrl: "https://pdd.dcvx.cn/api.php?action=add",
+    kind: "simple",
+    submitUrl: "https://pdd.dcvx.cn/api/codes",
     // 慢站压缩预算，避免拖死整组反馈
-    tokenTimeoutMs: 2500,
-    submitTimeoutMs: 3000,
+    submitTimeoutMs: 4000,
     maxAttempts: 2,
     extraHeaders: {
       "Origin": "https://pdd.dcvx.cn",
@@ -70,7 +57,7 @@ const SITES = [
 ]
 
 // 码校验规则：从站点动态获取，失败时用此默认值兜底
-const DEFAULT_CODE_RULES = { lengths: [8, 9], prefixes: ["1", "2", "3", "4"] }
+const DEFAULT_CODE_RULES = { lengths: [8, 9], prefixes: ["1", "8", "9"] }
 let cachedCodeRules: { lengths: number[]; prefixes: string[] } | null = null
 
 async function fetchCodeRules(): Promise<{ lengths: number[]; prefixes: string[] }> {
@@ -196,18 +183,9 @@ function createPublisherToken(): string {
 
 const PUBLISHER_TOKEN = createPublisherToken()
 
-function parseSetCookie(setCookie: string | null): string {
-  if (!setCookie) return ""
-  return setCookie
-    .split(/,(?=\s*[^;,=]+=[^;,]+)/)
-    .map((part) => part.split(";")[0].trim())
-    .filter(Boolean)
-    .join("; ")
-}
-
 function compressBusinessFailMessage(text: string): string {
   const t = text ?? ""
-  if (/重复|已提交/.test(t)) return "已重复"
+  if (/重复|已提交|已存在/.test(t)) return "已重复"
   if (/互助码|格式不正确/.test(t)) return "码格式错"
   if (/已结束/.test(t)) return "已结束"
   if (/已满|人满/.test(t)) return "已满员"
@@ -390,20 +368,26 @@ function parsePublisherResponse(site: any, response: HttpResult): SiteResult {
   return makeResult(siteName, false, "parse", `响应格式异常: ${shortText(response.text, 40)}`, response.status)
 }
 
-function parseTokenResponse(site: any, response: HttpResult): SiteResult {
+function parseSimpleResponse(site: any, response: HttpResult): SiteResult {
   const siteName = site.name
+  // 该站点用 HTTP 403 表达业务失败（如「该助力码已存在」），故优先按 JSON 业务字段判定
+  const json = response.jsonOrNull
+  if (json) {
+    if (json.success === true || json.ok === true || json.code === 0 || json.status === "success") {
+      return makeResult(siteName, true, "success", json.message ?? json.msg ?? "提交成功", response.status)
+    }
+    const msg = String(json.error ?? json.msg ?? json.message ?? "")
+    if (msg) {
+      if (containsSuccessKeyword(msg)) {
+        return makeResult(siteName, true, "success", msg || "提交成功(message兜底)", response.status)
+      }
+      return makeResult(siteName, false, "businessFail", compressBusinessFailMessage(msg), response.status)
+    }
+  }
   const statusResult = httpStatusResult(siteName, response.status)
   if (statusResult) return statusResult
-  const json = response.jsonOrNull
   if (!json) return makeResult(siteName, false, "parse", "响应不是 JSON", response.status)
-  if (json.success === true || json.code === 0 || json.status === "success") {
-    return makeResult(siteName, true, "success", json.msg ?? json.message ?? "提交成功", response.status)
-  }
-  const msg = String(json.msg ?? json.message ?? "")
-  if (containsSuccessKeyword(msg)) {
-    return makeResult(siteName, true, "success", msg || "提交成功(message兜底)", response.status)
-  }
-  return makeResult(siteName, false, "businessFail", compressBusinessFailMessage(msg || "提交失败"), response.status)
+  return makeResult(siteName, false, "businessFail", "提交失败", response.status)
 }
 
 async function submitPublisherCode(
@@ -413,28 +397,11 @@ async function submitPublisherCode(
 ): Promise<SiteResult> {
   return withRetry(async () => {
     throwIfAborted(ctx)
-    // 首页 GET 仅作为可选增强，失败不阻断提交
-    let cookie = ""
-    try {
-      const homeResponse = await httpRequest(site.homeUrl, {
-        method: "GET",
-        headers: { "Accept": "text/html,*/*" },
-        timeoutMs: Math.min(TIMEOUT_MS, 2000),
-      }, ctx)
-      if (homeResponse.status < 400) {
-        cookie = parseSetCookie(homeResponse.headers.get("set-cookie"))
-      }
-    } catch (error: any) {
-      if (error?.kind === "cancelled") throw error
-      console.log(`[${site.name}] 首页预检跳过：${error?.message ?? error}`)
-    }
-    throwIfAborted(ctx)
     const headers: any = {
       ...site.extraHeaders,
       "Content-Type": "application/json",
       "X-Publisher-Token": PUBLISHER_TOKEN,
     }
-    if (cookie) headers.Cookie = cookie
     const submitResponse = await httpRequest(site.submitUrl, {
       method: "POST",
       headers,
@@ -444,39 +411,25 @@ async function submitPublisherCode(
   }, { label: site.name, ctx })
 }
 
-async function submitTokenSite(site: any, code: string, ctx?: AbortableContext): Promise<SiteResult> {
+async function submitSimpleCode(site: any, code: string, ctx?: AbortableContext): Promise<SiteResult> {
   return withRetry(async () => {
     throwIfAborted(ctx)
-    const tokenResponse = await httpRequest(site.tokenUrl!, {
-      method: "GET",
-      headers: { "Accept": "application/json, text/plain, */*" },
-      timeoutMs: site.tokenTimeoutMs,
-    }, ctx)
-    const tokenStatusResult = httpStatusResult(site.name, tokenResponse.status)
-    if (tokenStatusResult) return tokenStatusResult
-    const token = tokenResponse.jsonOrNull?.token
-    if (typeof token !== "string" || token.trim() === "") {
-      return makeResult(site.name, false, "preflight", "未获取到提交 Token", tokenResponse.status)
-    }
-    throwIfAborted(ctx)
-    const cookie = parseSetCookie(tokenResponse.headers.get("set-cookie"))
     const submitResponse = await httpRequest(site.submitUrl, {
       method: "POST",
       headers: {
         ...site.extraHeaders,
         "Content-Type": "application/json",
-        "Cookie": cookie,
       },
-      body: JSON.stringify({ number: code, token, honeypot: "" }),
+      body: JSON.stringify({ code }),
       timeoutMs: site.submitTimeoutMs,
     }, ctx)
-    return parseTokenResponse(site, submitResponse)
+    return parseSimpleResponse(site, submitResponse)
   }, { label: site.name, maxAttempts: site.maxAttempts, ctx })
 }
 
 async function submitBySite(site: any, code: string, ctx?: AbortableContext): Promise<SiteResult> {
   if (site.kind === "publisher") return submitPublisherCode(site, code, ctx)
-  if (site.kind === "token") return submitTokenSite(site, code, ctx)
+  if (site.kind === "simple") return submitSimpleCode(site, code, ctx)
   return makeResult(site.name ?? "未知站点", false, "preflight", "未知站点类型", null)
 }
 
@@ -679,7 +632,7 @@ async function promptInputIfAvailable(): Promise<string> {
   try {
     const result = await Dialog.prompt({
       title: "拼多多快捷组队",
-      message: "请输入组队码（8 位，支持多组连写）",
+      message: "请输入组队码（8/9 位，支持多组连写）",
       placeholder: "8/9 位或整组倍数位数字",
     })
     if (typeof result === "string") return result
@@ -709,14 +662,16 @@ async function run(): Promise<void> {
     Script.exit(Intent.text("未输入组队码"))
     return
   }
-  const rules = await fetchCodeRules()
   const mode = parseInputMode(text)
   let codes: string[] = []
   let ignoredTailLength = 0
+  // 单码直发模式不做规则校验，无需请求规则接口（省一次网络往返）
+  let rules = DEFAULT_CODE_RULES
   if (mode.kind === "raw") {
     // 整串直发：不切分、不忽略余数
     if (mode.code.length > 0) codes = [mode.code]
   } else {
+    rules = await fetchCodeRules()
     const parsed = parseCodes(mode.digits, rules.lengths)
     codes = parsed.codes
     ignoredTailLength = parsed.ignoredTailLength
